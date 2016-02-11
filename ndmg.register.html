@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ndmg.register package &mdash; ndmg 0.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ndmg 0.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> ndmg
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">ndmg.register package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-ndmg.register.register">ndmg.register.register module</a></li>
+<li><a class="reference internal" href="#module-ndmg.register">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">ndmg</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>ndmg.register package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/ndmg.register.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="ndmg-register-package">
+<h1>ndmg.register package<a class="headerlink" href="#ndmg-register-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-ndmg.register.register">
+<span id="ndmg-register-register-module"></span><h2>ndmg.register.register module<a class="headerlink" href="#module-ndmg.register.register" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="ndmg.register.register.register">
+<em class="property">class </em><code class="descclassname">ndmg.register.register.</code><code class="descname">register</code><a class="headerlink" href="#ndmg.register.register.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="ndmg.register.register.register.align">
+<code class="descname">align</code><span class="sig-paren">(</span><em>inp</em>, <em>ref</em>, <em>xfm</em><span class="sig-paren">)</span><a class="headerlink" href="#ndmg.register.register.register.align" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aligns two images and stores the transform between them</p>
+<p><strong>Positional Arguments:</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>inp:</dt>
+<dd><ul class="first last simple">
+<li>Input impage to be aligned as a nifti image file</li>
+</ul>
+</dd>
+<dt>ref:</dt>
+<dd><ul class="first last simple">
+<li>Image being aligned to as a nifti image file</li>
+</ul>
+</dd>
+<dt>xfm:</dt>
+<dd><ul class="first last simple">
+<li>Returned transform between two images</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ndmg.register.register.register.align_slices">
+<code class="descname">align_slices</code><span class="sig-paren">(</span><em>dti</em>, <em>corrected_dti</em>, <em>idx</em><span class="sig-paren">)</span><a class="headerlink" href="#ndmg.register.register.register.align_slices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs eddy-correction (or self-alignment) of a stack of 3D images</p>
+<dl class="docutils">
+<dt><strong>Positional Arguments:</strong></dt>
+<dd><dl class="first last docutils">
+<dt>dti:</dt>
+<dd><ul class="first last simple">
+<li>4D (DTI) image volume as a nifti file</li>
+</ul>
+</dd>
+<dt>corrected_dti:</dt>
+<dd><ul class="first last simple">
+<li>Corrected and aligned DTI volume in a nifti file</li>
+</ul>
+</dd>
+<dt>idx:</dt>
+<dd><ul class="first last simple">
+<li>Index of the first B0 volume in the stack</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ndmg.register.register.register.applyxfm">
+<code class="descname">applyxfm</code><span class="sig-paren">(</span><em>inp</em>, <em>ref</em>, <em>xfm</em>, <em>aligned</em><span class="sig-paren">)</span><a class="headerlink" href="#ndmg.register.register.register.applyxfm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aligns two images with a given transform</p>
+<p><strong>Positional Arguments:</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>inp:</dt>
+<dd><ul class="first last simple">
+<li>Input impage to be aligned as a nifti image file</li>
+</ul>
+</dd>
+<dt>ref:</dt>
+<dd><ul class="first last simple">
+<li>Image being aligned to as a nifti image file</li>
+</ul>
+</dd>
+<dt>xfm:</dt>
+<dd><ul class="first last simple">
+<li>Transform between two images</li>
+</ul>
+</dd>
+<dt>aligned:</dt>
+<dd><ul class="first last simple">
+<li>Aligned output image as a nifti image file</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ndmg.register.register.register.dti2atlas">
+<code class="descname">dti2atlas</code><span class="sig-paren">(</span><em>dti</em>, <em>gtab</em>, <em>mprage</em>, <em>atlas</em>, <em>aligned_dti</em>, <em>outdir</em><span class="sig-paren">)</span><a class="headerlink" href="#ndmg.register.register.register.dti2atlas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aligns two images and stores the transform between them</p>
+<p><strong>Positional Arguments:</strong></p>
+<blockquote>
+<div><dl class="docutils">
+<dt>dti:</dt>
+<dd><ul class="first last simple">
+<li>Input impage to be aligned as a nifti image file</li>
+</ul>
+</dd>
+<dt>bvals:</dt>
+<dd><ul class="first last simple">
+<li>File containing list of bvalues for each scan</li>
+</ul>
+</dd>
+<dt>bvecs:</dt>
+<dd><ul class="first last simple">
+<li>File containing gradient directions for each scan</li>
+</ul>
+</dd>
+<dt>mprage:</dt>
+<dd><ul class="first last simple">
+<li>Intermediate image being aligned to as a nifti image file</li>
+</ul>
+</dd>
+<dt>atlas:</dt>
+<dd><ul class="first last simple">
+<li>Terminal image being aligned to as a nifti image file</li>
+</ul>
+</dd>
+<dt>aligned_dti:</dt>
+<dd><ul class="first last simple">
+<li>Aligned output dti image as a nifti image file</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ndmg.register.register.register.resample">
+<code class="descname">resample</code><span class="sig-paren">(</span><em>base</em>, <em>ingested</em>, <em>template</em><span class="sig-paren">)</span><a class="headerlink" href="#ndmg.register.register.register.resample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resamples the image such that images which have already been aligned
+in real coordinates also overlap in the image/voxel space.</p>
+<dl class="docutils">
+<dt><strong>Positional Arguments</strong></dt>
+<dd><dl class="first last docutils">
+<dt>base:</dt>
+<dd><ul class="first last simple">
+<li>Image to be aligned</li>
+</ul>
+</dd>
+<dt>ingested:</dt>
+<dd><ul class="first last simple">
+<li>Name of image after alignment</li>
+</ul>
+</dd>
+<dt>template:</dt>
+<dd><ul class="first last simple">
+<li>Image that is the target of the alignment</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-ndmg.register">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-ndmg.register" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, NeuroData.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
