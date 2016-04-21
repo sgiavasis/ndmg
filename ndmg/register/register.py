@@ -55,8 +55,9 @@ class register(object):
               " -cost mutualinfo -bins 256 -dof 12 -searchrx -180 180" +\
               " -searchry -180 180 -searchrz -180 180"
         print "Executing: " + cmd
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()
         pass
 
     def applyxfm(self, inp, ref, xfm, aligned):
@@ -78,8 +79,9 @@ class register(object):
               " -init " + xfm + " -interp trilinear -applyxfm"
 
         print "Executing: " + cmd
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()
         pass
 
     def align_slices(self, dti, corrected_dti, idx):
@@ -96,8 +98,9 @@ class register(object):
         """
         cmd = "eddy_correct " + dti + " " + corrected_dti + " " + str(idx)
         print "Executing: " + cmd
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()
         pass
 
     def resample(self, base, ingested, template):
@@ -180,8 +183,9 @@ class register(object):
 
         # Combines transforms from previous registrations in proper order
         cmd = "convert_xfm -omat " + xfm3 + " -concat " + xfm2 + " " + xfm1
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()
 
         # Applies combined transform to dti image volume
         self.applyxfm(dti2, atlas, xfm3, temp_aligned)
@@ -191,5 +195,6 @@ class register(object):
         cmd = "rm -f " + dti2 + " " + temp_aligned + " " + b0 + " " +\
               xfm1 + " " + xfm2 + " " + xfm3
         print "Cleaning temporary registration files..."
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()

@@ -44,8 +44,9 @@ def ndmg_pipeline(dti, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     dti_name = op.splitext(op.splitext(op.basename(dti))[0])[0]
     cmd = "mkdir -p " + outdir + "/reg_dti " + outdir + "/tensors " +\
           outdir + "/fibers " + outdir + "/graphs"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     p.communicate()
+    p.wait()
 
     # Graphs are different because of multiple atlases
     if isinstance(labels, list):
@@ -108,8 +109,9 @@ def ndmg_pipeline(dti, bvals, bvecs, mprage, atlas, mask, labels, outdir,
         print "Cleaning up intermediate files... "
         cmd = 'rm -f ' + tensors + ' ' + dti1 + ' ' + aligned_dti + ' ' +\
               bvecs1
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         p.communicate()
+        p.wait()
 
     print "Complete!"
     pass
@@ -139,8 +141,9 @@ def main():
     cmd = "mkdir -p " + result.outdir + " " + result.outdir + "/tmp"
     print "Creating output directory: " + result.outdir
     print "Creating output temp directory: " + result.outdir + "/tmp"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     p.communicate()
+    p.wait()
 
     ndmg_pipeline(result.dti, result.bval, result.bvec, result.mprage,
                   result.atlas, result.mask, result.labels, result.outdir,

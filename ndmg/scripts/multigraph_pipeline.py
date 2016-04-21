@@ -81,8 +81,9 @@ def main():
     cmd = "mkdir -p " + result.outdir + " " + result.outdir + "/tmp"
     print "Creating output directory: " + result.outdir
     print "Creating output temp directory: " + result.outdir + "/tmp"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     p.communicate()
+    p.wait()
 
     multigraphs(result.fibers, result.labels, result.outdir)
 
