@@ -44,7 +44,7 @@ def ndmg_pipeline(dti, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     dti_name = op.splitext(op.splitext(op.basename(dti))[0])[0]
     cmd = "mkdir -p " + outdir + "/reg_dti " + outdir + "/tensors " +\
           outdir + "/fibers " + outdir + "/graphs"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
     p.communicate()
 
     # Graphs are different because of multiple atlases
@@ -53,11 +53,11 @@ def ndmg_pipeline(dti, bvals, bvecs, mprage, atlas, mask, labels, outdir,
                       for x in labels]
         for label in label_name:
             p = Popen("mkdir -p " + outdir + "/graphs/" + label,
-                      stdout=PIPE, stderr=PIPE, shell=True)
+                      stdout=PIPE, stderr=PIPE, shell=True).wait()
     else:
         label_name = op.splitext(op.splitext(op.basename(labels))[0])[0]
         p = Popen("mkdir -p " + outdir + "/graphs/" + label_name,
-                  stdout=PIPE, stderr=PIPE, shell=True)
+                  stdout=PIPE, stderr=PIPE, shell=True).wait()
     # Create derivative output file names
     aligned_dti = outdir + "/reg_dti/" + dti_name + "_aligned.nii.gz"
     tensors = outdir + "/tensors/" + dti_name + "_tensors.npz"
@@ -108,7 +108,7 @@ def ndmg_pipeline(dti, bvals, bvecs, mprage, atlas, mask, labels, outdir,
         print "Cleaning up intermediate files... "
         cmd = 'rm -f ' + tensors + ' ' + dti1 + ' ' + aligned_dti + ' ' +\
               bvecs1
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
         p.communicate()
 
     print "Complete!"
@@ -139,7 +139,7 @@ def main():
     cmd = "mkdir -p " + result.outdir + " " + result.outdir + "/tmp"
     print "Creating output directory: " + result.outdir
     print "Creating output temp directory: " + result.outdir + "/tmp"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
     p.communicate()
 
     ndmg_pipeline(result.dti, result.bval, result.bvec, result.mprage,

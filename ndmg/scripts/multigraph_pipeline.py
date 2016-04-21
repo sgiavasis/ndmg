@@ -40,7 +40,7 @@ def multigraphs(fibers, labels, outdir):
                   for x in labels]
     for label in label_name:
         p = Popen("mkdir -p " + outdir + "/graphs/" + label,
-                  stdout=PIPE, stderr=PIPE, shell=True)
+                  stdout=PIPE, stderr=PIPE, shell=True).wait()
 
     # Create names of files to be produced
     graphs = [outdir + "/graphs/" + x + '/' + base + "_" + x + ".graphml"
@@ -81,7 +81,7 @@ def main():
     cmd = "mkdir -p " + result.outdir + " " + result.outdir + "/tmp"
     print "Creating output directory: " + result.outdir
     print "Creating output temp directory: " + result.outdir + "/tmp"
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).wait()
     p.communicate()
 
     multigraphs(result.fibers, result.labels, result.outdir)
