@@ -34,13 +34,13 @@ load_graphs <- function(fnames, rois, thresh=1e5) {
       fail <- fail + 1
     }
     else {
+      print(i)
       try(tempg <- get.adjacency(tempg, type='upper', attr='weight', sparse=FALSE), silent = TRUE)
-      if (exists('tempg')) {
+      if (!exists('tempg')) {
         fail <- fail +1
       }
-      tempg <- get.adjacency(tempg, type='upper', attr='weight', sparse=FALSE)
       if (all(dim(tempg) != c(rois,rois))) {
-        # warning(paste('The following graph is the impropper size:', fnames[i]))
+        warning(paste('The following graph is the impropper size:', fnames[i]))
         size <- size + 1
         next;
       }
@@ -54,6 +54,7 @@ load_graphs <- function(fnames, rois, thresh=1e5) {
       rm(tempg)
     }
   }
+  
   print(paste('Total number of graphs found:', N))
   print(paste('Number of graphs which failed to load: ', fail))
   print(paste('Graphs with improper dimensions: ', size))
