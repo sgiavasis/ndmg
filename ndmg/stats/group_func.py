@@ -222,12 +222,13 @@ class group_func(object):
             cmd = "mkdir -p {}".format(tmp_dir)
             mgu.execute_cmd(cmd)
             for subj, raw in label_raw.iteritems():
-                # loop over edges to threshold
+                # loop over edges to threshol
+                raw_mtx = nx.to_numpy_matrix(raw)
+                cor_thr = np.percentile(raw_mtx, thr*100) 
                 for u, v, d in raw.edges(data=True):
-                    # threshold graphs
-                    if d['weight'] > thr:
-                        d['weight'] = 1
-                    else:
+                    # threshold graphs by removing weights
+                    # above the threshold
+                    if d['weight'] < thr:
                         raw.remove_edge(u, v)
                 # resave the thresholded graphs
                 gname = "{}/{}".format(tmp_dir, subj)
