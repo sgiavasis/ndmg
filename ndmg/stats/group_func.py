@@ -228,7 +228,7 @@ class group_func(object):
                 for u, v, d in raw.edges(data=True):
                     # threshold graphs by removing weights
                     # above the threshold
-                    if d['weight'] < thr:
+                    if d['weight'] < cor_thr:
                         raw.remove_edge(u, v)
                 # resave the thresholded graphs
                 gname = "{}/{}".format(tmp_dir, subj)
