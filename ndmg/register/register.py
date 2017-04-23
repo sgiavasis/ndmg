@@ -373,6 +373,52 @@ class func_register(register):
                                           "_self-aligned.nii.gz")
         pass
 
+    def epireg_mem(self, epi_in, t1w, t1w_brain, epi_out):
+        """
+        A function to iteratively perform epireg.
+        Keeps memory usage down, since the primary bottleneck
+        for memory is that epireg does not free mem efficiently.
+        """
+        epi_tmp_out = []
+        epi_im = nb.load(epi_in)
+        epi_dat = epi_im.get_data()
+        break_size = 100
+        nt = epi_dat.shape[3]
+        nbreaks = np.ceil(nt/float(break_size)).astype(int)
+        print(nbreaks)
+        for i in range(0, nbreaks):
+            # separate the data in 100 timestep increments
+            this_break = np.min(((i+1)*break_size, nt))
+            break_dat = epi_dat[:, :, :, i*break_size:this_break]
+            print (break_dat.shape)
+            tin = mgu.name_tmps(self.outdir, self.epi_name,
+                                "_self_tmp{}.nii.gz".format(i))
+            tout = mgu.name_tmps(self.outdir, self.epi_name,
+                                 "_self-aligned_tmp{}.nii.gz".format(i))
+            epi_tmp_out.append(tout)
+            t_im = nb.Nifti1Image(dataobj = break_dat,
+                                  affine = epi_im.affine,
+                                  header = epi_im.header)
+            nb.save(img=t_im, filename=tin)
+            self.align_epi(tin, t1w, t1w_brain, tout)
+        # reconstruct registered brain
+        # could combine with above loop, but this will decrease
+        # memory overhead
+        for i in range(0, nbreaks):
+            if i == 0:
+                im = nb.load(epi_tmp_out[i])
+                head = im.header
+                aff = im.affine
+                dat = im.get_data()
+            else:
+                newdat = nb.load(epi_tmp_out[i]).get_data()
+                # add it to our ultimate data object
+                dat = np.concatenate((dat, newdat), axis=3)
+        # get header/affine information
+        reg_im = nb.Nifti1Image(dataobj = dat,
+                                affine=aff,
+                                header=head) 
+        nb.save(img=reg_im, filename=epi_out)
 
     def self_align(self):
         """
@@ -403,7 +449,7 @@ class func_register(register):
 
         # attempt EPI registration. note that this somethimes does not
         # work great if our EPI has a low field of view.
-        self.align_epi(epi_init, self.t1w, self.t1w_brain, epi_bbr)
+        self.epireg_mem(epi_init, self.t1w, self.t1w_brain, epi_bbr)
 
         print "Analyzing Self Registration Quality..."
         (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
