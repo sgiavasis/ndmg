@@ -400,7 +400,7 @@ class func_register(register):
                                   affine = epi_im.affine,
                                   header = epi_im.header)
             nb.save(img=t_im, filename=tin)
-            mgu.execute_cmd("df -h", verb=True)
+            print(mgu.execute_cmd("df -h", verb=True))
             self.align_epi(tin, t1w, t1w_brain, tout)
         # reconstruct registered brain
         # could combine with above loop, but this will decrease
