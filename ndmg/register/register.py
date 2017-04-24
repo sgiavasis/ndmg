@@ -395,6 +395,8 @@ class func_register(register):
             # most transforms are created with
             break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
                                         break_dat), axis=3)
+            base_name = mgu.name_tmps(self.outdir, self.epi_name,
+                                      "_self-aligned_tmp{}_*".format(i))
             tin = mgu.name_tmps(self.outdir, self.epi_name,
                                 "_self_tmp{}.nii.gz".format(i))
             tout = mgu.name_tmps(self.outdir, self.epi_name,
@@ -405,7 +407,7 @@ class func_register(register):
                                   header = epi_im.header)
             nb.save(img=t_im, filename=tin)
             self.align_epi(tin, t1w, t1w_brain, tout)
-            mgu.execute_cmd("rm {}".format(tin))
+            mgu.execute_cmd("rm {} {}".format(tin, base_name))
         # reconstruct registered brain
         # could combine with above loop, but this will decrease
         # memory overhead
@@ -414,11 +416,11 @@ class func_register(register):
                 im = nb.load(tout)
                 head = im.header
                 aff = im.affine
-                dat = np.delete(im.get_data(), 0)
+                dat = np.delete(im.get_data(), 0, axis=3)
             else:
-                newdat = np.delete(nb.load(tout).get_data(), 0)
+                newdat = np.delete(nb.load(tout).get_data(), 0,
+                                   axis=3)
                 # add it to our ultimate data object
-                mgu.execute_cmd("rm {}".format(tout))
                 dat = np.concatenate((dat, newdat), axis=3)
             cmd = "rm {}".format(tout)
             mgu.execute_cmd(cmd)
