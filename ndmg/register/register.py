@@ -383,6 +383,7 @@ class func_register(register):
         epi_im = nb.load(epi_in)
         epi_dat = epi_im.get_data()
         break_size = 100
+        s0_dat = epi_dat[:,:,:,0]
         nt = epi_dat.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
         print(nbreaks)
@@ -390,7 +391,10 @@ class func_register(register):
             # separate the data in 100 timestep increments
             this_break = np.min(((i+1)*break_size, nt))
             break_dat = epi_dat[:, :, :, i*break_size:this_break]
-            print (break_dat.shape)
+            # append s0 volume and strip later since this is what
+            # most transforms are created with
+            break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
+                                        break_dat), axis=3)
             tin = mgu.name_tmps(self.outdir, self.epi_name,
                                 "_self_tmp{}.nii.gz".format(i))
             tout = mgu.name_tmps(self.outdir, self.epi_name,
@@ -405,16 +409,18 @@ class func_register(register):
         # reconstruct registered brain
         # could combine with above loop, but this will decrease
         # memory overhead
-        for i in range(0, nbreaks):
+        for i, tout in enumerate(epi_tmp_out):
             if i == 0:
-                im = nb.load(epi_tmp_out[i])
+                im = nb.load(tout)
                 head = im.header
                 aff = im.affine
-                dat = im.get_data()
+                dat = np.delete(im.get_data(), 0)
             else:
-                newdat = nb.load(epi_tmp_out[i]).get_data()
+                newdat = np.delete(nb.load(tout).get_data(), 0)
                 # add it to our ultimate data object
                 dat = np.concatenate((dat, newdat), axis=3)
+            cmd = "rm {}".format(tout)
+            mgu.execute_cmd(cmd)
         # get header/affine information
         reg_im = nb.Nifti1Image(dataobj = dat,
                                 affine=aff,
