@@ -382,13 +382,13 @@ class func_register(register):
         epi_tmp_out = []
         epi_im = nb.load(epi_in)
         epi_dat = epi_im.get_data()
-        break_size = 100
+        break_size = 60
         s0_dat = epi_dat[:,:,:,0]
         nt = epi_dat.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
         print(nbreaks)
         for i in range(0, nbreaks):
-            # separate the data in 100 timestep increments
+            # separate the data in break_size timestep increments
             this_break = np.min(((i+1)*break_size, nt))
             break_dat = epi_dat[:, :, :, i*break_size:this_break]
             # append s0 volume and strip later since this is what
@@ -404,8 +404,8 @@ class func_register(register):
                                   affine = epi_im.affine,
                                   header = epi_im.header)
             nb.save(img=t_im, filename=tin)
-            print(mgu.execute_cmd("df -h", verb=True))
             self.align_epi(tin, t1w, t1w_brain, tout)
+            mgu.execute_cmd("rm {}".format(tin))
         # reconstruct registered brain
         # could combine with above loop, but this will decrease
         # memory overhead
@@ -418,6 +418,7 @@ class func_register(register):
             else:
                 newdat = np.delete(nb.load(tout).get_data(), 0)
                 # add it to our ultimate data object
+                mgu.execute_cmd("rm {}".format(tout))
                 dat = np.concatenate((dat, newdat), axis=3)
             cmd = "rm {}".format(tout)
             mgu.execute_cmd(cmd)
