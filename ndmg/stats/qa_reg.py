@@ -87,6 +87,7 @@ def plot_brain(brain, minthr=2, maxthr=95):
         for pos in coord:
             idx += 1
             ax = fbr.add_subplot(3, 3, idx)
+            ax.set_axis_bgcolor('black')
             ax.set_title(var[i] + " = " + str(pos))
             if i == 0:
                 image = ndimage.rotate(brain[pos, :, :], 90)
@@ -142,6 +143,7 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
         for pos in coord:
             idx += 1
             ax = foverlay.add_subplot(3, 3, idx)
+            ax.set_axis_bgcolor('black')
             ax.set_title(var[i] + " = " + str(pos))
             if i == 0:
                 image = ndimage.rotate(b0[pos, :, :], 90)

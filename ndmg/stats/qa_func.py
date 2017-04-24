@@ -358,7 +358,7 @@ class qa_func(object):
         self.temp_reg_sc = best_sc  # so we can recover this later 
         self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
         self.reg_anat_qa(freg.taligned_t1w, freg.atlas, outdir, treg_a_final)
-        self.voxel_qa(freq.taligned_epi, freq.atlas_mask, treg_f_final)
+        self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
         """
@@ -390,7 +390,7 @@ class qa_func(object):
         self.snr = mean_brain/std_nonbrain
         self.cnr = std_brain/std_nonbrain
 
-        scanid = mgu.get_filename(freg.taligned_epi)
+        scanid = mgu.get_filename(func)
 
         np.seterr(divide='ignore', invalid='ignore')
         mean_ts = fmri_dat.mean(axis=3)
@@ -402,7 +402,7 @@ class qa_func(object):
         plots["snr"] = plot_brain(snr_ts, minthr=10)
         plots["cnr"] = plot_brain(cnr_ts, minthr=10)
         for plotname, plot in plots.iteritems():
-            fname = "{}/{}_{}.png".format(treg_f_final, scanid, plotname)
+            fname = "{}/{}_{}.png".format(qadir, scanid, plotname)
             plot.savefig(fname, format='png')
             plt.close()
         pass
