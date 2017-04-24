@@ -382,7 +382,9 @@ class func_register(register):
         epi_tmp_out = []
         epi_im = nb.load(epi_in)
         epi_dat = epi_im.get_data()
-        break_size = 60
+        # perform registration with 200 volumes at a time.
+        # more could cause unruly memory requirements.
+        break_size = 200
         s0_dat = epi_dat[:,:,:,0]
         nt = epi_dat.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
