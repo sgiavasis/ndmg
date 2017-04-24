@@ -17,7 +17,7 @@
 
 # qa_reg.py
 # Created by Vikram Chandrashekhar.
-# Edited by Greg Kiar.
+# Edited by Greg Kiar and Eric Bridgeford.
 # Email: Greg Kiar @ gkiar@jhu.edu
 
 import os
@@ -35,7 +35,7 @@ mpl.use('Agg')  # very important above pyplot import
 import matplotlib.pyplot as plt
 
 
-def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False):
+def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False, minthr=2, maxthr=95):
     """
     outdir: directory where output png file is saved
     fname: name of output file WITHOUT FULL PATH. Path provided in outdir.
@@ -53,14 +53,14 @@ def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False):
     cmap1 = LinearSegmentedColormap.from_list('mycmap1', ['black', 'magenta'])
     cmap2 = LinearSegmentedColormap.from_list('mycmap2', ['black', 'green'])
 
-    fig = plot_overlays(atlas_data, mr_data, (cmap1, cmap2))
+    fig = plot_overlays(atlas_data, mr_data, (cmap1, cmap2), minthr, maxthr)
 
     # name and save the file
     fname = os.path.split(mri)[1].split(".")[0] + '.png'
     fig.savefig(outdir + '/' + fname, format='png')
     plt.close()
 
-def plot_brain(brain):
+def plot_brain(brain, minthr=2, maxthr=95):
     cmap = LinearSegmentedColormap.from_list('mycmap2', ['black', 'magenta'])
     plt.rcParams.update({'axes.labelsize': 'x-large',
                          'axes.titlesize': 'x-large'})
@@ -100,7 +100,7 @@ def plot_brain(brain):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
-            min_val, max_val = get_min_max(image)
+            min_val, max_val = get_min_max(image, minthr, maxthr)
             ax.imshow(image, interpolation='none', cmap=cmap, alpha=0.5,
                       vmin=min_val, vmax=max_val)
 
@@ -108,7 +108,7 @@ def plot_brain(brain):
     return fbr
 
 
-def plot_overlays(atlas, b0, cmaps=None):
+def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
     plt.rcParams.update({'axes.labelsize': 'x-large',
                          'axes.titlesize': 'x-large'})
     foverlay = plt.figure()
@@ -158,7 +158,7 @@ def plot_overlays(atlas, b0, cmaps=None):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
-            min_val, max_val = get_min_max(image)
+            min_val, max_val = get_min_max(image, minthr, maxthr)
             ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=0.5)
             ax.imshow(image, interpolation='none', cmap=cmaps[1], alpha=0.5,
                      vmin=min_val, vmax=max_val)
@@ -167,7 +167,7 @@ def plot_overlays(atlas, b0, cmaps=None):
     return foverlay
 
 
-def get_min_max(data):
+def get_min_max(data, minth=2, maxthr=95)
     '''
     data: regmri data to threshold.
     '''

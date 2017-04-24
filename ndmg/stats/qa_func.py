@@ -88,7 +88,7 @@ class qa_func(object):
         mc_im = nb.load(mc_brain)
         mc_dat = mc_im.get_data()
 
-        mcfig = plot_brain(mc_dat.mean(axis=3))
+        mcfig = plot_brain(mc_dat.mean(axis=3), minthr=10)
         nvols = mc_dat.shape[3]
 
         fnames = {}
@@ -252,7 +252,8 @@ class qa_func(object):
         """
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        reg_mri_pngs(aligned_func, atlas, qcdir, mean=True)
+        reg_mri_pngs(aligned_func, atlas, qcdir, mean=True, minthr=10,
+                     maxthr=95)
         pass
 
 
@@ -357,10 +358,25 @@ class qa_func(object):
         self.temp_reg_sc = best_sc  # so we can recover this later 
         self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
         self.reg_anat_qa(freg.taligned_t1w, freg.atlas, outdir, treg_a_final)
+        self.voxel_qa(freq.taligned_epi, freq.atlas_mask, treg_f_final)
 
+    def voxel_qa(self, func, mask, qadir):
+        """
+        A function to compute voxelwise statistics, such as voxelwise mean,
+        voxelwise snr, voxelwise cnr, for an image, and produce related
+        qa plots.
+
+        **Positional Arguments:**
+            - func:
+                - the path to the functional image we want statistics for.
+            - mask:
+                - the path to the anatomical mask.
+            - qadir:
+                - the directory to place qa images.
+        """
         # estimating mean signal intensity and deviation in brain/non-brain
-        fmri = nb.load(freg.taligned_epi)
-        mask = nb.load(freg.atlas_mask)
+        fmri = nb.load(func)
+        mask = nb.load(mask)
         fmri_dat = fmri.get_data()
         mask_dat = mask.get_data()
 
@@ -382,17 +398,16 @@ class qa_func(object):
         cnr_ts = np.divide(np.nanstd(fmri_dat, axis=3), std_nonbrain)
 
         plots = {}
-        plots["mean"] = plot_brain(mean_ts)
-        plots["snr"] = plot_brain(snr_ts)
-        plots["cnr"] = plot_brain(cnr_ts)
+        plots["mean"] = plot_brain(mean_ts, minthr=10)
+        plots["snr"] = plot_brain(snr_ts, minthr=10)
+        plots["cnr"] = plot_brain(cnr_ts, minthr=10)
         for plotname, plot in plots.iteritems():
             fname = "{}/{}_{}.png".format(treg_f_final, scanid, plotname)
             plot.savefig(fname, format='png')
             plt.close()
         pass
 
-
-    def nuisance_qa(self, nuis_ts, nuis_brain, prenuis_brain, qcdir=None):
+    def nuisance_qa(self, nuis_ts, nuis_brain, prenuis_brain, qcdir):
         """
         A function to assess the quality of nuisance correction.
 
@@ -407,9 +422,9 @@ class qa_func(object):
         print "Performing QA for Nuisance..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        return
+        pass
 
-    def roi_ts_qa(self, timeseries, func, anat, label, qcdir=None):
+    def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
         """
         A function to perform ROI timeseries quality control.
 
@@ -431,11 +446,11 @@ class qa_func(object):
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
      
-        reg_mri_pngs(anat, label, qcdir)
+        reg_mri_pngs(anat, label, qcdir, minthr=10, maxthr=95)
         fqc_utils.plot_timeseries(timeseries, qcdir=qcdir)
-        return
+        pass
 
-    def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask, qcdir=None):
+    def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask, qcdir):
         """
         A function to analyze the voxel timeseries extracted.
 
@@ -452,6 +467,6 @@ class qa_func(object):
         print "Performing QA for Voxel Timeseries..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-     
-        reg_mri_pngs(voxel_func, atlas_mask, qcdir, loc=0)
-        return
+        reg_mri_pngs(voxel_func, atlas_mask, qcdir, loc=0, minthr=10, maxthr=95)
+        self.voxel_qa(voxel_func, atlas_mask, qcdir)
+        pass
