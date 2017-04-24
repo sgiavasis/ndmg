@@ -167,7 +167,7 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
     return foverlay
 
 
-def get_min_max(data, minth=2, maxthr=95)
+def get_min_max(data, minth=2, maxthr=95):
     '''
     data: regmri data to threshold.
     '''
