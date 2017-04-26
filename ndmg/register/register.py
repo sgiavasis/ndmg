@@ -410,27 +410,11 @@ class func_register(register):
             nb.save(img=t_im, filename=tin)
             self.align_epi(tin, t1w, t1w_brain, tout)
             mgu.execute_cmd("rm {} {}".format(tin, base_name))
-        # reconstruct registered brain
-        # could combine with above loop, but this will decrease
-        # memory overhead
-        for i, tout in enumerate(epi_tmp_out):
-            if i == 0:
-                im = nb.load(tout)
-                head = im.header
-                aff = im.affine
-                dat = np.delete(im.get_data(), 0, axis=3)
-            else:
-                newdat = np.delete(nb.load(tout).get_data(), 0,
-                                   axis=3)
-                # add it to our ultimate data object
-                dat = np.concatenate((dat, newdat), axis=3)
-            cmd = "rm {}".format(tout)
-            mgu.execute_cmd(cmd)
-        # get header/affine information
-        reg_im = nb.Nifti1Image(dataobj = dat,
-                                affine=aff,
-                                header=head) 
-        nb.save(img=reg_im, filename=epi_out)
+        # reconstruct registered brain using fsl, which will
+        # do this operation on the HDD instead of in memory
+        files_to_merge = " ".join(epi_tmp_out)
+        cmd = "fslmerge -t {} {}".format(epi_out, files_to_merge)
+        mgu.execute_cmd(cmd, verb=True)
 
     def self_align(self):
         """
