@@ -276,10 +276,6 @@ class qa_func(object):
         """
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        anat_name = mgu.get_filename(aligned_anat)
-        anat_brain = mgu.name_tmps(outdir, anat_name, "_brain.nii.gz")
-        # extract brain and use generous 0.3 threshold
-        mgu.extract_brain(aligned_anat, anat_brain, opts=' -f 0.3 -B -R -S')
 
         reg_mri_pngs(anat_brain, atlas, qcdir)
         return
