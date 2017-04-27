@@ -189,8 +189,6 @@ def registration_score(aligned_func, reference_mask, outdir):
     return (reg_score, freg_qual)
 
 
-
-
 def check_alignments(mri_bname, mri_aname, refname, qcdir,
                      fname, title=""):
     """

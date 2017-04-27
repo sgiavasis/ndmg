@@ -277,7 +277,7 @@ class qa_func(object):
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
 
-        reg_mri_pngs(anat_brain, atlas, qcdir)
+        reg_mri_pngs(aligned_anat, atlas, qcdir)
         return
 
 
