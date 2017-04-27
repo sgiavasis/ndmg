@@ -167,10 +167,9 @@ def registration_score(aligned_func, reference_mask, outdir):
         - the directory in which temporary files will be placed.
     """
     func_name = mgu.get_filename(aligned_func)
-    func_brain = mgu.name_tmps(outdir, func_name, "_brain.nii.gz")
     func_mask = mgu.name_tmps(outdir, func_name, "_brain_mask.nii.gz")
     # extract brain and use generous 0.3 threshold with -m mask option
-    mgu.extract_brain(aligned_func, func_brain, opts=' -f 0.3 -m')
+    mgu.extract_brain(aligned_func, func_mask, opts=' -f 0.3 -m')
 
     func = nb.load(func_mask)
     mask = nb.load(reference_mask)
