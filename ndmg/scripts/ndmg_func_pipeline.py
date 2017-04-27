@@ -167,6 +167,9 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     qc_func.save(qc_stats)
 
     print("Execution took: {}".format(datetime.now() - startTime))
+    if clean:
+         cmd = "rm {}/tmp/{}*".format(outdir, func_name)
+
     print("Complete!")
 
 
