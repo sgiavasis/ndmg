@@ -381,18 +381,18 @@ class func_register(register):
         """
         epi_tmp_out = []
         epi_im = nb.load(epi_in)
-        epi_dat = epi_im.get_data()
         # perform registration with 200 volumes at a time.
         # more could cause unruly memory requirements.
         break_size = 70
-        s0_dat = epi_dat[:,:,:,0]
+        s0_dat = epi_im.dataobj[:,:,:,0]
         nt = epi_dat.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
         print(nbreaks)
         for i in range(0, nbreaks):
             # separate the data in break_size timestep increments
             this_break = np.min(((i+1)*break_size, nt))
-            break_dat = epi_dat[:, :, :, i*break_size:this_break]
+            break_dat = epi_im.dataobj[:, :, :,
+                                       i*break_size:this_break]
             # append s0 volume and strip later since this is what
             # most transforms are created with
             break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
