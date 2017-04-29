@@ -381,35 +381,54 @@ class func_register(register):
         """
         epi_tmp_out = []
         epi_im = nb.load(epi_in)
-        # perform registration with 200 volumes at a time.
+        # perform registration with 70 volumes at a time.
         # more could cause unruly memory requirements.
         break_size = 70
         s0_dat = epi_im.dataobj[:,:,:,0]
-        nt = epi_dat.shape[3]
+        nt = epi_im.dataobj.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
         print(nbreaks)
         for i in range(0, nbreaks):
+            # name temporary files
+            base_name = mgu.name_tmps(self.outdir, self.epi_name,
+                                      "_self-aligned_tmp{}_*".format(i))
+            in_f = mgu.name_tmps(self.outdir, self.epi_name,
+                                "_self-aligned_tmp{}_self.nii.gz".format(i))
+            tout_f = mgu.name_tmps(self.outdir, self.epi_name,
+                                   "_self-aligned_tmp{}_s0.nii.gz".format(i))
+            out_f = mgu.name_tmps(self.outdir, self.epi_name,
+                                   "_self-aligned_tmp{}.nii.gz".format(i))
+
+            # appending s0 slice onto the current window of data
             # separate the data in break_size timestep increments
             this_break = np.min(((i+1)*break_size, nt))
-            break_dat = epi_im.dataobj[:, :, :,
-                                       i*break_size:this_break]
+            break_dat = epi_im.dataobj[:, :, :, i*break_size:this_break]
             # append s0 volume and strip later since this is what
             # most transforms are created with
             break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
                                         break_dat), axis=3)
-            base_name = mgu.name_tmps(self.outdir, self.epi_name,
-                                      "_self-aligned_tmp{}_*".format(i))
-            tin = mgu.name_tmps(self.outdir, self.epi_name,
-                                "_self_tmp{}.nii.gz".format(i))
-            tout = mgu.name_tmps(self.outdir, self.epi_name,
-                                 "_self-aligned_tmp{}.nii.gz".format(i))
-            epi_tmp_out.append(tout)
             t_im = nb.Nifti1Image(dataobj = break_dat,
                                   affine = epi_im.affine,
                                   header = epi_im.header)
-            nb.save(img=t_im, filename=tin)
-            self.align_epi(tin, t1w, t1w_brain, tout)
-            mgu.execute_cmd("rm {} {}".format(tin, base_name))
+            nb.save(img=t_im, filename=in_f)
+
+            # align and free up memory we won't need anymore
+            break_dat = None
+            self.align_epi(in_f, t1w, t1w_brain, tout_f)
+
+            # remove the s0 slice that we appended earlier
+            # so that our alignment would be consistent
+            tout_im = nb.load(tout_f)
+            # delete the s0 slice we appended on earlier
+            out_dat = np.delete(tout_im.get_data(), 0, axis=3)
+            out_im = nb.Nifti1Image(dataobj = out_dat,
+                                    affine=tout_im.affine,
+                                    header=tout_im.header)
+            nb.save(img=out_im, filename=out_f)
+            mgu.execute_cmd("rm {}".format(base_name))
+            nb.save(img=out_im, filename=out_f)
+            out_dat = None
+            epi_tmp_out.append(out_f)
         # reconstruct registered brain using fsl, which will
         # do this operation on the HDD instead of in memory
         files_to_merge = " ".join(epi_tmp_out)
