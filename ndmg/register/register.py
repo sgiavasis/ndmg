@@ -383,31 +383,26 @@ class func_register(register):
         epi_im = nb.load(epi_in)
         # perform registration with 70 volumes at a time.
         # more could cause unruly memory requirements.
-        break_size = 70
+        break_size = 100
         s0_dat = epi_im.dataobj[:,:,:,0]
         nt = epi_im.dataobj.shape[3]
         nbreaks = np.ceil(nt/float(break_size)).astype(int)
         print(nbreaks)
-        memmap_fname = mgu.name_tmps(self.outdir, self.epi_name,
-                                    "_self-aligned_dat.dat")
-        t1w_shape = nb.load(t1w).dataobj.shape
-        new_shape = tuple(list(t1w_shape) + [nt])
-        new_dat = np.memmap(filename=memmap_fname, dtype='float32',
-                            mode='w+', shape=new_shape)
         for i in range(0, nbreaks):
             # name temporary files
             base_name = mgu.name_tmps(self.outdir, self.epi_name,
-                                      "_self-aligned_tmp{}*".format(i))
+                                      "_self-aligned_tmp{}_*".format(i))
             in_f = mgu.name_tmps(self.outdir, self.epi_name,
                                 "_self-aligned_tmp{}_self.nii.gz".format(i))
             tout_f = mgu.name_tmps(self.outdir, self.epi_name,
                                    "_self-aligned_tmp{}_s0.nii.gz".format(i))
+            out_f = mgu.name_tmps(self.outdir, self.epi_name,
+                                   "_self-aligned_tmp{}.nii.gz".format(i))
 
             # appending s0 slice onto the current window of data
             # separate the data in break_size timestep increments
-            max_vol =  np.min(((i+1)*break_size, nt))
-            min_vol = i*break_size 
-            break_dat = epi_im.dataobj[:, :, :, min_vol:max_vol]
+            this_break = np.min(((i+1)*break_size, nt))
+            break_dat = epi_im.dataobj[:, :, :, i*break_size:this_break]
             # append s0 volume and strip later since this is what
             # most transforms are created with
             break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
@@ -424,16 +419,21 @@ class func_register(register):
             # remove the s0 slice that we appended earlier
             # so that our alignment would be consistent
             tout_im = nb.load(tout_f)
-            new_dat[:, :, :, min_vol:max_vol] = tout_im.dataobj[:, :, :, 1:]
+            # delete the s0 slice we appended on earlier
+            out_dat = np.delete(tout_im.get_data(), 0, axis=3)
+            out_im = nb.Nifti1Image(dataobj = out_dat,
+                                    affine=tout_im.affine,
+                                    header=tout_im.header)
+            nb.save(img=out_im, filename=out_f)
             mgu.execute_cmd("rm {}".format(base_name))
+            nb.save(img=out_im, filename=out_f)
+            out_dat = None
+            epi_tmp_out.append(out_f)
         # reconstruct registered brain using fsl, which will
         # do this operation on the HDD instead of in memory
-        epi_out_im = nb.Nifti1Image(dataobj=new_dat,
-                                    header=tout_im.header,
-                                    affine=tout_im.affine)
-        nb.save(img=epi_out_im, filename=epi_out)
-        mgu.execute_cmd("sleep 300")
-        mgu.execute_cmd("rm {}".format(memmap_fname))
+        files_to_merge = " ".join(epi_tmp_out)
+        cmd = "fslmerge -t {} {}".format(epi_out, files_to_merge)
+        mgu.execute_cmd(cmd, verb=True)
 
     def self_align(self):
         """
@@ -479,8 +479,8 @@ class func_register(register):
         if (sc_bbr > 0.8):
             self.sreg_epi[0] = self.saligned_epi
             self.resample(epi_bbr, self.saligned_epi, self.t1w)
-            cmd = "rm {} {}".format(epi_bbr, epi_init)
-            mgu.execute_cmd(cmd)
+            # cmd = "rm {} {}".format(epi_bbr, epi_init)
+            # mgu.execute_cmd(cmd)
         else:
             print "Warning: BBR self registration failed."
             self.sreg_strat.insert(0, 'flirt')
