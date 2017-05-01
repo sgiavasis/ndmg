@@ -210,21 +210,20 @@ class register(object):
         # Saves new image
         nb.save(target_im, ingested)
 
-    def resample_fsl(self, base, res, template):
+    def resample_fsl(self, base, res, goal_res, interp='nearestneighbour'):
         """
         A function to resample a base image in fsl to that of a template.
         **Positional Arguments:**
 
-           base:
+            base:
                 - the path to the base image to resample.
             res:
                 - the filename after resampling.
-            template:
-                - the template image to align to.
+            goal_res:
+                - the desired resolution.
         """
-        goal_res = int(nb.load(template).get_header().get_zooms()[0])
-        cmd = "flirt -in {} -ref {} -out {} -nosearch -applyisoxfm {}"
-        cmd = cmd.format(base, template, res, goal_res)
+        cmd = "flirt -in {} -ref {} -out {} -applyisoxfm {} -interp {}"
+        cmd = cmd.format(base, base, res, goal_res, interp)
         mgu.execute_cmd(cmd, verb=True)
 
     def combine_xfms(self, xfm1, xfm2, xfmout):
@@ -339,7 +338,6 @@ class func_register(register):
         super(register, self).__init__()
         # our basic dependencies
         self.epi = func
-        self.t1w = t1w
         self.atlas = atlas
         self.atlas_brain = atlas_brain
         self.atlas_mask = atlas_mask
@@ -361,6 +359,12 @@ class func_register(register):
         self.epi_name = mgu.get_filename(func)
         self.t1w_name = mgu.get_filename(t1w)
         self.atlas_name = mgu.get_filename(atlas)
+
+        # put anatomical in 2mm resolution for memory
+        # efficiency
+        self.t1w = mgu.name_tmps(self.outdir, self.t1w_name,
+                                 "_resamp.nii.gz")
+        self.resample_fsl(t1w, self.t1w, 2)
         # since we will need the t1w brain multiple times
         self.t1w_brain = mgu.name_tmps(self.outdir, self.t1w_name,
                                        "_brain.nii.gz")
@@ -372,68 +376,6 @@ class func_register(register):
         self.saligned_epi = mgu.name_tmps(self.outdir, self.epi_name,
                                           "_self-aligned.nii.gz")
         pass
-
-    def epireg_mem(self, epi_in, t1w, t1w_brain, epi_out):
-        """
-        A function to iteratively perform epireg.
-        Keeps memory usage down, since the primary bottleneck
-        for memory is that epireg does not free mem efficiently.
-        """
-        epi_tmp_out = []
-        epi_im = nb.load(epi_in)
-        # perform registration with 70 volumes at a time.
-        # more could cause unruly memory requirements.
-        break_size = 100
-        s0_dat = epi_im.dataobj[:,:,:,0]
-        nt = epi_im.dataobj.shape[3]
-        nbreaks = np.ceil(nt/float(break_size)).astype(int)
-        print(nbreaks)
-        for i in range(0, nbreaks):
-            # name temporary files
-            base_name = mgu.name_tmps(self.outdir, self.epi_name,
-                                      "_self-aligned_tmp{}_*".format(i))
-            in_f = mgu.name_tmps(self.outdir, self.epi_name,
-                                "_self-aligned_tmp{}_self.nii.gz".format(i))
-            tout_f = mgu.name_tmps(self.outdir, self.epi_name,
-                                   "_self-aligned_tmp{}_s0.nii.gz".format(i))
-            out_f = mgu.name_tmps(self.outdir, self.epi_name,
-                                   "_self-aligned_tmp{}.nii.gz".format(i))
-
-            # appending s0 slice onto the current window of data
-            # separate the data in break_size timestep increments
-            this_break = np.min(((i+1)*break_size, nt))
-            break_dat = epi_im.dataobj[:, :, :, i*break_size:this_break]
-            # append s0 volume and strip later since this is what
-            # most transforms are created with
-            break_dat = np.concatenate((s0_dat[:,:,:,np.newaxis],
-                                        break_dat), axis=3)
-            t_im = nb.Nifti1Image(dataobj = break_dat,
-                                  affine = epi_im.affine,
-                                  header = epi_im.header)
-            nb.save(img=t_im, filename=in_f)
-
-            # align and free up memory we won't need anymore
-            break_dat = None
-            self.align_epi(in_f, t1w, t1w_brain, tout_f)
-
-            # remove the s0 slice that we appended earlier
-            # so that our alignment would be consistent
-            tout_im = nb.load(tout_f)
-            # delete the s0 slice we appended on earlier
-            out_dat = np.delete(tout_im.get_data(), 0, axis=3)
-            out_im = nb.Nifti1Image(dataobj = out_dat,
-                                    affine=tout_im.affine,
-                                    header=tout_im.header)
-            nb.save(img=out_im, filename=out_f)
-            mgu.execute_cmd("rm {}".format(base_name))
-            nb.save(img=out_im, filename=out_f)
-            out_dat = None
-            epi_tmp_out.append(out_f)
-        # reconstruct registered brain using fsl, which will
-        # do this operation on the HDD instead of in memory
-        files_to_merge = " ".join(epi_tmp_out)
-        cmd = "fslmerge -t {} {}".format(epi_out, files_to_merge)
-        mgu.execute_cmd(cmd, verb=True)
 
     def self_align(self):
         """
@@ -464,7 +406,7 @@ class func_register(register):
 
         # attempt EPI registration. note that this somethimes does not
         # work great if our EPI has a low field of view.
-        self.epireg_mem(epi_init, self.t1w, self.t1w_brain, epi_bbr)
+        self.align_epi(epi_init, self.t1w, self.t1w_brain, epi_bbr)
 
         print "Analyzing Self Registration Quality..."
         (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
@@ -479,8 +421,8 @@ class func_register(register):
         if (sc_bbr > 0.8):
             self.sreg_epi[0] = self.saligned_epi
             self.resample(epi_bbr, self.saligned_epi, self.t1w)
-            # cmd = "rm {} {}".format(epi_bbr, epi_init)
-            # mgu.execute_cmd(cmd)
+            cmd = "rm {} {}".format(epi_bbr, epi_init)
+            mgu.execute_cmd(cmd)
         else:
             print "Warning: BBR self registration failed."
             self.sreg_strat.insert(0, 'flirt')
