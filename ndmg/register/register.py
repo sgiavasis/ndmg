@@ -430,7 +430,7 @@ class func_register(register):
             self.sreg_sc.insert(0, sc_init)
             self.sreg_sc_fig.insert(0, fig_init)
             self.resample(epi_init, self.saligned_epi, self.t1w)
-            cmd = "rm {}".foramt(epi_init)
+            cmd = "rm {}".format(epi_init)
             mgu.execute_cmd(cmd)
         pass
 
