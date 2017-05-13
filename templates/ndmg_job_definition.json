@@ -1,0 +1,18 @@
+{
+    "jobDefinitionName": "ndmg-fmri",
+    "type": "container",
+    "parameters": {},
+    "containerProperties": {
+        "image": "tagarwa2/fngs",
+        "vcpus": 2,
+        "memory": 15000,
+        "command": [],
+        "volumes": [],
+        "environment": [],
+        "mountPoints": [],
+        "ulimits": []
+    },
+    "retryStrategy": {
+        "attempts": 1
+    }
+}
