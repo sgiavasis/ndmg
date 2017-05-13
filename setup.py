@@ -47,12 +47,11 @@ setup(
         'nibabel>=2.0',
         'nilearn>=0.2',
         'sklearn>=0.0',
-        'numpy',  # We use nump v1.10.4
+        'numpy==1.12.1',  # We use nump v1.10.4
         'scipy',  # We use 0.17.0
         'dipy>=0.1',
         'boto3',
-        'pandas',
-        'matplotlib==1.5.1',
+        'matplotlib==1.5.3',
         'plotly==1.12.1',
         'awscli'
     ],

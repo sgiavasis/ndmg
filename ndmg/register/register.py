@@ -426,7 +426,7 @@ class func_register(register):
         else:
             print "Warning: BBR self registration failed."
             self.sreg_strat.insert(0, 'flirt')
-            self.sreg_epi.insert(0, epi_init)
+            self.sreg_epi.insert(0, self.saligned_epi)
             self.sreg_sc.insert(0, sc_init)
             self.sreg_sc_fig.insert(0, fig_init)
             self.resample(epi_init, self.saligned_epi, self.t1w)
