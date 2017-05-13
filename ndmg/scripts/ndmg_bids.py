@@ -83,7 +83,7 @@ def get_atlas(atlas_dir, dwi=True):
         lv_mask = op.join(atlas_func, 'mask/HarvOx_lv_thr25-2mm.nii.gz')
         labels = ['label/HarvardOxford-cort-maxprob-thr25-2mm.nii.gz',
                   'label/aal-2mm.nii.gz', 'label/brodmann-2mm.nii.gz',
-                  'label/desikan-2mm.nii.gz', 'label/Talairach-2mm.nii.gz']
+                  'label/desikan-2mm.nii.gz', 'label/pp264-2mm.nii.gz']
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
 
