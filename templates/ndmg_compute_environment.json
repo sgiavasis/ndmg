@@ -6,7 +6,7 @@
         "type": "EC2",
         "minvCpus": 0,
         "maxvCpus": 256,
-        "desiredvCpus": 2,
+        "desiredvCpus": 256,
         "instanceTypes": [
             "r4.large"
         ],
