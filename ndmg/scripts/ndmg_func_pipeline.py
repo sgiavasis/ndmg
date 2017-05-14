@@ -86,7 +86,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     cmd = "mkdir -p {} {} {} {} {} {} {} {} {} {}/reg/func/align \
            {}/reg/func/preproc {}/reg/func/mc {}/ts_voxel {}/ts_roi \
-           {}/reg/t1w {}/tmp {}/connectomes/ {}/nuis"
+           {}/reg/t1w {}/tmp {}/graphs/ {}/nuis"
     cmd = cmd.format(qadir, prepdir, sreg_fdir, sreg_adir, treg_fdir,
                      treg_adir, roidir, voxeldir, nuisdir, *([outdir] * 9))
     mgu.execute_cmd(cmd)
@@ -95,13 +95,13 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     if isinstance(labels, list):
         label_name = [mgu.get_filename(x) for x in labels]
         for label in label_name:
-            cmd = "mkdir -p {}/ts_roi/{} {}/connectomes/{} {}/{}"
+            cmd = "mkdir -p {}/ts_roi/{} {}/graphs/{} {}/{}"
             cmd = cmd.format(outdir, label, outdir, label, roidir, label)
             mgu.execute_cmd(cmd)
     else:
         label_name = mgu.get_filename(labels)
         label = label_name
-        cmd = "mkdir -p {}/ts_roi/{} {}/connectomes/{} {}/{}"
+        cmd = "mkdir -p {}/ts_roi/{} {}/graphs/{} {}/{}"
         cmd = cmd.format(outdir, label, outdir, label, roidir, label)
         mgu.execute_cmd(cmd)
 
@@ -119,8 +119,8 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     print("fMRI volume registered to atlas: {}".format(aligned_func))
     print("Voxel timecourse in atlas space: {}".format(voxel_ts))
 
-    # Again, connectomes are different
-    connectomes = ["{}/connectomes/{}/{}_{}.{}".format(outdir, x, func_name,
+    # Again, graphs are different
+    graphs = ["{}/graphs/{}/{}_{}.{}".format(outdir, x, func_name,
                                                        x, fmt)
                    for x in label_name]
     roi_ts = ["{}/ts_roi/{}/{}_{}.npy".format(outdir, x, func_name, x)
@@ -128,7 +128,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     print("ROI timeseries downsampled to given labels: " +
           ", ".join([x for x in roi_ts]))
     print("Connectomes downsampled to given labels: " +
-          ", ".join([x for x in connectomes]))
+          ", ".join([x for x in graphs]))
 
     qc_func = mgrf()
     # Align fMRI volumes to Atlas
@@ -160,7 +160,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
         connectome = mgg(ts.shape[0], labels[idx], sens="func")
         connectome.cor_graph(ts)
         connectome.summary()
-        connectome.save_graph(connectomes[idx], fmt=fmt)
+        connectome.save_graph(graphs[idx], fmt=fmt)
         qc_func.roi_ts_qa(roi_ts[idx], nuis_func, aligned_t1w,
                        labels[idx], labeldir)
     # save our statistics so that we can do group level

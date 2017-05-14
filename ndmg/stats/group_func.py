@@ -49,11 +49,11 @@ class group_func(object):
         self.ndmgdir = basedir
         self.qadir = "{}/qa".format(self.ndmgdir)
         self.outdir = outdir
-        self.conn_dir = "{}/connectomes".format(self.ndmgdir)
+        self.conn_dir = "{}/graphs".format(self.ndmgdir)
         self.dataset = dataset
 
         (self.qa_files, self.subs) = self.get_qa_files()
-        self.connectomes = self.get_connectomes()
+        self.graphs = self.get_graphs()
         self.qa_objects = self.load_qa()
         self.group_level_analysis()
         self.connectome_analysis()
@@ -75,12 +75,12 @@ class group_func(object):
                 subs.append(sub)
         return (qa_files, subs)
 
-    def get_connectomes(self):
+    def get_graphs(self):
         """
-        A function to load the relevant connectomes for all of the subjects
+        A function to load the relevant graphs for all of the subjects
         for each parcellation we have.
         """
-        connectomes = {}
+        graphs = {}
         for label in os.listdir(self.conn_dir):
             this_label = []
             label_dir = "{}/{}".format(self.conn_dir, label)
@@ -88,8 +88,8 @@ class group_func(object):
                 conn_path = "{}/{}".format(label_dir, connectome)
                 if os.path.isfile(conn_path):
                     this_label.append(conn_path)
-            connectomes[label] = this_label
-        return connectomes
+            graphs[label] = this_label
+        return graphs
 
     def load_qa(self):
         """
@@ -194,10 +194,10 @@ class group_func(object):
         pyo.plot(multi, validate=False, filename=fname_multi) 
         pass
 
-    def connectome_analysis(self, thr=0.6, minimal=False, log=False,
+    def connectome_analysis(self, thr=0.7, minimal=False, log=False,
                             hemispheres=False):
         """
-        A function to threshold and binarize the connectomes.
+        A function to threshold and binarize the graphs.
         Presently just thresholds to reference correlation of
         setting all edges below 0.3 to 0, and those greater to 1.
         This value of 0.3 was generally the highest performing in
@@ -210,7 +210,7 @@ class group_func(object):
         self.graph_dir = "{}/graphs".format(self.outdir)
         cmd = "mkdir -p {}".format(self.graph_dir)
         mgu.execute_cmd(cmd)
-        for label, raw_conn_files in self.connectomes.iteritems():
+        for label, raw_conn_files in self.graphs.iteritems():
             print("Parcellation: {}".format(label))
             label_raw = loadGraphs(raw_conn_files)
             label_graphs = {}
