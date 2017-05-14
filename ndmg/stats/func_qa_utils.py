@@ -510,7 +510,7 @@ def plot_timeseries(timeseries, qcdir=None):
     fcorr = plt.figure()
     axcorr = fcorr.add_subplot(111)
     cax = axcorr.imshow(np.corrcoef(timeseries), interpolation='nearest',
-                        cmap=plt.cm.ocean)
+                        cmap=plt.cm.jet)
     fcorr.colorbar(cax, fraction=0.046, pad=0.04)
     axcorr.set_title(" ".join([scan, "Corr"]))
     axcorr.set_xlabel('ROI')
