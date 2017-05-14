@@ -41,6 +41,7 @@ class nuis(object):
         by the difference between the maximum and the minimum.
 
         **Positional Arguments:**
+
             data:
                 - the fMRI data. Should be passed as an ndarray,
                   with dimensions [ntimesteps, nvoxels].
@@ -61,6 +62,7 @@ class nuis(object):
         timeseries of nuisance variables.
 
         **Positional Arguments:**
+
             masked_ts:
                 - the timeseries over a masked region.
             n:
@@ -103,6 +105,7 @@ class nuis(object):
         an fMRI image.
 
         **Positional Arguments:**
+
             mri:
                 - an ndarray containing timeseries of dimensions
                   [voxels,timesteps] which the user wants to have
@@ -139,9 +142,10 @@ class nuis(object):
         Regresses data to given regressors.
 
         **Positional Arguments:**
-            - data:
+
+            data:
                 - the data as a ndarray.
-            - R:
+            R:
                 - a numpy ndarray of regressors to
                   regress to.
         """
@@ -156,12 +160,13 @@ class nuis(object):
         image into GM, WM, and CSF maps.
 
         **Positional Arguments:**
-            - anat:
+
+            anat:
                 - an anatomical image.
-            - an:
+            an:
                 - an integer representing the type of the anatomical image.
                   (1 for T1w, 2 for T2w, 3 for PD).
-            - basename:
+            basename:
                 - the basename for outputs. Often it will be
                   most convenient for this to be the dataset,
                   followed by the subject, followed by the step of
@@ -182,11 +187,12 @@ class nuis(object):
         mask have values.
 
         **Positional Arguments:**
-            - mask_path:
+
+            mask_path:
                 - a path to a nifti containing a mask.
-            - eroded_path:
+            eroded_path:
                 - a path to the eroded mask to be created.
-            - v:
+            v:
                 - the number of voxels to erode by.
         """
         print("Eroding Mask...")
@@ -226,12 +232,13 @@ class nuis(object):
         Also, performs mask erosion as a substep.
 
         **Positional Arguments:**
-            - prob_map:
+
+            prob_map:
                 - the path to probability map for the given class
                   of brain tissue.
-            - mask_path:
+            mask_path:
                 - the path to the extracted mask.
-            - t:
+            t:
                 - the threshold to consider voxels part of the class.
         """
         print("Extracting Mask from probability map...")
@@ -250,10 +257,11 @@ class nuis(object):
         A function to perform quadratic detrending of fMRI data.
 
         **Positional Arguments**
-            - voxel:
+
+            voxel:
                 - an ndarray containing a voxel timeseries.
                   dimensions should be [timesteps, voxels]
-            - csf_reg:
+            csf_reg:
                 - a timeseries for csf mean regression. If not
                   provided, regression will not be performed.
         """
@@ -283,20 +291,21 @@ class nuis(object):
         of Frequency filtering, and mean csf/quadratic regression.
 
         **Positional Arguments:**
-            - fmri:
+
+            fmri:
                 - the path to a fmri brain as a nifti image.
-            - nuisance_fmri:
+            nuisance_fmri:
                 - the desired path for the nuisance corrected brain.
-            - wmmask:
+            wmmask:
                 - the path to a white matter mask (should be eroded ahead of
                   time).
-            - er_csfmask:
+            er_csfmask:
                 - the path to a lateral ventricles csf mask.
-            - highpass:
+            highpass:
                 - the highpass cutoff for FFT.
-            - lowpass:
+            lowpass:
                 - the lowpass cutoff for FFT. NOT recommended.
-            - trim:
+            trim:
                 - trim the timeseries by a number of slices. Corrects
                   for T1 effects; that is, in some datasets, the first few
                   timesteps may have a non-saturated T1 contrast and as such

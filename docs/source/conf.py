@@ -24,6 +24,11 @@ sys.path.insert(0, os.path.abspath('../../ndmg/register'))
 sys.path.insert(0, os.path.abspath('../../ndmg/graph'))
 sys.path.insert(0, os.path.abspath('../../ndmg/track'))
 sys.path.insert(0, os.path.abspath('../../ndmg/utils'))
+sys.path.insert(0, os.path.abspath('../../ndmg/scripts'))
+sys.path.insert(0, os.path.abspath('../../ndmg/timeseries'))
+sys.path.insert(0, os.path.abspath('../../ndmg/nuis'))
+sys.path.insert(0, os.path.abspath('../../ndmg/preproc'))
+sys.path.insert(0, os.path.abspath('../../ndmg/stats'))
 
 # -- General configuration ------------------------------------------------
 

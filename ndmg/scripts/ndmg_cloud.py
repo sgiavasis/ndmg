@@ -28,7 +28,6 @@ import sys
 import os
 import re
 import csv
-import boto3
 import json
 import ast
 import time

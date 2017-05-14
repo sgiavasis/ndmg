@@ -3,7 +3,7 @@
     "type": "container",
     "parameters": {},
     "containerProperties": {
-        "image": "tagarwa2/fngs",
+        "image": "ericw95/fngs:0.0.7",
         "vcpus": 2,
         "memory": 15000,
         "command": [],

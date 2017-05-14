@@ -39,6 +39,7 @@ class timeseries(object):
         Returns the voxel timeseries as a numpy.ndarray.
 
         **Positional Arguments**
+
             func_file:
                 - the path to the fmri 4d volume to extract timeseries.
                 can be string, nifti1image, or ndarray
@@ -109,6 +110,7 @@ class timeseries(object):
         saved in future versions.
 
         **Positional Arguments**
+
             timeseries_file: the file to load timeseries data from.
         """
         timeseries = np.load(timeseries_file)

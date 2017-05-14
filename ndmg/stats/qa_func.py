@@ -45,7 +45,8 @@ class qa_func(object):
         can perform group level quality control easily.
 
         **Positional Arguments:**
-            - filename: the name of the pickle file containing
+
+            filename: the name of the pickle file containing
                 our qa_func object
         """
         with open(filename, 'rb') as f:
@@ -58,7 +59,8 @@ class qa_func(object):
         A function for saving a qa_func object.
 
         **Positional Arguments:**
-            - filename: the name of the file we want to save to.
+
+            filename: the name of the file we want to save to.
         """
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
@@ -72,12 +74,13 @@ class qa_func(object):
         parameters used.
 
         **Positional Arguments**
-            - mc_brain:
+
+            mc_brain:
                 - the motion corrected brain. should have
                 an identically named file + '.par' created by mcflirt.
-            - scan_id:
+            scan_id:
                 - the id of the subject.
-            - qcdir:
+            qcdir:
                 - the quality control directory.
         """
         print "Performing QA for Preprocessing..."
@@ -240,13 +243,14 @@ class qa_func(object):
         leg of the pipeline for functional scans.
 
         **Positional Arguments**
-            - aligned_func:
+
+            aligned_func:
                 - the aligned functional MRI.
-            - atlas:
+            atlas:
                 - the atlas the functional brain is aligned to.
-            - outdir:
+            outdir:
                 - the directory where temporary files will be placed.
-            - qcdir:
+            qcdir:
                 - the directory in which quality control images will
                 be placed.
         """
@@ -263,14 +267,15 @@ class qa_func(object):
         leg of the pipeline for anatomical scans.
 
         **Positional Arguments**
-            - aligned_anat:
+
+            aligned_anat:
                 - the aligned anatomical MRI.
-            - atlas:
+            atlas:
                 - the atlas the functional and anatomical brains
                 were aligned to.
-            - outdir:
+            outdir:
                 - the directory where temporary files will be placed.
-            - qcdir:
+            qcdir:
                 - the directory in which quality control images will
                 be placed.
         """
@@ -286,11 +291,12 @@ class qa_func(object):
         A function that produces self-registration quality control figures.
 
         **Positional Arguments:**
-            - freg:
+
+            freg:
                 - the func_register object from registration.
-            - sreg_func_dir:
+            sreg_func_dir:
                 - the directory to place functional qc images.
-            - outdir:
+            outdir:
                 - the directory where the temporary files will be placed.
         """
         print "Performing QA for Self-Registration..."
@@ -325,13 +331,14 @@ class qa_func(object):
         A function that produces self-registration quality control figures.
 
         **Positional Arguments:**
-            - freg:
+
+            freg:
                 - the functional registration object.
-            - treg_func_dir:
+            treg_func_dir:
                 - the directory to place functional qc images.
-            - treg_anat_dir:
+            treg_anat_dir:
                 - the directory to place anatomical qc images.
-            - outdir:
+            outdir:
                 - the directory where the temporary files will be placed.
         """
         print "Performing QA for Template-Registration..."
@@ -363,11 +370,12 @@ class qa_func(object):
         qa plots.
 
         **Positional Arguments:**
-            - func:
+
+            func:
                 - the path to the functional image we want statistics for.
-            - mask:
+            mask:
                 - the path to the anatomical mask.
-            - qadir:
+            qadir:
                 - the directory to place qa images.
         """
         # estimating mean signal intensity and deviation in brain/non-brain
@@ -408,11 +416,14 @@ class qa_func(object):
         A function to assess the quality of nuisance correction.
 
         **Positional Arguments**
-            - nuis_brain:
+
+            nuis_ts:
+                - the timeseries after nuisance correction.
+            nuis_brain:
                 - the nuisance corrected brain image.
-            - prenuis_brain:
+            prenuis_brain:
                 - the brain before nuisance correction.
-            - qcdir:
+            qcdir:
                 - the directory to place quality control images.
         """
         print "Performing QA for Nuisance..."
@@ -425,17 +436,18 @@ class qa_func(object):
         A function to perform ROI timeseries quality control.
 
         **Positional Arguments**
-            - timeseries:
+
+            timeseries:
                 - a path to the ROI timeseries.
-            - func:
+            func:
                 - the functional image that has timeseries
                 extract from it.
-            - anat:
+            anat:
                 - the anatomical image that is aligned.
-            - label:
+            label:
                 - the label in which voxel timeseries will be
                 downsampled.
-            - qcdir:
+            qcdir:
                 - the quality control directory to place outputs.
         """
         print "Performing QA for ROI Timeseries..."
@@ -451,13 +463,14 @@ class qa_func(object):
         A function to analyze the voxel timeseries extracted.
 
         **Positional Arguments**
-            - voxel_func:
+
+            voxel_func:
                 - the functional timeseries that
               has voxel timeseries extracted from it.
-            - atlas_mask:
+            atlas_mask:
                 - the mask under which
               voxel timeseries was extracted.
-            - qcdir:
+            qcdir:
                 - the directory to place qc in.
         """
         print "Performing QA for Voxel Timeseries..."

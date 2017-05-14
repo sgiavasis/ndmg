@@ -17,6 +17,7 @@
 
 # utils.py
 # Created by Will Gray Roncal on 2016-01-28.
+# Edited by Eric Bridgeford.
 # Email: wgr@jhu.edu
 
 from __future__ import print_function
@@ -35,6 +36,7 @@ def apply_mask(inp, masked, mask):
     A function to apply a mask to a brain.
 
     **Positional Arguments:**
+
         inp:
             - the input path to an mri image.
         masked:
@@ -116,7 +118,9 @@ def get_slice(mri, volid, sli):
     """
     Takes a volume index and constructs a new nifti image from
     the specified volume.
+
     **Positional Arguments:**
+
         mri:
             - the path to a 4d mri volume to extract a slice from.
         volid:
@@ -145,6 +149,7 @@ def get_braindata(brain_file):
     Returns a numpy.ndarray representation of a brain.
 
     **Positional Arguements**
+
         brain_file:
             - an object to open the data for a brain.
             Can be a string (path to a brain file),
@@ -170,6 +175,7 @@ def extract_brain(inp, out, opts="-B"):
     A function to extract the brain from an image using FSL's BET.
 
     **Positional Arguments:**
+
         inp:
             - the input image.
         out:
@@ -186,7 +192,7 @@ def graph2mtx(self, graph):
     ROI to largest.
 
     **Positional Arguments:**
-        - graph:
+        graph:
             - a networkx graph.
     """
     return graph2np(graph, nodelist=np.sort(graph.nodes()).tolist())

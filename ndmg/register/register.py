@@ -17,6 +17,7 @@
 
 # register.py
 # Created by Greg Kiar on 2016-01-28.
+# Edited by Eric Bridgeford.
 # Email: gkiar@jhu.edu
 
 from subprocess import Popen, PIPE
