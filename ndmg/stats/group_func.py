@@ -32,7 +32,7 @@ from ndmg.stats.plotly_helper import *
 
 
 class group_func(object):
-    def __init__(self, basedir, outdir, dataset=None):
+    def __init__(self, basedir, outdir, atlas=None, dataset=None):
         """
         A class for group level quality control.
 
@@ -50,8 +50,10 @@ class group_func(object):
         self.qadir = "{}/qa".format(self.ndmgdir)
         self.outdir = outdir
         self.conn_dir = "{}/graphs".format(self.ndmgdir)
+        if atlas is not None:
+            self.conn_dir = "{}/graphs/{}".format(self.ndmgdir, atlas)
         self.dataset = dataset
-
+        self.atlas = atlas
         (self.qa_files, self.subs) = self.get_qa_files()
         self.graphs = self.get_graphs()
         self.qa_objects = self.load_qa()
@@ -81,7 +83,11 @@ class group_func(object):
         for each parcellation we have.
         """
         graphs = {}
-        for label in os.listdir(self.conn_dir):
+        if self.atlas is not None:
+            labels = os.listdir(self.conn_dir)
+        else:
+            labels = self.atlas
+        for label in labels:
             this_label = []
             label_dir = "{}/{}".format(self.conn_dir, label)
             for connectome in os.listdir(label_dir):
