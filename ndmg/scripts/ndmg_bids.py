@@ -290,7 +290,8 @@ def main():
                 tpath = '{}/graphs/{}'.format(remo, atlas)
                 tindir = '{}/{}'.format(inDir, atlas)
                 if not dwi:
-                    tindir = '{}/graphs/{}'.format(inDir, atlas)
+                    tpath = '{}/connectomes/{}'.format(remo, atlas)
+                    tindir = '{}/connectomes/{}'.format(inDir, atlas)
             else:
                 tpath = '{}/graphs'.format(remo)
                 tindir = inDir
@@ -298,9 +299,6 @@ def main():
                 qadir_rem = '{}/qa'.format(remo)
                 qadir_local = '{}/qa'.format(inDir)
                 s3_get_data(buck, qadir_rem, qadir_local, public=creds)
-            print buck
-            print tpath
-            print tindir
             s3_get_data(buck, tpath, tindir, public=creds)
         modif = 'qa'
         group_level(inDir, outDir, dataset, atlas, minimal, log, hemi, dwi)

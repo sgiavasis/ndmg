@@ -46,12 +46,11 @@ class group_func(object):
                 - an optional parameter for the name of the dataset
                   to be present in the quality control output filenames.
         """
+        print atlas
         self.ndmgdir = basedir
         self.qadir = "{}/qa".format(self.ndmgdir)
         self.outdir = outdir
         self.conn_dir = "{}/connectomes".format(self.ndmgdir)
-        if atlas is not None:
-            self.conn_dir = "{}/connectomes/{}".format(self.ndmgdir, atlas)
         self.dataset = dataset
         self.atlas = atlas
         (self.qa_files, self.subs) = self.get_qa_files()
@@ -83,11 +82,8 @@ class group_func(object):
         for each parcellation we have.
         """
         connectomes = {}
-        if self.atlas is not None:
-            labels = os.listdir(self.conn_dir)
-        else:
-            labels = self.atlas
-        for label in labels:
+        for label in os.listdir(self.conn_dir):
+            print label
             this_label = []
             label_dir = "{}/{}".format(self.conn_dir, label)
             for connectome in os.listdir(label_dir):
@@ -200,7 +196,7 @@ class group_func(object):
         pyo.plot(multi, validate=False, filename=fname_multi) 
         pass
 
-    def connectome_analysis(self, thr=0.7, minimal=False, log=False,
+    def connectome_analysis(self, thr=0.85, minimal=False, log=False,
                             hemispheres=False):
         """
         A function to threshold and binarize the connectomes.
@@ -228,7 +224,7 @@ class group_func(object):
             cmd = "mkdir -p {}".format(tmp_dir)
             mgu.execute_cmd(cmd)
             for subj, raw in label_raw.iteritems():
-                # loop over edges to threshol
+                # loop over edges to threshold
                 raw_mtx = nx.to_numpy_matrix(raw)
                 cor_thr = np.percentile(raw_mtx, thr*100) 
                 for u, v, d in raw.edges(data=True):
@@ -236,6 +232,8 @@ class group_func(object):
                     # above the threshold
                     if d['weight'] < cor_thr:
                         raw.remove_edge(u, v)
+                    else:
+                         d['weight'] = 1
                 # resave the thresholded connectomes
                 gname = "{}/{}".format(tmp_dir, subj)
                 nx.write_gpickle(raw, gname)
@@ -247,5 +245,6 @@ class group_func(object):
             make_panel_plot(label_dir, outf, dataset=self.dataset,
                             atlas=label, minimal=minimal,
                             log=log, hemispheres=hemispheres)
+            print outf
         pass
 
