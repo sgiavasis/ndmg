@@ -37,7 +37,7 @@ group_templ = 'https://raw.githubusercontent.com/neurodata/ndmg/eric-dev-gkiar-f
 
 
 def batch_submit(bucket, path, jobdir, credentials=None, state='participant',
-                 debug=False, dataset=None, log=False, stc=None, mode='func'):
+                 debug=False, dataset=None, log=False, stc=None, mode='dwi'):
     """
     Searches through an S3 bucket, gets all subject-ids, creates json files
     for each, submits batch jobs, and returns list of job ids to query status
@@ -45,7 +45,7 @@ def batch_submit(bucket, path, jobdir, credentials=None, state='participant',
     """
     group = state == 'group'
     print("Getting list from s3://{}/{}/...".format(bucket, path))
-    threads = crawl_bucket(bucket, path, group)
+    threads = crawl_bucket(bucket, path, group, mode=mode)
 
     print("Generating job for each subject...")
     jobs = create_json(bucket, path, threads, jobdir, group, credentials,
@@ -55,12 +55,15 @@ def batch_submit(bucket, path, jobdir, credentials=None, state='participant',
     ids = submit_jobs(jobs, jobdir)
 
 
-def crawl_bucket(bucket, path, group=False):
+def crawl_bucket(bucket, path, group=False, mode='dwi'):
     """
     Gets subject list for a given S3 bucket and path
     """
     if group:
-        cmd = 'aws s3 ls s3://{}/{}/graphs/'.format(bucket, path)
+        if mode == 'dwi':
+            cmd = 'aws s3 ls s3://{}/{}/graphs/'.format(bucket, path)
+        else:
+            cmd = 'aws s3 ls s3://{}/{}/connectomes/'.format(bucket, path)
         out, err = mgu.execute_cmd(cmd)
         atlases = re.findall('PRE (.+)/', out)
         print("Atlas IDs: " + ", ".join(atlases))
