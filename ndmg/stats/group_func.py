@@ -49,13 +49,13 @@ class group_func(object):
         self.ndmgdir = basedir
         self.qadir = "{}/qa".format(self.ndmgdir)
         self.outdir = outdir
-        self.conn_dir = "{}/graphs".format(self.ndmgdir)
+        self.conn_dir = "{}/connectomes".format(self.ndmgdir)
         if atlas is not None:
-            self.conn_dir = "{}/graphs/{}".format(self.ndmgdir, atlas)
+            self.conn_dir = "{}/connectomes/{}".format(self.ndmgdir, atlas)
         self.dataset = dataset
         self.atlas = atlas
         (self.qa_files, self.subs) = self.get_qa_files()
-        self.graphs = self.get_graphs()
+        self.connectomes = self.get_connectomes()
         self.qa_objects = self.load_qa()
         self.group_level_analysis()
         self.connectome_analysis()
@@ -77,12 +77,12 @@ class group_func(object):
                 subs.append(sub)
         return (qa_files, subs)
 
-    def get_graphs(self):
+    def get_connectomes(self):
         """
-        A function to load the relevant graphs for all of the subjects
+        A function to load the relevant connectomes for all of the subjects
         for each parcellation we have.
         """
-        graphs = {}
+        connectomes = {}
         if self.atlas is not None:
             labels = os.listdir(self.conn_dir)
         else:
@@ -94,8 +94,8 @@ class group_func(object):
                 conn_path = "{}/{}".format(label_dir, connectome)
                 if os.path.isfile(conn_path):
                     this_label.append(conn_path)
-            graphs[label] = this_label
-        return graphs
+            connectomes[label] = this_label
+        return connectomes
 
     def load_qa(self):
         """
@@ -203,7 +203,7 @@ class group_func(object):
     def connectome_analysis(self, thr=0.7, minimal=False, log=False,
                             hemispheres=False):
         """
-        A function to threshold and binarize the graphs.
+        A function to threshold and binarize the connectomes.
         Presently just thresholds to reference correlation of
         setting all edges below 0.3 to 0, and those greater to 1.
         This value of 0.3 was generally the highest performing in
@@ -213,15 +213,15 @@ class group_func(object):
             - thr:
                 - the threshold to binarize below.
         """
-        self.graph_dir = "{}/graphs".format(self.outdir)
+        self.graph_dir = "{}/connectomes".format(self.outdir)
         cmd = "mkdir -p {}".format(self.graph_dir)
         mgu.execute_cmd(cmd)
-        for label, raw_conn_files in self.graphs.iteritems():
+        for label, raw_conn_files in self.connectomes.iteritems():
             print("Parcellation: {}".format(label))
             label_raw = loadGraphs(raw_conn_files)
-            label_graphs = {}
+            label_connectomes = {}
             label_dir = "{}/{}".format(self.graph_dir, label)
-            tmp_dir = "{}/graphs".format(label_dir)
+            tmp_dir = "{}/connectomes".format(label_dir)
             # verify that directories exist
             cmd = "mkdir -p {}".format(label_dir)
             mgu.execute_cmd(cmd)
@@ -232,17 +232,17 @@ class group_func(object):
                 raw_mtx = nx.to_numpy_matrix(raw)
                 cor_thr = np.percentile(raw_mtx, thr*100) 
                 for u, v, d in raw.edges(data=True):
-                    # threshold graphs by removing weights
+                    # threshold connectomes by removing weights
                     # above the threshold
                     if d['weight'] < cor_thr:
                         raw.remove_edge(u, v)
-                # resave the thresholded graphs
+                # resave the thresholded connectomes
                 gname = "{}/{}".format(tmp_dir, subj)
                 nx.write_gpickle(raw, gname)
-                # so our graphs are in the format expected by
+                # so our connectomes are in the format expected by
                 # graphing qa
-                label_graphs[subj] = gname
-            compute_metrics(label_graphs.values(), label_dir, label)
+                label_connectomes[subj] = gname
+            compute_metrics(label_connectomes.values(), label_dir, label)
             outf = os.path.join(label_dir, "{}_plot".format(label))
             make_panel_plot(label_dir, outf, dataset=self.dataset,
                             atlas=label, minimal=minimal,
