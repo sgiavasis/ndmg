@@ -18,27 +18,79 @@
 # nuis.py
 # Created by Eric Bridgeford on 2016-06-20-16.
 # Email: ebridge2@jhu.edu
+from ndmg.utils import utils as mgu
 import nibabel as nb
 import numpy as np
-import scipy.signal as signal
-from scipy import fftpack as scifft
-from ndmg.utils import utils as mgu
+from scipy.fftpack import rfft, irfft, fftfreq
 
 
 class nuis(object):
 
-    def __init__(self):
+    def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None):
         """
         A class for nuisance correction of fMRI.
+
+        **Positional Arguments:**
+
+            - fmri:
+                - the functional mri.
+            - smri:
+                - the structural mri (assumed to be T1w).
+            - nuis_mri:
+                - the file path of a nuisance corrected mri
+            - lv_mask:
+                - lateral-ventricles mask (optional).
         """
+        # store our inputs
+        self.fmri = fmri  # the fmri
+        self.smri = smri  # the T1w anatomical mri
+        self.nuis_mri = nuis_mri  # the nuisance-corrected path
+
+        # store the masks so that we can easily do qa later
+        self.lv_mask = lv_mask  # lateral-ventricles mask
+        self.er_wm_mask = None  # eroded white-matter mask
+
+        # places to place intermediates
+        self.outdir = outdir
+        self.anat_name = mgu.get_filename(smri)
+        # store temporary path for segmentation step
+        nuisname = "{}_nuis".format(self.anat_name)
+        self.nuisname = nuisname
+        # wm mask
+        self.wm_mask = mgu.name_tmps(outdir, nuisname, "_wmm.nii.gz")
+        # csf mask
+        self.csf_mask = mgu.name_tmps(outdir, nuisname, "_csf.nii.gz")
+        # gm mask
+        self.gm_mask = mgu.name_tmps(outdir, nuisname, "_gmm.nii.gz")
+        self.map_path = mgu.name_tmps(outdir, nuisname, "_seg")
+        # segment the brain for quality control purposes
+        self.segment_anat(self.smri, self.map_path)
+        # extract the masks
+        self.extract_mask(self.wm_prob, self.wm_mask, .99, erode=0)
+        self.extract_mask(self.csf_prob, self.csf_mask, .95, erode=0)
+        self.extract_mask(self.gm_prob, self.gm_mask, .95, erode=0)
+        # the centered brain
+        self.cent_nuis = None
+        # the brain after glm
+        self.glm_nuis = None
+        # the brain after frequency correction
+        self.fft_nuis = None
+        # regressors so that we can use them for line plots
+        self.csf_reg = None
+        self.wm_reg = None
+        self.quad_reg = None
+        self.freq_reg = None
+
+        # signal that is removed at given steps
+        self.fft_sig = None
+        self.glm_sig = None
         pass
 
-    def normalize_signal(self, data):
+    def center_signal(self, data):
         """
         A function that performs normalization to a
         given fMRI signal. We subtract out the mean of
-        each dimension, and then normalze our signal
-        by the difference between the maximum and the minimum.
+        each dimension.
 
         **Positional Arguments:**
 
@@ -46,17 +98,31 @@ class nuis(object):
                 - the fMRI data. Should be passed as an ndarray,
                   with dimensions [ntimesteps, nvoxels].
         """
-        # remove the voxels that are unchanging, as normalizing
-        # these by std would lead to a divide by 0
-        data = data[:, data.std(axis=0) != 0]
-        data = signal.detrend(data, axis=0, type='linear')
+        print "Centering Signal..."
         data = data - data.mean(axis=0)
+        return data
+
+    def normalize_signal(self, data):
+        """
+        A function taht performs normalization by the standard deviation
+        to a fMRI signal. We divide by the standard deviation of the signal
+        so that the voxel timeseries are of relatively equal magnitude,
+        as the standard deviation is the primary contrast that we are
+        concerned with.
+
+        **Positional Arguments:**
+
+            data:
+                - the fMRI data. Should be an array, with dimensions
+                  [ntimesteps, nvoxels].
+        """
+        print "Normalizing Signal by Standard Deviation..."
         # normalize the signal
         data = np.divide(data, data.std(axis=0))
         # returns the normalized signal
         return data
 
-    def compcor(self, masked_ts, n=None, t=None):
+    def compcor(self, masked_ts, n=5):
         """
         A function to extract principal components on
         timeseries of nuisance variables.
@@ -64,40 +130,19 @@ class nuis(object):
         **Positional Arguments:**
 
             masked_ts:
-                - the timeseries over a masked region.
-            n:
-                - the number of components to use. Default is None.
-                  Note that either n or t should be set, but not
-                  both.
-            t:
-                - the threshold for the amount of expected variance,
-                  as a float between 0 and 1, where the number of
-                  components returned will be less than the threshold
-                  indicated.
+                - the timeseries over a masked region. We assume
+                  that this array is already mean centered per voxel.
+                  Dimensions should be [ntimesteps, nvoxels].
+           n:
+                - the number of components to use.
         """
-        print("Extracting Nuisance Components...")
-        # normalize the signal to mean center
-        masked_ts = self.normalize_signal(masked_ts)
+        print "Extracting Nuisance Components..."
         # singular value decomposition to get the ordered
         # principal components
         U, s, V = np.linalg.svd(masked_ts)
-        if n is not None and t is not None:
-            raise ValueError("CompCor: you have passed both a number of"
-                             " components and a threshold. You should pass"
-                             " one or the other, not both.")
-        elif n is not None:
-            # return the top n principal components
-            return U[:, 0:n], s
-        elif t is not None:
-            var_per_comp = s/np.sum(s)  # percent variance of each component
-            total_var = np.cumsum(var_per_comp)
-            thresh_var = total_var[total_var > t]
-            # return up to lowest component greater than threshold
-            idx = np.argmin(thresh_var)
-            return U[:, 0:idx], s
-        else:
-            raise ValueError("CompCor: you have not passed a threshold nor"
-                             " a number of components. You must specify one.")
+        # return the top n principal components
+        return U[:, 0:n], s
+        pass
 
     def freq_filter(self, mri, tr, highpass=0.01, lowpass=None):
         """
@@ -105,7 +150,6 @@ class nuis(object):
         an fMRI image.
 
         **Positional Arguments:**
-
             mri:
                 - an ndarray containing timeseries of dimensions
                   [voxels,timesteps] which the user wants to have
@@ -116,70 +160,87 @@ class nuis(object):
                 - the upper limit  frequency band to remove above.
         """
         # apply the fft per voxel to take to fourier domain
-        fftd = np.apply_along_axis(np.fft.fft, 0, mri)
+        passed_fft = np.apply_along_axis(rfft, 0, mri)
 
         # get the frequencies returned by the fft that we want
         # to use. note that this function returns us a single-sided
-        # set of frequencies.
-        freq_ra = np.fft.fftfreq(mri.shape[0], d=tr)
+        # set of frequencies
+        freq_ra = fftfreq(mri.shape[0], d=tr)
+        self.freq_ra = freq_ra
+
+        # free for memory purposes
+        mri = None
 
         bpra = np.zeros(freq_ra.shape, dtype=bool)
-
         # figure out which positions we will exclude
         if highpass is not None:
-            print("Filtering below {} Hz".format(highpass))
+            print "filtering below " + str(highpass) + " Hz..."
             bpra[freq_ra < highpass] = True
         if lowpass is not None:
-            print("Filtering above {} Hz".format(lowpass))
+            print "filtering above " + str(lowpass) + " Hz..."
             bpra[freq_ra > lowpass] = True
-        print("Applying Frequency Filtering...")
-        fftd[bpra, :] = 0
+        print "Applying Frequency Filtering..."
+        filtered_ra = np.logical_not(bpra)
+        filtered_fft = passed_fft.copy()
+        filtered_fft[filtered_ra, :] = 0
+        filtered_sig = np.apply_along_axis(irfft, 0,
+                                           filtered_fft)
+        filtered_fft = None
+        self.fft_sig = filtered_sig[:, self.voxel_gm_mask].mean(axis=1)
+        filtered_sig = None
+
+        passed_fft[bpra, :] = 0
+        self.fft_reg = passed_fft[:, self.voxel_gm_mask].mean(axis=1)
         # go back to time domain
-        return np.apply_along_axis(np.fft.ifft, 0, fftd)
+        return np.apply_along_axis(irfft, 0, passed_fft)
 
     def regress_signal(self, data, R):
         """
         Regresses data to given regressors.
 
         **Positional Arguments:**
-
-            data:
+            - data:
                 - the data as a ndarray.
-            R:
+            - R:
                 - a numpy ndarray of regressors to
                   regress to.
         """
-        print("GLM with design matrix of shape: {}".format(R.shape))
+        print "GLM with Design Matrix of Dimensions " + str(R.shape) + "..."
         # OLS solution for GLM B = (X^TX)^(-1)X^TY
         coefs = np.linalg.inv(R.T.dot(R)).dot(R.T).dot(data)
         return R.dot(coefs)
 
-    def segment_anat(self, anat, an, basename):
+    def segment_anat(self, amri, basename, an=1):
         """
         A function to use FSL's FAST to segment an anatomical
         image into GM, WM, and CSF maps.
 
         **Positional Arguments:**
 
-            anat:
+            - amri:
                 - an anatomical image.
-            an:
-                - an integer representing the type of the anatomical image.
-                  (1 for T1w, 2 for T2w, 3 for PD).
-            basename:
+            - basename:
                 - the basename for outputs. Often it will be
                   most convenient for this to be the dataset,
                   followed by the subject, followed by the step of
                   processing. Note that this anticipates a path as well;
                   ie, /path/to/dataset_sub_nuis, with no extension.
+            - an:
+                - an integer representing the type of the anatomical image.
+                  (1 for T1w, 2 for T2w, 3 for PD).
         """
-        print("Segmenting Anatomical Image into WM, GM, and CSF...")
+        print "Segmenting Anatomical Image into WM, GM, and CSF..."
         # run FAST, with options -t for the image type and -n to
         # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
-        cmd = "fast -t {} -n 3 -o {} {}".format(int(an), basename, anat)
+        cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
         mgu.execute_cmd(cmd)
 
-    def erode_mask(self, mask_path, eroded_path, v=0):
+        self.wm_prob = "{}_{}".format(basename, "pve_2.nii.gz")
+        self.gm_prob = "{}_{}".format(basename, "pve_1.nii.gz")
+        self.csf_prob = "{}_{}".format(basename, "pve_0.nii.gz")
+        pass
+
+    def erode_mask(self, mask, v=0):
         """
         A function to erode a mask by a specified number of
         voxels. Here, we define erosion as the process of checking
@@ -188,16 +249,12 @@ class nuis(object):
 
         **Positional Arguments:**
 
-            mask_path:
-                - a path to a nifti containing a mask.
-            eroded_path:
-                - a path to the eroded mask to be created.
-            v:
+            - mask:
+                - a numpy array of a mask to be eroded.
+            - v:
                 - the number of voxels to erode by.
         """
-        print("Eroding Mask...")
-        mask_img = nb.load(mask_path)
-        mask = mask_img.get_data()
+        print "Eroding Mask..."
         for i in range(0, v):
             # masked_vox is a tuple 0f [x]. [y]. [z] cooords
             # wherever mask is nonzero
@@ -220,50 +277,58 @@ class nuis(object):
             else:
                 raise ValueError('Your mask erosion has an invalid shape.')
             mask = erode_mask
-        eroded_mask_img = nb.Nifti1Image(mask,
-                                         header=mask_img.header,
-                                         affine=mask_img.get_affine())
-        nb.save(eroded_mask_img, eroded_path)
         return mask
 
-    def extract_mask(self, prob_map, mask_path, t):
+    def extract_mask(self, prob_map, mask_path, t, erode=0):
         """
         A function to extract a mask from a probability map.
         Also, performs mask erosion as a substep.
 
         **Positional Arguments:**
 
-            prob_map:
+            - prob_map:
                 - the path to probability map for the given class
                   of brain tissue.
-            mask_path:
+            - mask_path:
                 - the path to the extracted mask.
-            t:
+            - t:
                 - the threshold to consider voxels part of the class.
+            - erode=2:
+                - the number of voxels to erode by. Defaults to 2.
         """
-        print("Extracting Mask from probability map...")
+        print "Extracting Mask from probability map {}...".format(prob_map)
         prob = nb.load(prob_map)
         prob_dat = prob.get_data()
         mask = (prob_dat > t).astype(int)
+        mask = self.erode_mask(mask, v=erode)
         img = nb.Nifti1Image(mask,
                              header=prob.header,
                              affine=prob.get_affine())
         # save the corrected image
         nb.save(img, mask_path)
-        return mask
+        return mask_path
 
-    def linear_reg(self, voxel, csf_reg=None):
+    def linear_reg(self, voxel, csf_ts=None, wm_ts=None, n=None):
         """ 
         A function to perform quadratic detrending of fMRI data.
 
         **Positional Arguments**
 
-            voxel:
+            - voxel:
                 - an ndarray containing a voxel timeseries.
                   dimensions should be [timesteps, voxels]
-            csf_reg:
+            - csf_ts:
                 - a timeseries for csf mean regression. If not
-                  provided, regression will not be performed.
+                  provided, csf regression will not be performed.
+            - wm_ts:
+                - a timeseries for white matter regression.
+                  If only wm_ts is provided, wm mean regression
+                  will be performed. If n and wm_ts are provided, 
+                  compcor with n components will be performed. If
+                  neither are provided, no wm regression will be
+                  performed.
+            - n:
+                - the number of components for wm regression.
         """
         # time dimension is now the 0th dim
         time = voxel.shape[0]
@@ -275,47 +340,60 @@ class nuis(object):
         # use GLM model given regressors to approximate the weight we want
         # to regress out
         R = np.column_stack((np.ones(time), lin_reg, quad_reg))
-        if csf_reg is not None:
+
+        # highpass filter voxel timeseries appropriately
+
+        if csf_ts is not None:
+            csf_reg = csf_ts.mean(axis=1)
+            self.csf_reg = csf_reg  # save for qa later
             # add coefficients to our regression
             R = np.column_stack((R, csf_reg))
 
+        if n is not None and wm_ts is not None:
+            wm_reg = self.compcor(wm_ts, n=n)
+            self.wm_reg = wm_reg  # save for QA later
+            R = np.column_stack((R, wm_reg))
+        elif wm_ts is not None:
+            wm_reg = wm_ts.mean(axis=1)
+            self.wm_reg = wm_reg
+            R = np.column_stack((R, wm_reg))
+
         W = self.regress_signal(voxel, R)
+        self.glm_sig = W[:, self.voxel_gm_mask].mean(axis=1)
+
         # corr'd ts is the difference btwn the original timeseries and
         # our regressors, and then we transpose back
         return (voxel - W)
 
-    def nuis_correct(self, fmri, nuisance_mri, er_csfmask=None, highpass=0.01,
-                     lowpass=None, trim=0):
+    def nuis_correct(self, highpass=0.01, lowpass=None, trim=0, n=None):
         """
         Removes Nuisance Signals from brain images, using a combination
         of Frequency filtering, and mean csf/quadratic regression.
 
         **Positional Arguments:**
 
-            fmri:
-                - the path to a fmri brain as a nifti image.
-            nuisance_fmri:
-                - the desired path for the nuisance corrected brain.
-            wmmask:
-                - the path to a white matter mask (should be eroded ahead of
-                  time).
-            er_csfmask:
-                - the path to a lateral ventricles csf mask.
-            highpass:
+            - highpass:
                 - the highpass cutoff for FFT.
-            lowpass:
+            - lowpass:
                 - the lowpass cutoff for FFT. NOT recommended.
-            trim:
+            - trim:
                 - trim the timeseries by a number of slices. Corrects
                   for T1 effects; that is, in some datasets, the first few
                   timesteps may have a non-saturated T1 contrast and as such
                   will show non-standard intensities.
+            - n:
+                - the number of components for wm regression. If set to None,
+                  does not perform wm regression.
         """
-        fmri_name = mgu.get_filename(fmri)
-        fmri_im = nb.load(fmri)
+        fmri_name = mgu.get_filename(self.fmri)
+        fmri_im = nb.load(self.fmri)
 
         fmri_dat = fmri_im.get_data()
         basic_mask = fmri_dat.sum(axis=3) > 0
+        gm_mask_dat = nb.load(self.gm_mask).get_data()
+        # mean center signal to start with
+        # fmri_dat = self.center_signal(fmri_dat)
+
         # load the voxel timeseries and transpose
         # remove voxels that are absolutely non brain (zero activity)
         voxel = fmri_dat[basic_mask, :].T
@@ -323,29 +401,50 @@ class nuis(object):
         # zooms are x, y, z, t
         tr = fmri_im.header.get_zooms()[3]
 
-        # highpass filter voxel timeseries appropriately
-        if er_csfmask is not None:
+        if self.lv_mask is not None:
             # csf regressor is the mean of all voxels in the csf
             # mask at each time point
-            lv_im = nb.load(er_csfmask)
-            lvm = lv_im.get_data()
+            lvm = nb.load(self.lv_mask).get_data()
             lv_ts = fmri_dat[lvm != 0, :].T
-            csf_reg = lv_ts.mean(axis=1)
         else:
-            csf_reg = None
+            lv_ts = None
 
-        lc_voxel = self.linear_reg(voxel, csf_reg = csf_reg)
+        # if n is provided, perform compcor
+        if n is not None:
+            self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
+                                                 "wm_mask_eroded")
+            self.extract_mask(self.wm_prob, self.er_wm_mask, .99, erode=2)
+            wmm = nb.load(self.er_wm_mask).get_data()
+            wm_ts = fmri_dat[wmm != 0, :].T
+        else:
+            wm_ts = None
 
-        nuis_voxel = self.freq_filter(lc_voxel, tr, highpass=highpass,
-                                      lowpass=lowpass)
-        nuis_voxel = lc_voxel
+        fmri_dat = None  # free for memory purposes
+        self.voxel_gm_mask = gm_mask_dat[basic_mask == True] > 0
+        gm_mask_dat = None  # free for memory
+        self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        # GLM for nuisance correction
+        voxel = self.linear_reg(voxel, csf_ts=lv_ts,
+                                wm_ts=None, n=None)
+        self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+
+        # Frequency Filtering for Nuisance Correction
+        # voxel = self.freq_filter(voxel, tr, highpass=highpass,
+        #                          lowpass=lowpass)
+        self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+
+        # normalize the signal to account for anatomical intensity differences
+	# self.voxel = self.normalize_signal(self.voxel)
         # put the nifti back together again and re-transpose
-        fmri_dat[basic_mask, :] = nuis_voxel.T
+        fmri_dat = fmri_im.get_data()
+        fmri_dat[basic_mask, :] = voxel.T
 
+        # free for memory purposes
+        voxel = None
         fmri_dat = fmri_dat[:, :, :, trim:]
         img = nb.Nifti1Image(fmri_dat,
                              header=fmri_im.header,
                              affine=fmri_im.affine)
         # save the corrected image
-        nb.save(img, nuisance_mri)
-        return fmri_dat
+        nb.save(img, self.nuis_mri)
+        pass

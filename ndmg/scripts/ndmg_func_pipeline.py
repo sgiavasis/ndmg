@@ -142,12 +142,13 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     func_reg.register()
 
     qc_func.self_reg_qa(func_reg, sreg_fdir, sreg_adir, outdir)
-
     qc_func.temp_reg_qa(func_reg, treg_fdir, treg_adir, outdir)
 
     print "Correcting Nuisance Variables..."
-    nuis = mgn().nuis_correct(aligned_func, nuis_func, lv_mask, trim=2)
-    qc_func.nuisance_qa(nuis, nuis_func, aligned_func, qcdir=nuisdir)
+    nuis = mgn(aligned_func, aligned_t1w, nuis_func, outdir, lv_mask=lv_mask)
+    nuis.nuis_correct(trim=2)
+
+    qc_func.nuisance_qa(nuis, nuisdir)
 
     print "Extracting Voxelwise Timeseries..."
     voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)

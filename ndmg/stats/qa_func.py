@@ -411,24 +411,22 @@ class qa_func(object):
             plt.close()
         pass
 
-    def nuisance_qa(self, nuis_ts, nuis_brain, prenuis_brain, qcdir):
+    def nuisance_qa(self, nuisobj, qcdir):
         """
         A function to assess the quality of nuisance correction.
 
         **Positional Arguments**
 
-            nuis_ts:
-                - the timeseries after nuisance correction.
-            nuis_brain:
-                - the nuisance corrected brain image.
-            prenuis_brain:
-                - the brain before nuisance correction.
+            nuisobj:
+                - the nuisance correction object.
             qcdir:
                 - the directory to place quality control images.
         """
         print "Performing QA for Nuisance..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
+
+
         pass
 
     def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
