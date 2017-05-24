@@ -88,17 +88,17 @@ class nuis(object):
     def center_signal(self, data):
         """
         A function that performs normalization to a
-        given fMRI signal. We subtract out the mean of
+        given fMRI signal, non-transposed. We subtract out the mean of
         each dimension.
 
         **Positional Arguments:**
 
             data:
                 - the fMRI data. Should be passed as an ndarray,
-                  with dimensions [ntimesteps, nvoxels].
+                  with dimensions [xdim, ydim, zdim, ntimesteps].
         """
         print "Centering Signal..."
-        data = data - data.mean(axis=0)
+        data = data - data.mean(axis=3, keepdims=True)
         return data
 
     def normalize_signal(self, data):
@@ -394,7 +394,7 @@ class nuis(object):
         basic_mask = fmri_dat.sum(axis=3) > 0
         gm_mask_dat = nb.load(self.gm_mask).get_data()
         # mean center signal to start with
-        # fmri_dat = self.center_signal(fmri_dat)
+        fmri_dat = self.center_signal(fmri_dat)
 
         # load the voxel timeseries and transpose
         # remove voxels that are absolutely non brain (zero activity)
@@ -444,6 +444,7 @@ class nuis(object):
 
         # free for memory purposes
         voxel = None
+        fmri_dat = fmri_dat[:, :, :, trim:]
         img = nb.Nifti1Image(fmri_dat,
                              header=fmri_im.header,
                              affine=fmri_im.affine)
