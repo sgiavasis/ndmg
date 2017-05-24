@@ -428,7 +428,7 @@ class nuis(object):
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
         # GLM for nuisance correction
         voxel = self.linear_reg(voxel, csf_ts=lv_ts,
-                                wm_ts=None, n=None)
+                                wm_ts=wm_ts, n=n)
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
