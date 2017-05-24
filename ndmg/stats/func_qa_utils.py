@@ -473,6 +473,44 @@ def image_align(mri_data, ref_data, qcdir, scanid="", refid=""):
     return fname
 
 
+def plot_signals(signals, labels, title=None, xlabel=None,
+                 ylabel=None, xax=None):
+    """
+    A utility to plot and return a figure for
+    multiple signals.
+
+    **Positional Arguments:**
+
+        - signals:
+            - a list of the signals you want to have plotted.
+        - labels:
+            - a list of the labels associated with each signal.
+        - title:
+            - the title.
+        - xlabel:
+            - the x label.
+        - ylabel:
+            - the y label.
+        - xax:
+            - the scale for the x axis.
+    """
+    fig_sig = plt.figure()
+    ax_sig = fig_sig.add_subplot(111)
+    lines = []
+    legs = []
+    for (signal, label) in zip(signals, labels):
+        if xax is not None:
+            lines.append(ax_sig.plot(xax, signal)[0])
+        else:
+            lines.append(ax_sig.plot(signal)[0])
+        legs.append(label)
+    ax_sig.legend(lines, legs, loc='lower right')
+    ax_sig.set_title(title)
+    ax_sig.set_ylabel(ylabel)
+    ax_sig.set_xlabel(xlabel)
+    fig_sig.tight_layout()
+    return fig_sig
+
 def plot_timeseries(timeseries, qcdir=None):
     """
     A function to generate a plot of the timeseries

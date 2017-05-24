@@ -21,7 +21,7 @@
 from ndmg.utils import utils as mgu
 import nibabel as nb
 import numpy as np
-from scipy.fftpack import rfft, irfft, fftfreq
+from scipy.fftpack import rfft, irfft, rfftfreq
 
 
 class nuis(object):
@@ -58,8 +58,7 @@ class nuis(object):
         self.nuisname = nuisname
         # wm mask
         self.wm_mask = mgu.name_tmps(outdir, nuisname, "_wmm.nii.gz")
-        # csf mask
-        self.csf_mask = mgu.name_tmps(outdir, nuisname, "_csf.nii.gz")
+        # csf mask not used due to inconsistencies in segmenting
         # gm mask
         self.gm_mask = mgu.name_tmps(outdir, nuisname, "_gmm.nii.gz")
         self.map_path = mgu.name_tmps(outdir, nuisname, "_seg")
@@ -67,7 +66,6 @@ class nuis(object):
         self.segment_anat(self.smri, self.map_path)
         # extract the masks
         self.extract_mask(self.wm_prob, self.wm_mask, .99, erode=0)
-        self.extract_mask(self.csf_prob, self.csf_mask, .95, erode=0)
         self.extract_mask(self.gm_prob, self.gm_mask, .95, erode=0)
         # the centered brain
         self.cent_nuis = None
@@ -79,7 +77,8 @@ class nuis(object):
         self.csf_reg = None
         self.wm_reg = None
         self.quad_reg = None
-        self.freq_reg = None
+        self.fft_reg = None
+        self.fft_bef = None
 
         # signal that is removed at given steps
         self.fft_sig = None
@@ -165,32 +164,36 @@ class nuis(object):
         # get the frequencies returned by the fft that we want
         # to use. note that this function returns us a single-sided
         # set of frequencies
-        freq_ra = fftfreq(mri.shape[0], d=tr)
-        self.freq_ra = freq_ra
+        freq_ra = rfftfreq(mri.shape[0], d=tr)
+        self.freq_ra = np.sort(freq_ra)
+        order = np.argsort(freq_ra)
 
         # free for memory purposes
         mri = None
-
+        
+        self.fft_bef = np.square(passed_fft[:,
+            self.voxel_gm_mask].mean(axis=1))[order]
         bpra = np.zeros(freq_ra.shape, dtype=bool)
         # figure out which positions we will exclude
         if highpass is not None:
             print "filtering below " + str(highpass) + " Hz..."
-            bpra[freq_ra < highpass] = True
+            bpra[np.abs(freq_ra) < highpass] = True
         if lowpass is not None:
             print "filtering above " + str(lowpass) + " Hz..."
-            bpra[freq_ra > lowpass] = True
+            bpra[np.abs(freq_ra) > lowpass] = True
         print "Applying Frequency Filtering..."
         filtered_ra = np.logical_not(bpra)
         filtered_fft = passed_fft.copy()
         filtered_fft[filtered_ra, :] = 0
-        filtered_sig = np.apply_along_axis(irfft, 0,
-                                           filtered_fft)
+        filt_sig = np.apply_along_axis(irfft, 0,
+                                       filtered_fft)
         filtered_fft = None
-        self.fft_sig = filtered_sig[:, self.voxel_gm_mask].mean(axis=1)
-        filtered_sig = None
+        self.fft_sig = filt_sig[:, self.voxel_gm_mask].mean(axis=1)
+        filt_sig = None
 
         passed_fft[bpra, :] = 0
-        self.fft_reg = passed_fft[:, self.voxel_gm_mask].mean(axis=1)
+        self.fft_reg = np.square(passed_fft[:, 
+                self.voxel_gm_mask].mean(axis=1))[order]
         # go back to time domain
         return np.apply_along_axis(irfft, 0, passed_fft)
 
@@ -237,7 +240,6 @@ class nuis(object):
 
         self.wm_prob = "{}_{}".format(basename, "pve_2.nii.gz")
         self.gm_prob = "{}_{}".format(basename, "pve_1.nii.gz")
-        self.csf_prob = "{}_{}".format(basename, "pve_0.nii.gz")
         pass
 
     def erode_mask(self, mask, v=0):
@@ -344,7 +346,7 @@ class nuis(object):
         # highpass filter voxel timeseries appropriately
 
         if csf_ts is not None:
-            csf_reg = csf_ts.mean(axis=1)
+            csf_reg = csf_ts.mean(axis=1, keepdims=True)
             self.csf_reg = csf_reg  # save for qa later
             # add coefficients to our regression
             R = np.column_stack((R, csf_reg))
@@ -354,9 +356,9 @@ class nuis(object):
             self.wm_reg = wm_reg  # save for QA later
             R = np.column_stack((R, wm_reg))
         elif wm_ts is not None:
-            wm_reg = wm_ts.mean(axis=1)
+            wm_reg = wm_ts.mean(axis=1, keepdims=True)
             self.wm_reg = wm_reg
-            R = np.column_stack((R, wm_reg))
+            R = np.column_stack((R, wm_reg[:, 0]))
 
         W = self.regress_signal(voxel, R)
         self.glm_sig = W[:, self.voxel_gm_mask].mean(axis=1)
@@ -396,6 +398,7 @@ class nuis(object):
 
         # load the voxel timeseries and transpose
         # remove voxels that are absolutely non brain (zero activity)
+        # and trim here so that we don't correct for nuis timepoints
         voxel = fmri_dat[basic_mask, :].T
 
         # zooms are x, y, z, t
@@ -429,8 +432,8 @@ class nuis(object):
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
-        # voxel = self.freq_filter(voxel, tr, highpass=highpass,
-        #                          lowpass=lowpass)
+        voxel = self.freq_filter(voxel, tr, highpass=highpass,
+                                 lowpass=lowpass)
         self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # normalize the signal to account for anatomical intensity differences
@@ -441,7 +444,6 @@ class nuis(object):
 
         # free for memory purposes
         voxel = None
-        fmri_dat = fmri_dat[:, :, :, trim:]
         img = nb.Nifti1Image(fmri_dat,
                              header=fmri_im.header,
                              affine=fmri_im.affine)

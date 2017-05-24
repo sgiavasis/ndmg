@@ -24,7 +24,7 @@ import os.path
 import matplotlib
 import numpy as np
 from ndmg.utils import utils as mgu
-from ndmg.stats import func_qa_utils as fqc_utils
+from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals
 from ndmg.stats.qa_reg import reg_mri_pngs, plot_brain, plot_overlays
 from ndmg.register.register import func_register as ndfr
 matplotlib.use('Agg')
@@ -423,10 +423,84 @@ class qa_func(object):
                 - the directory to place quality control images.
         """
         print "Performing QA for Nuisance..."
-        cmd = "mkdir -p {}".format(qcdir)
+        maskdir = "{}/{}".format(qcdir, "masks")
+        glmdir = "{}/{}".format(qcdir, "glm_correction")
+        fftdir = "{}/{}".format(qcdir, "filtering")
+
+        cmd = "mkdir -p {} {} {} {}".format(qcdir, maskdir, glmdir, fftdir)
         mgu.execute_cmd(cmd)
 
+        anat_name = mgu.get_filename(nuisobj.smri)
+        t1w_dat = nb.load(nuisobj.smri).get_data()
+        masks = [nuisobj.lv_mask, nuisobj.wm_mask, nuisobj.gm_mask,
+                 nuisobj.er_wm_mask]
+        masknames = ["csf_mask", "wm_mask", "gm_mask", "eroded_wm_mask"]
+        # iterate over masks for existence and plot overlay if they exist
+        # since that means they were used at some point
+        for mask, maskname in zip(masks, masknames):
+            if mask is not None:
+                mask_dat = nb.load(mask).get_data()
+                f_mask = plot_overlays(t1w_dat, mask_dat, min_val=0, max_val=1)
+                fname_mask = "{}/{}_{}.png".format(maskdir, anat_name, maskname)
+                f_mask.savefig(fname_mask, format='png')
+                plt.close()
 
+        # GLM regressors
+        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg]
+        glm_names = ["csf", "wm"]
+        glm_titles = ["CSF Regressors", "White-Matter Regressors"]
+        for (reg, name, title) in zip(glm_regs, glm_names, glm_titles):
+            if reg is not None:
+                regs = []
+                labels = []
+                for i in range(0, reg.shape[1]):
+                    regs.append(reg[:, i])
+                    labels.append('{} reg {}'.format(name, i))
+                fig = plot_signals(regs, labels, title=title,
+                        xlabel='Timepoint', ylabel='Intensity')
+                fname_reg = "{}/{}_{}_regressors.png".format(glmdir,
+                                                             anat_name,
+                                                             name)
+                fig.savefig(fname_reg, format='png')
+                plt.close()
+        # before glm compared with the signal removed and
+        # signal after correction
+        fig_glm_sig = plot_signals([nuisobj.cent_nuis,
+                                    nuisobj.glm_sig, nuisobj.glm_nuis],
+                         ['Before', 'Regressed Sig', 'After'],
+                         title='Impact of GLM Regression on Average GM Signal',
+                         xlabel='Timepoint',
+                         ylabel='Intensity')
+        fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, anat_name)
+        fig_glm_sig.savefig(fname_glm_sig, format='png')
+        plt.close()
+
+        # Frequency Filtering
+        # start by just plotting the average fft of gm voxels and compare with
+        # average fft after frequency filtering
+        if nuisobj.fft_reg is not None:
+            print "Here!"
+            fig_fft_pow = plot_signals([nuisobj.fft_bef, nuisobj.fft_reg],
+                    ['Before', 'After'],
+                    title='Average Gray Matter Power Spectrum',
+                    xlabel='Frequency',
+                    ylabel='Power',
+                    xax=nuisobj.freq_ra)
+            fname_fft_pow = '{}/{}_fft_power.png'.format(fftdir, anat_name)
+            fig_fft_pow.savefig(fname_fft_pow, format='png')
+            plt.close()
+            # plot the signal vs the regressed signal vs signal after
+            fig_fft_sig = plot_signals([nuisobj.glm_nuis, nuisobj.fft_sig,
+                                        nuisobj.fft_nuis],
+                    ['Before', 'Regressed Sig', 'After'],
+                    title='Impact of Frequency Filtering on Average GM Signal',
+                    xlabel='Timepoint',
+                    ylabel='Intensity')
+            fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(fftdir, anat_name)
+            fig_fft_sig.savefig(fname_fft_sig, format='png')
+            plt.close()
+        else:
+            print "Not :("
         pass
 
     def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
@@ -453,7 +527,7 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
      
         reg_mri_pngs(anat, label, qcdir, minthr=10, maxthr=95)
-        fqc_utils.plot_timeseries(timeseries, qcdir=qcdir)
+        plot_timeseries(timeseries, qcdir=qcdir)
         pass
 
     def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask, qcdir):

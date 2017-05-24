@@ -83,6 +83,7 @@ def plot_brain(brain, minthr=2, maxthr=95):
     # create subplot for first slice
     # and customize all labels
     idx = 0
+    min_val, max_val = get_min_max(brain, minthr, maxthr)
     for i, coord in enumerate(coords):
         for pos in coord:
             idx += 1
@@ -101,7 +102,6 @@ def plot_brain(brain, minthr=2, maxthr=95):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
-            min_val, max_val = get_min_max(image, minthr, maxthr)
             ax.imshow(image, interpolation='none', cmap=cmap, alpha=0.5,
                       vmin=min_val, vmax=max_val)
 
@@ -109,7 +109,8 @@ def plot_brain(brain, minthr=2, maxthr=95):
     return fbr
 
 
-def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
+def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
+                  max_val=None):
     plt.rcParams.update({'axes.labelsize': 'x-large',
                          'axes.titlesize': 'x-large'})
     foverlay = plt.figure()
@@ -139,6 +140,8 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
     # create subplot for first slice
     # and customize all labels
     idx = 0
+    if (min_val is None) and (max_val is None):
+        min_val, max_val = get_min_max(b0, minthr, maxthr)
     for i, coord in enumerate(coords):
         for pos in coord:
             idx += 1
@@ -160,7 +163,6 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
-            min_val, max_val = get_min_max(image, minthr, maxthr)
             ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=0.5)
             ax.imshow(image, interpolation='none', cmap=cmaps[1], alpha=0.5,
                      vmin=min_val, vmax=max_val)

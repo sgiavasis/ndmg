@@ -371,7 +371,7 @@ class func_register(register):
                                        "_brain.nii.gz")
         # Applies skull stripping to T1 volume
         # using a very low sensitivity for thresholding
-        bet_sens = '-f 0.3 -R -B -S'
+        self.bet_sens = '-f 0.3 -R -B -S'
         mgu.extract_brain(self.t1w, self.t1w_brain, opts=bet_sens)
         # name intermediates for self-alignment
         self.saligned_epi = mgu.name_tmps(self.outdir, self.epi_name,
@@ -495,6 +495,7 @@ class func_register(register):
         # just apply our previously computed linear transform
         self.applyxfm(self.saligned_epi, self.atlas, xfm_t1w2temp, epi_lin)
         self.applyxfm(self.t1w, self.atlas, xfm_t1w2temp, t1w_lin)
+        mgu.extract_brain(t1w_lin, t1w_lin, opts=self.bet_sens)
         (sc_flirt, fig_flirt) = registration_score(epi_lin, self.atlas_brain,
             self.outdir)
         self.treg_sc.insert(0, sc_flirt)
