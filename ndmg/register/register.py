@@ -362,10 +362,15 @@ class func_register(register):
         self.atlas_name = mgu.get_filename(atlas)
 
         # put anatomical in 2mm resolution for memory
-        # efficiency
-        self.t1w = mgu.name_tmps(self.outdir, self.t1w_name,
-                                 "_resamp.nii.gz")
-        self.resample_fsl(t1w, self.t1w, 2)
+        # efficiency if it is lower
+        self.simp=False  # for simple inputs
+        if sum(nb.load(t1w).get_zooms()) < 6:
+            self.t1w = mgu.name_tmps(self.outdir, self.t1w_name,
+                                     "_resamp.nii.gz")
+            self.resample_fsl(t1w, self.t1w, 2)
+        else:
+            self.simp = True  # if the input is poor
+            self.t1w = t1w
         # since we will need the t1w brain multiple times
         self.t1w_brain = mgu.name_tmps(self.outdir, self.t1w_name,
                                        "_brain.nii.gz")
@@ -405,20 +410,23 @@ class func_register(register):
                     sch="${FSLDIR}/etc/flirtsch/simple3D.sch")
         self.applyxfm(self.epi, self.t1w_brain, xfm_init2, epi_init)
 
-        # attempt EPI registration. note that this somethimes does not
+        # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
-        self.align_epi(epi_init, self.t1w, self.t1w_brain, epi_bbr)
+        if not self.simp:
+            self.align_epi(epi_init, self.t1w, self.t1w_brain, epi_bbr)
 
-        print "Analyzing Self Registration Quality..."
-        (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
-                                               self.outdir)
-        (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
-                                                 self.outdir)
+            print "Analyzing Self Registration Quality..."
+            (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
+                                                   self.outdir)
+            (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
+                                                     self.outdir)
 
-        self.sreg_strat.insert(0, 'epireg')
-        self.sreg_epi.insert(0, epi_bbr)
-        self.sreg_sc.insert(0, sc_bbr)
-        self.sreg_sc_fig.insert(0, fig_bbr)
+            self.sreg_strat.insert(0, 'epireg')
+            self.sreg_epi.insert(0, epi_bbr)
+            self.sreg_sc.insert(0, sc_bbr)
+            self.sreg_sc_fig.insert(0, fig_bbr)
+        else:
+            sc_bbr = 0  # force to use the basic linear registration
         if (sc_bbr > 0.8):
             self.sreg_epi[0] = self.saligned_epi
             self.resample(epi_bbr, self.saligned_epi, self.t1w)
@@ -451,7 +459,8 @@ class func_register(register):
         self.align(self.t1w_brain, self.atlas_brain, xfm_t1w2temp)
 
         # if the atlas is MNI 2mm, then we have a config file for it
-        if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)]):
+        if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
+            (self.simp is False)):
             warp_t1w2temp = mgu.name_tmps(self.outdir, self.epi_name,
                                           "_warp_t1w2temp.nii.gz")
             epi_nl = mgu.name_tmps(self.outdir, self.epi_name,
@@ -482,7 +491,8 @@ class func_register(register):
                 self.resample(epi_nl, self.taligned_epi, self.atlas)
                 return
         else:
-            print "Atlas is not 2mm MNI. Using linear template registration."
+            print "Atlas is not 2mm MNI, or input is low quality."
+            print "Using linear template registration."
 
         # note that if Nonlinear failed, we will come here as well
         epi_lin = mgu.name_tmps(self.outdir, self.epi_name,
