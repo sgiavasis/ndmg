@@ -364,7 +364,7 @@ class func_register(register):
         # put anatomical in 2mm resolution for memory
         # efficiency if it is lower
         self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).get_zooms()) < 6:
+        if sum(nb.load(t1w).header.get_zooms()) < 6:
             self.t1w = mgu.name_tmps(self.outdir, self.t1w_name,
                                      "_resamp.nii.gz")
             self.resample_fsl(t1w, self.t1w, 2)
@@ -410,6 +410,8 @@ class func_register(register):
                     sch="${FSLDIR}/etc/flirtsch/simple3D.sch")
         self.applyxfm(self.epi, self.t1w_brain, xfm_init2, epi_init)
 
+        (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
+                                                 self.outdir)
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
         if not self.simp:
@@ -418,8 +420,6 @@ class func_register(register):
             print "Analyzing Self Registration Quality..."
             (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
                                                    self.outdir)
-            (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
-                                                     self.outdir)
 
             self.sreg_strat.insert(0, 'epireg')
             self.sreg_epi.insert(0, epi_bbr)
