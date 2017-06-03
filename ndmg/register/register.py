@@ -425,15 +425,14 @@ class func_register(register):
             self.sreg_epi.insert(0, epi_bbr)
             self.sreg_sc.insert(0, sc_bbr)
             self.sreg_sc_fig.insert(0, fig_bbr)
-        else:
-            sc_bbr = 0  # force to use the basic linear registration
-        if (sc_bbr > 0.8):
             self.sreg_epi[0] = self.saligned_epi
             self.resample(epi_bbr, self.saligned_epi, self.t1w)
             cmd = "rm {} {}".format(epi_bbr, epi_init)
             mgu.execute_cmd(cmd)
+
         else:
-            print "Warning: BBR self registration failed."
+            print ("Warning: BBR self registration not "
+                   "attempted, as input is low quality.")
             self.sreg_strat.insert(0, 'flirt')
             self.sreg_epi.insert(0, self.saligned_epi)
             self.sreg_sc.insert(0, sc_init)
@@ -485,11 +484,9 @@ class func_register(register):
             self.treg_sc.insert(0, sc_fnirt)
             self.treg_sc_fig.insert(0, fig_fnirt)
 
-            # if self registration does well, return. else, use linear
-            if (sc_fnirt > 0.8):
-                self.resample(t1w_nl, self.taligned_t1w, self.atlas)
-                self.resample(epi_nl, self.taligned_epi, self.atlas)
-                return
+            self.resample(t1w_nl, self.taligned_t1w, self.atlas)
+            self.resample(epi_nl, self.taligned_epi, self.atlas)
+            return
         else:
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
@@ -511,12 +508,8 @@ class func_register(register):
         self.treg_sc.insert(0, sc_flirt)
         self.treg_sc_fig.insert(0, fig_flirt)
 
-        if (sc_flirt == np.max(self.treg_sc)):
-            self.resample(t1w_lin, self.taligned_t1w, self.atlas)
-            self.resample(epi_lin, self.taligned_epi, self.atlas)
-        else:
-            self.resample(t1w_nl, self.taligned_t1w, self.atlas)
-            self.resample(epi_nl, self.taligned_epi, self.atlas)
+        self.resample(t1w_nl, self.taligned_t1w, self.atlas)
+        self.resample(epi_nl, self.taligned_epi, self.atlas)
         pass
 
 
