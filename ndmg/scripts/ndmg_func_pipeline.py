@@ -169,8 +169,8 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
-         cmd = "rm {}/tmp/{}*".format(outdir, func_name)
-
+         cmd = "rm {}/tmp/{}* {}/tmp/{}*".format(outdir, func_name, anat_name)
+         mgu.execute_cmd(cmd)
     print("Complete!")
 
 
@@ -196,7 +196,7 @@ def main():
                         " labels of regions of interest in atlas space")
     parser.add_argument("-s", "--stc_file", action="store",
                         help="File for STC.")
-    parser.add_argument("-c", "--clean", action="store_true", default=False,
+    parser.add_argument("-c", "--clean", action="store_true", default=True,
                         help="Whether or not to delete intemediates")
     parser.add_argument("-f", "--fmt", action="store", default='gpickle',
                         help="Determines connectome output format")
