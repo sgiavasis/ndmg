@@ -170,7 +170,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
          cmd = "rm {}/tmp/{}* {}/tmp/{}*".format(outdir, func_name,
-                                                 outdir, anat_name)
+                                                 outdir, t1w_name)
          mgu.execute_cmd(cmd)
     print("Complete!")
 
