@@ -76,7 +76,7 @@ def get_atlas(atlas_dir, dwi=True):
         labels = [op.join(atlas_dir, l) for l in labels]
         fils = labels + [atlas, atlas_mask]
     else:
-        atlas_func = op.join(atlas_dir, 'atlases')
+        atlas_func = op.join(atlas_dir, 'func_atlases')
         atlas = op.join(atlas_func, 'atlas/MNI152_T1-2mm.nii.gz')
         atlas_brain = op.join(atlas_func, 'atlas/MNI152_T1-2mm_brain.nii.gz')
         atlas_mask = op.join(atlas_func, 'mask/MNI152_T1-2mm_brain_mask.nii.gz')
