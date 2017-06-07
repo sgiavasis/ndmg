@@ -508,8 +508,8 @@ class func_register(register):
         self.treg_sc.insert(0, sc_flirt)
         self.treg_sc_fig.insert(0, fig_flirt)
 
-        self.resample(t1w_nl, self.taligned_t1w, self.atlas)
-        self.resample(epi_nl, self.taligned_epi, self.atlas)
+        self.resample(t1w_lin, self.taligned_t1w, self.atlas)
+        self.resample(epi_lin, self.taligned_epi, self.atlas)
         pass
 
 
