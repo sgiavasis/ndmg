@@ -83,6 +83,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     voxeldir = "{}/ts_voxel".format(qadir)
     nuisdir = "{}/nuis".format(qadir)
     qc_stats = "{}/{}_stats.pkl".format(qadir, func_name)
+    tmpdir = '{}/tmp'.format(outdir)
 
     cmd = "mkdir -p {} {} {} {} {} {} {} {} {} {}/reg/func/align \
            {}/reg/func/preproc {}/reg/func/mc {}/ts_voxel {}/ts_roi \
@@ -106,10 +107,10 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
         mgu.execute_cmd(cmd)
 
     # Create derivative output file names
-    preproc_func = "{}/reg/func/preproc/{}_preproc.nii.gz".format(outdir, func_name)
+    preproc_func = "{}/{}_preproc.nii.gz".format(tmpdir, func_name)
     aligned_func = "{}/reg/func/align/{}_aligned.nii.gz".format(outdir, func_name)
-    aligned_t1w = "{}/reg/t1w/{}_aligned.nii.gz".format(outdir, t1w_name)
-    motion_func = "{}/reg/func/mc/{}_mc.nii.gz".format(outdir, func_name)
+    aligned_t1w = "{}/{}_aligned.nii.gz".format(tmpdir, t1w_name)
+    motion_func = "{}/{}_mc.nii.gz".format(tmpdir, func_name)
     nuis_func = "{}/nuis/{}_nuis.nii.gz".format(outdir, func_name)
     voxel_ts = "{}/ts_voxel/{}_voxel.npz".format(outdir, func_name)
 
