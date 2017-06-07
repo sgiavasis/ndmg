@@ -303,16 +303,9 @@ class qa_func(object):
         # analyze the quality of each self registration performed
         regiter = zip(freg.sreg_strat, freg.sreg_epi,
                       freg.sreg_sc, freg.sreg_sc_fig)
-        for (strat, fsreg, sc, fig_ov) in regiter:
-            sreg_f = "{}/{}_score_{:.0f}".format(sreg_func_dir, strat, sc*1000)
-            func_name = mgu.get_filename(fsreg)
-            self.reg_func_qa(fsreg, freg.t1w, outdir, sreg_f)
-            fname = "{}/{}_bet_quality.png".format(sreg_f, func_name)
-            fig_ov.savefig(fname)
-            plt.close()
         # make sure to note which brain is actually used
         best_sc = np.max(freg.sreg_sc)
-        sreg_f_final = "{}/{}_score_{:.0f}".format(sreg_func_dir, "final", best_sc*1000)
+        sreg_f_final = "{}/{}_score_{:.0f}".format(sreg_func_dir, "epireg", best_sc*1000)
         self.self_reg_sc = best_sc  # so we can recover this later
         self.reg_func_qa(freg.saligned_epi, freg.t1w, outdir, sreg_f_final)
         # provide qc for the skull stripping step
@@ -344,7 +337,7 @@ class qa_func(object):
         print "Performing QA for Template-Registration..."
         # make sure to note which brain is actually used
         best_sc = np.max(freg.treg_sc)
-        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "epireg", best_sc*1000)
+        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "fnirt", best_sc*1000)
         treg_a_final = "{}/{}_score_{:.0f}".format(treg_anat_dir, "fnirt", best_sc*1000)
         self.temp_reg_sc = best_sc  # so we can recover this later 
         self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
