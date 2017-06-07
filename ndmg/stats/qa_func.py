@@ -342,22 +342,10 @@ class qa_func(object):
                 - the directory where the temporary files will be placed.
         """
         print "Performing QA for Template-Registration..."
-        # analyze the quality of each self registration performed
-        regiter =  zip(freg.treg_strat, freg.treg_epi, freg.treg_t1w,
-                       freg.treg_sc, freg.treg_sc_fig)
-        for (strat, ftreg, fareg, sc, fig_ov) in regiter:
-            treg_f = "{}/{}_score_{:.0f}".format(treg_func_dir, strat, sc*1000)
-            treg_a = "{}/{}_score_{:.0f}".format(treg_anat_dir, strat, sc*1000)
-            self.reg_func_qa(ftreg, freg.atlas, outdir, treg_f)
-            self.reg_anat_qa(fareg, freg.atlas, outdir, treg_a)
-            func_name = mgu.get_filename(ftreg)
-            fname = "{}/{}_bet_quality.png".format(treg_f, func_name)
-            fig_ov.savefig(fname)
-            plt.close()
         # make sure to note which brain is actually used
         best_sc = np.max(freg.treg_sc)
-        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "final", best_sc*1000)
-        treg_a_final = "{}/{}_score_{:.0f}".format(treg_anat_dir, "final", best_sc*1000)
+        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "epireg", best_sc*1000)
+        treg_a_final = "{}/{}_score_{:.0f}".format(treg_anat_dir, "fnirt", best_sc*1000)
         self.temp_reg_sc = best_sc  # so we can recover this later 
         self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
         self.reg_anat_qa(freg.taligned_t1w, freg.atlas, outdir, treg_a_final)
