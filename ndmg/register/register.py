@@ -365,22 +365,23 @@ class func_register(register):
         # efficiency if it is lower
         self.simp=False  # for simple inputs
         if sum(nb.load(t1w).header.get_zooms()) < 6:
-            self.t1w = mgu.name_tmps(self.outdir, self.t1w_name,
-                                     "_resamp.nii.gz")
+            self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
+                                                    self.t1w_name)
             self.resample_fsl(t1w, self.t1w, 2)
         else:
             self.simp = True  # if the input is poor
             self.t1w = t1w
         # since we will need the t1w brain multiple times
-        self.t1w_brain = mgu.name_tmps(self.outdir, self.t1w_name,
-                                       "_brain.nii.gz")
+        self.t1w_brain = "{}/{}_brain.nii.gz".format(self.outdir['sreg_a'],
+                                                     self.t1w_name)
         # Applies skull stripping to T1 volume
         # using a very low sensitivity for thresholding
         self.bet_sens = '-f 0.3 -R -B -S'
         mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.bet_sens)
         # name intermediates for self-alignment
-        self.saligned_epi = mgu.name_tmps(self.outdir, self.epi_name,
-                                          "_self-aligned.nii.gz")
+        self.saligned_epi = "{}/{}_self-aligned.nii.gz".format(
+            self.outdir['sreg_f'],
+            self.epi_name)
         pass
 
     def self_align(self):
@@ -389,16 +390,16 @@ class func_register(register):
         cost function to get the two images close, and then uses bbr
         to obtain a good alignment of brain boundaries.
         """
-        epi_init = mgu.name_tmps(self.outdir, self.epi_name,
-                                  "_self-aligned_init.nii.gz")
-        epi_bbr = mgu.name_tmps(self.outdir, self.epi_name,
-                                "_self-aligned_bbr.nii.gz")
-        temp_aligned = mgu.name_tmps(self.outdir, self.epi_name,
-                                     "_noresamp.nii.gz")
-        xfm_init1 = mgu.name_tmps(self.outdir, self.epi_name,
-                                  "_xfm_epi2t1w_init1.mat")
-        xfm_init2 = mgu.name_tmps(self.outdir, self.epi_name,
-                                  "_xfm_epi2t1w_init2.mat")
+        epi_init = "{}/{}_self-aligned_tmp.nii.gz".format(self.outdir['sreg_f'],
+                                                          self.epi_name)
+        epi_bbr =  "{}/{}_self-aligned_bbr.nii.gz".format(self.outdir['sreg_f'],
+                                                          self.epi_name)
+        temp_aligned = "{}/{}_noresamp.nii.gz".format(self.outdir['sreg_f'],
+                                                      self.epi_name)
+        xfm_init1 = "{}/{}_xfm_epi2t1w_init1.mat".format(self.outdir['sreg_f'],
+                                                         self.epi_name)
+        xfm_init2 = "{}/{}_xfm_epi2t1w_init2.mat".format(self.outdir['sreg_f'],
+                                                         self.epi_name)
 
         # perform an initial alignment with a gentle translational guess
         self.align(self.epi, self.t1w_brain, xfm=xfm_init1, bins=None,
@@ -451,8 +452,7 @@ class func_register(register):
         NOTE: for this to work, must first have called self-align.
         """
          
-        xfm_t1w2temp = mgu.name_tmps(self.outdir, self.epi_name,
-                                  "_xfm_t1w2temp.mat")
+        xfm_t1w2temp = "_xfm_t1w2temp.mat".format(self.outdir, self.epi_name)
 
         # linear registration from t1 space to atlas space
         self.align(self.t1w_brain, self.atlas_brain, xfm_t1w2temp)
@@ -460,12 +460,14 @@ class func_register(register):
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
             (self.simp is False)):
-            warp_t1w2temp = mgu.name_tmps(self.outdir, self.epi_name,
-                                          "_warp_t1w2temp.nii.gz")
-            epi_nl = mgu.name_tmps(self.outdir, self.epi_name,
-                                   "_temp-aligned_nonlinear.nii.gz")
-            t1w_nl = mgu.name_tmps(self.outdir, self.t1w_name,
-                                   "_temp-aligned_nonlinear.nii.gz")
+            warp_t1w2temp = "_warp_t1w2temp.nii.gz".format(self.outdir['treg_a'],
+                                                           self.epi_name)
+            epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
+                self.outdir['treg_f'],
+                self.epi_name)
+            t1w_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
+                self.outdir['treg_a'],
+                self.t1w_name)
             self.align_nonlinear(self.t1w, self.atlas, xfm_t1w2temp,
                                  warp_t1w2temp, mask=self.atlas_mask)
 
@@ -492,10 +494,12 @@ class func_register(register):
             print "Using linear template registration."
 
         # note that if Nonlinear failed, we will come here as well
-        epi_lin = mgu.name_tmps(self.outdir, self.epi_name,
-                                "_temp-aligned_linear.nii.gz")
-        t1w_lin = mgu.name_tmps(self.outdir, self.t1w_name,
-                                "_temp-aligned_linear.nii.gz") 
+        epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+            self.outdir['treg_f'],
+            self.epi_name)
+        t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+            self.outdir['treg_a'],
+            self.epi_name) 
         self.treg_strat.insert(0, 'flirt')
         self.treg_epi.insert(0, epi_lin)
         self.treg_t1w.insert(0, t1w_lin)
@@ -504,7 +508,7 @@ class func_register(register):
         self.applyxfm(self.t1w, self.atlas, xfm_t1w2temp, t1w_lin)
         mgu.extract_brain(t1w_lin, t1w_lin, opts=self.bet_sens)
         (sc_flirt, fig_flirt) = registration_score(epi_lin, self.atlas_brain,
-            self.outdir)
+                                                   self.outdir)
         self.treg_sc.insert(0, sc_flirt)
         self.treg_sc_fig.insert(0, fig_flirt)
 

@@ -73,46 +73,60 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     t1w_name = mgu.get_filename(t1w)
     atlas_name = mgu.get_filename(atlas)
 
-    qadir = "{}/qa/{}".format(outdir, func_name)
-    prepdir = "{}/reg/func/preproc".format(qadir)
-    sreg_fdir = "{}/reg/func/align/self".format(qadir)
-    sreg_adir = "{}/reg/t1w/align/self".format(qadir)
-    treg_fdir = "{}/reg/func/align/temp".format(qadir)
-    treg_adir = "{}/reg/t1w/align/temp".format(qadir) 
-    roidir = "{}/ts_roi".format(qadir)
-    voxeldir = "{}/ts_voxel".format(qadir)
-    nuisdir = "{}/nuis".format(qadir)
-    qc_stats = "{}/{}_stats.pkl".format(qadir, func_name)
-    tmpdir = '{}/tmp'.format(outdir)
+    paths = {'prep': "reg/func/preproc",
+        'sreg_f': "reg/func/align/self",
+        'sreg_a': "reg/t1w/align/self",
+        'treg_f': "reg/func/align/template",
+        'treg_a': "reg/t1w/align/template",
+        'nuis': "nuis",
+        'ts_voxel': "timeseries/voxel",
+        'ts_roi': "timeseries/roi"}
+    finals = {'ts_roi': paths['ts_roi'],
+        'ts_voxel': paths['ts_voxel'],
+        'conn': "connectomes"}
 
-    cmd = "mkdir -p {} {} {} {} {} {} {} {} {} {}/reg/func/align \
-           {}/reg/func/preproc {}/reg/func/mc {}/ts_voxel {}/ts_roi \
-           {}/reg/t1w {}/tmp {}/connectomes/ {}/nuis"
-    cmd = cmd.format(qadir, prepdir, sreg_fdir, sreg_adir, treg_fdir,
-                     treg_adir, roidir, voxeldir, nuisdir, *([outdir] * 9))
+    tmpdir = '{}/tmp/{}'.format(outdir, func_name)
+    qadir = "{}/qa/{}".format(outdir, func_name)
+
+    tmp_dirs = {}
+    qa_dirs = {}
+    for (key, value) in (paths).iteritems():
+        tmp_dirs[key] = "{}/{}".format(tmpdir, paths[key])
+        qa_dirs[key] = "{}/{}".format(qadir, paths[key])
+    qc_stats = "{}/{}_stats.pkl".format(qadir, func_name)
+
+    final_dirs = {}
+    for (key, value) in finals.iteritems():
+        final_dirs[key] = "{}/{}".format(outdir, finals[key])
+
+    cmd = "mkdir -p {} {} {}".format(" ".join(tmp_dirs.values()),
+                                     " ".join(qa_dirs.values()),
+                                     " ".join(final_dirs.values()))
     mgu.execute_cmd(cmd)
 
     # Graphs are different because of multiple parcellations
     if isinstance(labels, list):
         label_name = [mgu.get_filename(x) for x in labels]
         for label in label_name:
-            cmd = "mkdir -p {}/ts_roi/{} {}/connectomes/{} {}/{}"
-            cmd = cmd.format(outdir, label, outdir, label, roidir, label)
+            cmd = "mkdir -p {}/{} {}/{} {}/{}"
+            cmd = cmd.format(final_dirs['ts_roi'], label, final_dirs['conn'],
+                             label, qa_dirs['ts_roi'], label)
             mgu.execute_cmd(cmd)
     else:
         label_name = mgu.get_filename(labels)
         label = label_name
-        cmd = "mkdir -p {}/ts_roi/{} {}/connectomes/{} {}/{}"
-        cmd = cmd.format(outdir, label, outdir, label, roidir, label)
+        cmd = "mkdir -p {}/{} {}/{} {}/{}"
+        cmd = cmd.format(final_dirs['ts_roi'], label, final_dirs['conn'],
+                         label, qa_dirs['ts_roi'], label)
         mgu.execute_cmd(cmd)
 
     # Create derivative output file names
-    preproc_func = "{}/{}_preproc.nii.gz".format(tmpdir, func_name)
-    aligned_func = "{}/reg/func/align/{}_aligned.nii.gz".format(outdir, func_name)
-    aligned_t1w = "{}/{}_aligned.nii.gz".format(tmpdir, t1w_name)
-    motion_func = "{}/{}_mc.nii.gz".format(tmpdir, func_name)
-    nuis_func = "{}/nuis/{}_nuis.nii.gz".format(outdir, func_name)
-    voxel_ts = "{}/ts_voxel/{}_voxel.npz".format(outdir, func_name)
+    preproc_func = "{}/{}_preproc.nii.gz".format(tmp_dirs['prep'], func_name)
+    aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
+    aligned_t1w = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_a'], t1w_name)
+    motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['prep'], func_name)
+    nuis_func = "{}/{}_nuis.nii.gz".format(tmp_dirs['nuis'], func_name)
+    voxel_ts = "{}/timeseries/voxel/{}_voxel.npz".format(outdir, func_name)
 
     print("This pipeline will produce the following derivatives...")
     print("fMRI volumes preprocessed: {}".format(preproc_func))
@@ -124,8 +138,8 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     connectomes = ["{}/connectomes/{}/{}_{}.{}".format(outdir, x, func_name,
                                                        x, fmt)
                    for x in label_name]
-    roi_ts = ["{}/ts_roi/{}/{}_{}.npy".format(outdir, x, func_name, x)
-              for x in label_name] 
+    roi_ts = ["{}/ts_roi/{}/{}_{}.npz".format(outdir, x, func_name, x)
+              for x in label_name]
     print("ROI timeseries downsampled to given labels: " +
           ", ".join([x for x in roi_ts]))
     print("Connectomes downsampled to given labels: " +
@@ -134,31 +148,32 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     qc_func = mgrf()
     # Align fMRI volumes to Atlas
     print "Preprocessing volumes..."
-    mgp().preprocess(func, preproc_func, motion_func, outdir, stc=stc)
-    qc_func.preproc_qa(motion_func, prepdir)
+    mgp().preprocess(func, preproc_func, motion_func, tmp_dirs['prep'], stc=stc)
+    qc_func.preproc_qa(motion_func, qa_dirs['prep'])
 
     print "Aligning volumes..."
     func_reg = mgr(preproc_func, t1w, atlas, atlas_brain, atlas_mask,
-                   aligned_func, aligned_t1w, outdir)
+                   aligned_func, aligned_t1w, tmp_dirs)
     func_reg.register()
 
-    qc_func.self_reg_qa(func_reg, sreg_fdir, sreg_adir, outdir)
-    qc_func.temp_reg_qa(func_reg, treg_fdir, treg_adir, outdir)
+    qc_func.self_reg_qa(func_reg, qa_dirs)
+    qc_func.temp_reg_qa(func_reg, qa_dirs)
 
     print "Correcting Nuisance Variables..."
-    nuis = mgn(aligned_func, aligned_t1w, nuis_func, outdir, lv_mask=lv_mask)
+    nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
+               lv_mask=lv_mask)
     nuis.nuis_correct(trim=2, n=None)
 
-    qc_func.nuisance_qa(nuis, nuisdir)
+    qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
 
     print "Extracting Voxelwise Timeseries..."
     voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
-    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask, qcdir=voxeldir)
+    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask, qcdir=qa_dirs['ts_voxel'])
 
     for idx, label in enumerate(label_name):
         print "Extracting ROI timeseries for " + label + " parcellation..."
         ts = mgts().roi_timeseries(nuis_func, labels[idx], roi_ts[idx])
-        labeldir = "{}/{}".format(roidir, label)
+        labeldir = "{}/{}".format(qa_dirs['ts_roi'], label)
         connectome = mgg(ts.shape[0], labels[idx], sens="func")
         connectome.cor_graph(ts)
         connectome.summary()
@@ -170,8 +185,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
-         cmd = "rm {}/tmp/{}* {}/tmp/{}*".format(outdir, func_name,
-                                                 outdir, t1w_name)
+         cmd = "rm {}".format(tmpdir)
          mgu.execute_cmd(cmd)
     print("Complete!")
 

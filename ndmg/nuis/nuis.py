@@ -57,11 +57,11 @@ class nuis(object):
         nuisname = "{}_nuis".format(self.anat_name)
         self.nuisname = nuisname
         # wm mask
-        self.wm_mask = mgu.name_tmps(outdir, nuisname, "_wmm.nii.gz")
+        self.wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir, nuisname)
         # csf mask not used due to inconsistencies in segmenting
         # gm mask
-        self.gm_mask = mgu.name_tmps(outdir, nuisname, "_gmm.nii.gz")
-        self.map_path = mgu.name_tmps(outdir, nuisname, "_seg")
+        self.gm_mask = "{}/{}_gmm.nii.gz".format(self.outdir, nuisname)
+        self.map_path = "{}/{}_seg".format(self.outdir, nuisname)
         # segment the brain for quality control purposes
         self.segment_anat(self.smri, self.map_path)
         # extract the masks

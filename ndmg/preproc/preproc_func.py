@@ -126,8 +126,8 @@ class preproc_func():
         """
         func_name = mgu.get_filename(func)
 
-        s0 = mgu.name_tmps(outdir, func_name, "_0slice.nii.gz")
-        stc_func = mgu.name_tmps(outdir, func_name, "_stc.nii.gz")
+        s0 = "{}/{}_0slice.nii.gz".format(outdir, func_name)
+        stc_func = "{}/{}_stc.nii.gz".format(outdir, func_name)
         # TODO EB: decide whether it is advantageous to align to mean image
         if (stc is not None):
             self.slice_time_correct(func, stc_func, stc)

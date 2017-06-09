@@ -100,7 +100,7 @@ class timeseries(object):
                 roi_ts[idx, :] = ts
 
         if roits_file:
-            np.save(roits_file, roi_ts)
+            np.savez(roits_file, roi_ts)
         return roi_ts
 
     def load_timeseries(self, timeseries_file):

@@ -237,7 +237,7 @@ class qa_func(object):
         return
 
 
-    def reg_func_qa(self, aligned_func, atlas, outdir, qcdir):
+    def reg_func_qa(self, aligned_func, atlas, qcdir):
         """
         A function that produces quality control information for registration
         leg of the pipeline for functional scans.
@@ -248,8 +248,6 @@ class qa_func(object):
                 - the aligned functional MRI.
             atlas:
                 - the atlas the functional brain is aligned to.
-            outdir:
-                - the directory where temporary files will be placed.
             qcdir:
                 - the directory in which quality control images will
                 be placed.
@@ -261,7 +259,7 @@ class qa_func(object):
         pass
 
 
-    def reg_anat_qa(self, aligned_anat, atlas, outdir, qcdir):
+    def reg_anat_qa(self, aligned_anat, atlas, qcdir):
         """
         A function that produces quality control information for registration
         leg of the pipeline for anatomical scans.
@@ -273,8 +271,6 @@ class qa_func(object):
             atlas:
                 - the atlas the functional and anatomical brains
                 were aligned to.
-            outdir:
-                - the directory where temporary files will be placed.
             qcdir:
                 - the directory in which quality control images will
                 be placed.
@@ -286,7 +282,7 @@ class qa_func(object):
         return
 
 
-    def self_reg_qa(self, freg, sreg_func_dir, sreg_anat_dir, outdir):
+    def self_reg_qa(self, freg, sreg_func_dir, sreg_anat_dir):
         """
         A function that produces self-registration quality control figures.
 
@@ -296,8 +292,6 @@ class qa_func(object):
                 - the func_register object from registration.
             sreg_func_dir:
                 - the directory to place functional qc images.
-            outdir:
-                - the directory where the temporary files will be placed.
         """
         print "Performing QA for Self-Registration..."
         # analyze the quality of each self registration performed
@@ -307,7 +301,7 @@ class qa_func(object):
         best_sc = np.max(freg.sreg_sc)
         sreg_f_final = "{}/{}_score_{:.0f}".format(sreg_func_dir, "epireg", best_sc*1000)
         self.self_reg_sc = best_sc  # so we can recover this later
-        self.reg_func_qa(freg.saligned_epi, freg.t1w, outdir, sreg_f_final)
+        self.reg_func_qa(freg.saligned_epi, freg.t1w, sreg_f_final)
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
@@ -319,7 +313,7 @@ class qa_func(object):
         pass
 
 
-    def temp_reg_qa(self, freg, treg_func_dir, treg_anat_dir, outdir):
+    def temp_reg_qa(self, freg, qa_dirs, tmp_dirs):
         """
         A function that produces self-registration quality control figures.
 
@@ -327,21 +321,23 @@ class qa_func(object):
 
             freg:
                 - the functional registration object.
-            treg_func_dir:
-                - the directory to place functional qc images.
-            treg_anat_dir:
-                - the directory to place anatomical qc images.
-            outdir:
-                - the directory where the temporary files will be placed.
+            qa_dirs:
+                - a dictionary of the directories to place qa files.
+            tmp_dirs:
+                - a dictionary of the directories to place temporary files.
         """
         print "Performing QA for Template-Registration..."
         # make sure to note which brain is actually used
         best_sc = np.max(freg.treg_sc)
-        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "fnirt", best_sc*1000)
-        treg_a_final = "{}/{}_score_{:.0f}".format(treg_anat_dir, "fnirt", best_sc*1000)
+        treg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_f'],
+                                                   "fnirt", best_sc*1000)
+        treg_a_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_a'],
+                                                   "fnirt", best_sc*1000)
         self.temp_reg_sc = best_sc  # so we can recover this later 
-        self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
-        self.reg_anat_qa(freg.taligned_t1w, freg.atlas, outdir, treg_a_final)
+        self.reg_func_qa(freg.taligned_epi, freg.atlas,
+                         qa_dirs['treg_f'])
+        self.reg_anat_qa(freg.taligned_t1w, freg.atlas,
+                         qa_dirs['treg_a'])
         self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
