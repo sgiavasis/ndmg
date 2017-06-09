@@ -364,7 +364,7 @@ class func_register(register):
         # put anatomical in 2mm resolution for memory
         # efficiency if it is lower
         self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).header.get_zooms()) < 6:
+        if sum(nb.load(t1w).header.get_zooms()) < 12:
             self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
                                                     self.t1w_name)
             self.resample_fsl(t1w, self.t1w, 2)
