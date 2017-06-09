@@ -138,7 +138,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     connectomes = ["{}/connectomes/{}/{}_{}.{}".format(outdir, x, func_name,
                                                        x, fmt)
                    for x in label_name]
-    roi_ts = ["{}/ts_roi/{}/{}_{}.npz".format(outdir, x, func_name, x)
+    roi_ts = ["{}/{}/{}_{}.npz".format(final_dirs['ts_roi'], x, func_name, x)
               for x in label_name]
     print("ROI timeseries downsampled to given labels: " +
           ", ".join([x for x in roi_ts]))
@@ -185,7 +185,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
-         cmd = "rm {}".format(tmpdir)
+         cmd = "rm -rf {}".format(tmpdir)
          mgu.execute_cmd(cmd)
     print("Complete!")
 

@@ -216,3 +216,18 @@ def execute_cmd(cmd, verb=False):
 def name_tmps(basedir, basename, extension):
     return "{}/tmp/{}{}".format(basedir, basename, extension)
 
+def load_timeseries(timeseries_file, ts='roi'):
+    """
+    A function to load timeseries data. Exists to standardize
+    formatting in case changes are made with how timeseries are
+    saved in future versions.
+     **Positional Arguments**
+         timeseries_file: the file to load timeseries data from.
+    """
+    if (ts == 'roi') or (ts == 'voxel'):
+        timeseries = np.load(timeseries_file)['roi']
+        return timeseries
+    else:
+        print('You have not selected a valid timeseries type.' +
+              'options are ts=\'roi\' or ts=\'voxel\'.')
+    pass

@@ -412,7 +412,7 @@ class func_register(register):
         self.applyxfm(self.epi, self.t1w_brain, xfm_init2, epi_init)
 
         (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
-                                                 self.outdir)
+                                                 self.outdir['sreg_f'])
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
         if not self.simp:
@@ -420,7 +420,7 @@ class func_register(register):
 
             print "Analyzing Self Registration Quality..."
             (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
-                                                   self.outdir)
+                                                   self.outdir['sreg_f'])
 
             self.sreg_strat.insert(0, 'epireg')
             self.sreg_epi.insert(0, epi_bbr)
@@ -478,7 +478,7 @@ class func_register(register):
  
             print "Analyzing Nonlinear Template Registration Quality..."
             (sc_fnirt, fig_fnirt) = registration_score(epi_nl, self.atlas_brain,
-                self.outdir)
+                self.outdir['treg_f'])
 
             self.treg_strat.insert(0, 'fnirt')
             self.treg_epi.insert(0, epi_nl)
@@ -508,7 +508,7 @@ class func_register(register):
         self.applyxfm(self.t1w, self.atlas, xfm_t1w2temp, t1w_lin)
         mgu.extract_brain(t1w_lin, t1w_lin, opts=self.bet_sens)
         (sc_flirt, fig_flirt) = registration_score(epi_lin, self.atlas_brain,
-                                                   self.outdir)
+                                                   self.outdir['treg_f'])
         self.treg_sc.insert(0, sc_flirt)
         self.treg_sc_fig.insert(0, fig_flirt)
 

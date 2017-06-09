@@ -32,7 +32,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import plotly as py
 import plotly.offline as offline
-from ndmg.timeseries import timeseries as mgts
 from ndmg.stats.qa_reg import plot_overlays
 
 
@@ -167,7 +166,7 @@ def registration_score(aligned_func, reference_mask, outdir):
         - the directory in which temporary files will be placed.
     """
     func_name = mgu.get_filename(aligned_func)
-    func_mask = mgu.name_tmps(outdir, func_name, "_brain_mask.nii.gz")
+    func_mask = "{}/{}_brain_mask.nii.gz".format(outdir, func_name)
     # extract brain and use generous 0.3 threshold with -m mask option
     mgu.extract_brain(aligned_func, func_mask, opts=' -f 0.3 -m')
 
@@ -528,7 +527,7 @@ def plot_timeseries(timeseries, qcdir=None):
     fname_ts = "{}_timeseries.html".format(path)
     fname_corr = "{}_corr.png".format(path)
 
-    timeseries = mgts().load_timeseries(timeseries)
+    timeseries = mgu.load_timeseries(timeseries)
 
     fts_list = []
     for d in range(0, timeseries.T.shape[1]):

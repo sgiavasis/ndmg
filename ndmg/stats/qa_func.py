@@ -282,7 +282,7 @@ class qa_func(object):
         return
 
 
-    def self_reg_qa(self, freg, sreg_func_dir, sreg_anat_dir):
+    def self_reg_qa(self, freg, qa_dirs):
         """
         A function that produces self-registration quality control figures.
 
@@ -299,21 +299,23 @@ class qa_func(object):
                       freg.sreg_sc, freg.sreg_sc_fig)
         # make sure to note which brain is actually used
         best_sc = np.max(freg.sreg_sc)
-        sreg_f_final = "{}/{}_score_{:.0f}".format(sreg_func_dir, "epireg", best_sc*1000)
+        sreg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['sreg_f'],
+                                                   "epireg", best_sc*1000)
         self.self_reg_sc = best_sc  # so we can recover this later
         self.reg_func_qa(freg.saligned_epi, freg.t1w, sreg_f_final)
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
         freg_qual = plot_overlays(t1_dat, t1brain_dat)
-        fraw_name = "{}_bet_quality.png".format(mgu.get_filename(freg.t1w_brain))
-        fname = "{}/{}".format(sreg_anat_dir, fraw_name)              
+        fraw_name = "{}_bet_quality.png".format(
+            mgu.get_filename(freg.t1w_brain))
+        fname = "{}/{}".format(sreg_f_final, fraw_name)              
         freg_qual.savefig(fname)
         plt.close()
         pass
 
 
-    def temp_reg_qa(self, freg, qa_dirs, tmp_dirs):
+    def temp_reg_qa(self, freg, qa_dirs):
         """
         A function that produces self-registration quality control figures.
 
@@ -335,9 +337,9 @@ class qa_func(object):
                                                    "fnirt", best_sc*1000)
         self.temp_reg_sc = best_sc  # so we can recover this later 
         self.reg_func_qa(freg.taligned_epi, freg.atlas,
-                         qa_dirs['treg_f'])
+                         treg_f_final)
         self.reg_anat_qa(freg.taligned_t1w, freg.atlas,
-                         qa_dirs['treg_a'])
+                         treg_a_final)
         self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
@@ -456,7 +458,6 @@ class qa_func(object):
         # start by just plotting the average fft of gm voxels and compare with
         # average fft after frequency filtering
         if nuisobj.fft_reg is not None:
-            print "Here!"
             fig_fft_pow = plot_signals([nuisobj.fft_bef, nuisobj.fft_reg],
                     ['Before', 'After'],
                     title='Average Gray Matter Power Spectrum',
@@ -476,8 +477,6 @@ class qa_func(object):
             fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(fftdir, anat_name)
             fig_fft_sig.savefig(fname_fft_sig, format='png')
             plt.close()
-        else:
-            print "Not :("
         pass
 
     def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
