@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # Copyright 2016 NeuroData (http://neuromri_dat.io)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+#
 # nuis.py
 # Created by Eric Bridgeford on 2016-06-20-16.
 # Email: ebridge2@jhu.edu
@@ -202,9 +202,10 @@ class nuis(object):
         Regresses data to given regressors.
 
         **Positional Arguments:**
-            - data:
+
+            data:
                 - the data as a ndarray.
-            - R:
+            R:
                 - a numpy ndarray of regressors to
                   regress to.
         """
@@ -220,15 +221,15 @@ class nuis(object):
 
         **Positional Arguments:**
 
-            - amri:
+            amri:
                 - an anatomical image.
-            - basename:
+            basename:
                 - the basename for outputs. Often it will be
                   most convenient for this to be the dataset,
                   followed by the subject, followed by the step of
                   processing. Note that this anticipates a path as well;
                   ie, /path/to/dataset_sub_nuis, with no extension.
-            - an:
+            an:
                 - an integer representing the type of the anatomical image.
                   (1 for T1w, 2 for T2w, 3 for PD).
         """
@@ -251,9 +252,9 @@ class nuis(object):
 
         **Positional Arguments:**
 
-            - mask:
+            mask:
                 - a numpy array of a mask to be eroded.
-            - v:
+            v:
                 - the number of voxels to erode by.
         """
         print "Eroding Mask..."
@@ -288,14 +289,14 @@ class nuis(object):
 
         **Positional Arguments:**
 
-            - prob_map:
+            prob_map:
                 - the path to probability map for the given class
                   of brain tissue.
-            - mask_path:
+            mask_path:
                 - the path to the extracted mask.
-            - t:
+            t:
                 - the threshold to consider voxels part of the class.
-            - erode=2:
+            erode=2:
                 - the number of voxels to erode by. Defaults to 2.
         """
         print "Extracting Mask from probability map {}...".format(prob_map)
@@ -310,27 +311,61 @@ class nuis(object):
         nb.save(img, mask_path)
         return mask_path
 
-    def linear_reg(self, voxel, csf_ts=None, wm_ts=None, n=None):
+    def friston_model(self, mc_params):
+        """
+        A function that computes the friston 24 parameter
+        model for motion regressors. This model can then
+        be incorporated into a GLM for correction of motion-related
+        nuisance.
+
+        **Positional Arguments:**
+
+            mc_params:
+                - a txm matrix of the motion parameters per timepoint,
+                  for m regressors.
+        """
+        (t, m) = mc_params.shape
+        friston = np.zeros((t, 4*m))
+        # the motion parameters themselves
+        friston[:, 0:m] = mc_params
+        # square the motion parameters
+        friston[:, m:2*m] = np.square(mc_params)
+
+        # use the motion estimated at the preceding timepoint
+        # as a regressor
+        friston[1:, 2*m:3*m] = mc_params[:-1, :]
+        # use the motion estimated at the preceding timepoint
+        # squared as a regressor
+        friston[:, 3*m:4*m] = np.square(friston[:, 2*m:3*m])
+        return friston
+
+    def linear_reg(self, voxel, csf_ts=None, wm_ts=None, n=None,
+                   mc_params=None):
         """ 
         A function to perform quadratic detrending of fMRI data.
 
         **Positional Arguments**
 
-            - voxel:
+            voxel:
                 - an ndarray containing a voxel timeseries.
                   dimensions should be [timesteps, voxels]
-            - csf_ts:
+            csf_ts:
                 - a timeseries for csf mean regression. If not
                   provided, csf regression will not be performed.
-            - wm_ts:
+            wm_ts:
                 - a timeseries for white matter regression.
                   If only wm_ts is provided, wm mean regression
                   will be performed. If n and wm_ts are provided, 
                   compcor with n components will be performed. If
                   neither are provided, no wm regression will be
                   performed.
-            - n:
+            n:
                 - the number of components for wm regression.
+            mc_params:
+                - the motion parameters, as a matrix, for txm
+                  dimensions. If provided, performs friston 24
+                  parameter estimation. If not, skips incorporating
+                  motion regressors into GLM.
         """
         # time dimension is now the 0th dim
         time = voxel.shape[0]
@@ -356,9 +391,13 @@ class nuis(object):
             self.wm_reg = wm_reg  # save for QA later
             R = np.column_stack((R, wm_reg))
         elif wm_ts is not None:
-            wm_reg = wm_ts.mean(axis=1, keepdims=True)
-            self.wm_reg = wm_reg
-            R = np.column_stack((R, wm_reg[:, 0]))
+            self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
+            R = np.column_stack((R, self.wm_reg))
+
+        if mc_params is not None:
+            # friston 24 parameter model
+            self.friston_regs = friston_model(mc_params)
+            R = np.column_stack((R, self.friston_regs))
 
         W = self.regress_signal(voxel, R)
         self.glm_sig = W[:, self.voxel_gm_mask].mean(axis=1)
@@ -367,25 +406,30 @@ class nuis(object):
         # our regressors, and then we transpose back
         return (voxel - W)
 
-    def nuis_correct(self, highpass=0.01, lowpass=None, trim=0, n=None):
+    def nuis_correct(self, highpass=0.01, lowpass=None, trim=0, n=None,
+                     mc_params_file=None):
         """
         Removes Nuisance Signals from brain images, using a combination
         of Frequency filtering, and mean csf/quadratic regression.
 
         **Positional Arguments:**
 
-            - highpass:
+            highpass:
                 - the highpass cutoff for FFT.
-            - lowpass:
+            lowpass:
                 - the lowpass cutoff for FFT. NOT recommended.
-            - trim:
+            trim:
                 - trim the timeseries by a number of slices. Corrects
                   for T1 effects; that is, in some datasets, the first few
                   timesteps may have a non-saturated T1 contrast and as such
                   will show non-standard intensities.
-            - n:
+            n:
                 - the number of components for wm regression. If set to None,
                   does not perform wm regression.
+            mc_params_file:
+                - the path to a motion parameters space-delimited values file
+                  indicating the motion parameters. the .par file associated
+                  with mcflirt.
         """
         fmri_name = mgu.get_filename(self.fmri)
         fmri_im = nb.load(self.fmri)
@@ -415,12 +459,19 @@ class nuis(object):
         # if n is provided, perform compcor
         if n is not None:
             self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
-                                                 "wm_mask_eroded")
-            self.extract_mask(self.wm_prob, self.er_wm_mask, .99, erode=2)
+                                                    "wm_mask_eroded")
+            self.extract_mask(self.wm_prob, self.er_wm_mask,
+                              .99, erode=2)
             wmm = nb.load(self.er_wm_mask).get_data()
             wm_ts = fmri_dat[wmm != 0, :].T
         else:
             wm_ts = None
+
+        # if we have motion parameters, perform motion param regression
+        if mc_params is not None:
+            mc_params = np.genfromtxt(mc_params_file).T
+        else:
+            mc_params = None
 
         fmri_dat = None  # free for memory purposes
         self.voxel_gm_mask = gm_mask_dat[basic_mask == True] > 0
@@ -428,13 +479,13 @@ class nuis(object):
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
         # GLM for nuisance correction
         voxel = self.linear_reg(voxel, csf_ts=lv_ts,
-                                wm_ts=wm_ts, n=n)
+                                wm_ts=wm_ts, n=n, mc_params=None)
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
-        voxel = self.freq_filter(voxel, tr, highpass=highpass,
-                                 lowpass=lowpass)
-        self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        # voxel = self.freq_filter(voxel, tr, highpass=highpass,
+        #                          lowpass=lowpass)
+        # self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # normalize the signal to account for anatomical intensity differences
 	# self.voxel = self.normalize_signal(self.voxel)

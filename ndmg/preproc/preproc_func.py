@@ -31,11 +31,18 @@ from scipy import signal
 
 class preproc_func():
 
-    def __init__(self):
+    def __init__(self, func, preproc_func, motion_func,
+                   outdir, stc=None, scanid=""):
         """
         Enables preprocessing of single images for single images. Has options
         to perform motion correction.
         """
+        self.func = func
+        self.preproc_func = preproc_func
+        self.motion_func = motion_func
+        self.outdir = outdir
+        self.stc = stc
+        self.scanid = scanid
         pass
 
     def motion_correct(self, mri, corrected_mri, idx=None):
@@ -96,33 +103,9 @@ class preproc_func():
         else:
             print "Skipping slice timing correction."
 
-    def preprocess(self, func, preproc_func, motion_func,
-                   outdir, stc=None, qcdir="", scanid=""):
+    def preprocess(self):
         """
         A function to preprocess a stack of 3D images.
-
-        **Positional Arguments:**
-
-            mri:
-                - the 4d (fMRI) image volume as a nifti file (String).
-            motion_mri:
-                - the 4d (fMRI) image volume that is motion aligned (String).
-            preproc_mri:
-                - the 4d (fMRI) preprocessed image volume
-                as a nifti image (String).
-            stc:
-                - the slice timing correction information. See documentation
-                  for slice_time_correct() for details.
-            mri_name:
-                - the name to append before all paths for file naming.
-            outdir:
-                - the location to place outputs (String).
-            qcdir:
-                - optional argument required for quality control output
-                directory (String).
-            scanid:
-                - optional argument required for quality control, is the id
-                of the subject (String).
         """
         func_name = mgu.get_filename(func)
 
@@ -130,10 +113,10 @@ class preproc_func():
         stc_func = "{}/{}_stc.nii.gz".format(outdir, func_name)
         # TODO EB: decide whether it is advantageous to align to mean image
         if (stc is not None):
-            self.slice_time_correct(func, stc_func, stc)
+            self.slice_time_correct(self.func, stc_func, stc)
         else:
-            stc_func = func
-        self.motion_correct(stc_func, motion_func, 0)
-
-        cmd = "cp {} {}".format(motion_func, preproc_func)
+            stc_func = self.func
+        self.motion_correct(stc_func, self.motion_func, None)
+        self.mc_params = "{}.par".format(self.motion_func)
+        cmd = "cp {} {}".format(self.motion_func, self.preproc_func)
         mgu.execute_cmd(cmd, verb=True)

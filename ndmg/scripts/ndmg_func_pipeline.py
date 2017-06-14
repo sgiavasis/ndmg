@@ -148,8 +148,9 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     qc_func = mgrf()
     # Align fMRI volumes to Atlas
     print "Preprocessing volumes..."
-    mgp().preprocess(func, preproc_func, motion_func, tmp_dirs['prep'], stc=stc)
-    qc_func.preproc_qa(motion_func, qa_dirs['prep'])
+    prep = mgp(func, preproc_func, motion_func, tmp_dirs['prep'], stc=stc)
+    prep.preprocess()
+    qc_func.preproc_qa(prep, qa_dirs['prep'])
 
     print "Aligning volumes..."
     func_reg = mgr(preproc_func, t1w, atlas, atlas_brain, atlas_mask,
@@ -161,7 +162,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
-               lv_mask=lv_mask)
+               lv_mask=lv_mask, mc_params=prep.mc_params)
     nuis.nuis_correct(trim=2, n=None)
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])

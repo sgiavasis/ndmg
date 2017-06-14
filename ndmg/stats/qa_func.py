@@ -67,7 +67,7 @@ class qa_func(object):
         f.close()
         pass
 
-    def preproc_qa(self, mc_brain, qcdir=None):
+    def preproc_qa(self, prep, qcdir=None):
         """
         A function for performing quality control given motion
         correction information. Produces plots of the motion correction
@@ -75,9 +75,8 @@ class qa_func(object):
 
         **Positional Arguments**
 
-            mc_brain:
-                - the motion corrected brain. should have
-                an identically named file + '.par' created by mcflirt.
+            prep:
+                - the module used for preprocessing.
             scan_id:
                 - the id of the subject.
             qcdir:
@@ -88,7 +87,7 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
         scanid = mgu.get_filename(mc_brain)
 
-        mc_im = nb.load(mc_brain)
+        mc_im = nb.load(prep.motion_func)
         mc_dat = mc_im.get_data()
 
         mcfig = plot_brain(mc_dat.mean(axis=3), minthr=10)
@@ -98,7 +97,7 @@ class qa_func(object):
         fnames['trans'] = "{}_trans.html".format(scanid)
         fnames['rot'] = "{}_rot.html".format(scanid) 
 
-        par_file = "{}.par".format(mc_brain)
+        par_file = prep.mc_params
         mc_file = "{}/{}_stats.txt".format(qcdir, scanid)
 
         abs_pos = np.zeros((nvols, 6))
@@ -406,7 +405,7 @@ class qa_func(object):
         glmdir = "{}/{}".format(qcdir, "glm_correction")
         fftdir = "{}/{}".format(qcdir, "filtering")
 
-        cmd = "mkdir -p {} {} {} {}".format(qcdir, maskdir, glmdir, fftdir)
+        cmd = "mkdir -p {} {} {}".format(qcdir, maskdir, glmdir)
         mgu.execute_cmd(cmd)
 
         anat_name = mgu.get_filename(nuisobj.smri)
@@ -425,9 +424,10 @@ class qa_func(object):
                 plt.close()
 
         # GLM regressors
-        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg]
-        glm_names = ["csf", "wm"]
-        glm_titles = ["CSF Regressors", "White-Matter Regressors"]
+        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg, nuisobj.friston]
+        glm_names = ["csf", "wm", "friston"]
+        glm_titles = ["CSF Regressors", "White-Matter Regressors",
+            "Friston Motion Regressors"]
         for (reg, name, title) in zip(glm_regs, glm_names, glm_titles):
             if reg is not None:
                 regs = []
@@ -458,6 +458,9 @@ class qa_func(object):
         # start by just plotting the average fft of gm voxels and compare with
         # average fft after frequency filtering
         if nuisobj.fft_reg is not None:
+            cmd = "mkdir -p {}".format(fftdir)
+            mgu.execute_cmd(cmd)
+
             fig_fft_pow = plot_signals([nuisobj.fft_bef, nuisobj.fft_reg],
                     ['Before', 'After'],
                     title='Average Gray Matter Power Spectrum',
