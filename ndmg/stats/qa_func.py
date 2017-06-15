@@ -425,15 +425,17 @@ class qa_func(object):
         glm_names = ["csf", "wm", "friston"]
         glm_titles = ["CSF Regressors", "White-Matter Regressors",
                       "Friston Motion Regressors"]
-        for (reg, name, title) in zip(glm_regs, glm_names, glm_titles):
+        label_include = [True, True, False]
+        for (reg, name, title, lab) in zip(glm_regs, glm_names, glm_titles,
+                label_include):
             if reg is not None:
                 regs = []
                 labels = []
                 for i in range(0, reg.shape[1]):
                     regs.append(reg[:, i])
-                    labels.append('{} reg {}'.format(name, i))
                 fig = plot_signals(regs, labels, title=title,
-                                   xlabel='Timepoint', ylabel='Intensity')
+                                   xlabel='Timepoint', ylabel='Intensity',
+                                   lab_incl=lab)
                 fname_reg = "{}/{}_{}_regressors.png".format(glmdir,
                                                              anat_name,
                                                              name)

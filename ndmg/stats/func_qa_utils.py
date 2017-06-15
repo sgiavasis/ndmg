@@ -473,7 +473,7 @@ def image_align(mri_data, ref_data, qcdir, scanid="", refid=""):
 
 
 def plot_signals(signals, labels, title=None, xlabel=None,
-                 ylabel=None, xax=None):
+                 ylabel=None, xax=None, lab_incl=True):
     """
     A utility to plot and return a figure for
     multiple signals.
@@ -492,6 +492,8 @@ def plot_signals(signals, labels, title=None, xlabel=None,
             - the y label.
         - xax:
             - the scale for the x axis.
+        - lab_incl:
+            - whether to include the labels on the plot.
     """
     fig_sig = plt.figure()
     ax_sig = fig_sig.add_subplot(111)
@@ -503,7 +505,8 @@ def plot_signals(signals, labels, title=None, xlabel=None,
         else:
             lines.append(ax_sig.plot(signal)[0])
         legs.append(label)
-    ax_sig.legend(lines, legs, loc='lower right')
+    if lab_incl:
+        ax_sig.legend(lines, legs, loc='lower right')
     ax_sig.set_title(title)
     ax_sig.set_ylabel(ylabel)
     ax_sig.set_xlabel(xlabel)
