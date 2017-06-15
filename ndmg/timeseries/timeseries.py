@@ -62,7 +62,7 @@ class timeseries(object):
         funcdata = mgu.get_braindata(func_file)
         voxel_ts = funcdata[maskbool, :]
         if voxel_file is not None:
-            np.savez(voxel_file, voxel_ts)
+            np.savez(voxel_file, voxel=voxel_ts)
         return voxel_ts
 
     def roi_timeseries(self, func_file, label_file, roits_file=None):
@@ -100,18 +100,6 @@ class timeseries(object):
                 roi_ts[idx, :] = ts
 
         if roits_file:
-            np.save(roits_file, roi_ts)
+            np.savez(roits_file, roi=roi_ts)
         return roi_ts
 
-    def load_timeseries(self, timeseries_file):
-        """
-        A function to load timeseries data. Exists to standardize
-        formatting in case changes are made with how timeseries are
-        saved in future versions.
-
-        **Positional Arguments**
-
-            timeseries_file: the file to load timeseries data from.
-        """
-        timeseries = np.load(timeseries_file)
-        return timeseries

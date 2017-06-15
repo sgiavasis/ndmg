@@ -67,7 +67,7 @@ class qa_func(object):
         f.close()
         pass
 
-    def preproc_qa(self, mc_brain, qcdir=None):
+    def preproc_qa(self, prep, qcdir=None):
         """
         A function for performing quality control given motion
         correction information. Produces plots of the motion correction
@@ -75,9 +75,8 @@ class qa_func(object):
 
         **Positional Arguments**
 
-            mc_brain:
-                - the motion corrected brain. should have
-                an identically named file + '.par' created by mcflirt.
+            prep:
+                - the module used for preprocessing.
             scan_id:
                 - the id of the subject.
             qcdir:
@@ -86,9 +85,9 @@ class qa_func(object):
         print "Performing QA for Preprocessing..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        scanid = mgu.get_filename(mc_brain)
+        scanid = mgu.get_filename(prep.motion_func)
 
-        mc_im = nb.load(mc_brain)
+        mc_im = nb.load(prep.motion_func)
         mc_dat = mc_im.get_data()
 
         mcfig = plot_brain(mc_dat.mean(axis=3), minthr=10)
@@ -96,9 +95,9 @@ class qa_func(object):
 
         fnames = {}
         fnames['trans'] = "{}_trans.html".format(scanid)
-        fnames['rot'] = "{}_rot.html".format(scanid) 
+        fnames['rot'] = "{}_rot.html".format(scanid)
 
-        par_file = "{}.par".format(mc_brain)
+        par_file = prep.mc_params
         mc_file = "{}/{}_stats.txt".format(qcdir, scanid)
 
         abs_pos = np.zeros((nvols, 6))
@@ -164,7 +163,7 @@ class qa_func(object):
                       xaxis=dict(title='Timepoint', range=[0, nvols]),
                       yaxis=dict(title='Rotation (rad)'))
         frot = dict(data=frot_list, layout=layout)
-        rot_path ="{}/{}_rot.html".format(qcdir, scanid)
+        rot_path = "{}/{}_rot.html".format(qcdir, scanid)
         offline.plot(frot, filename=rot_path, auto_open=False)
 
         # Motion Statistics
@@ -236,8 +235,7 @@ class qa_func(object):
         fstat.close()
         return
 
-
-    def reg_func_qa(self, aligned_func, atlas, outdir, qcdir):
+    def reg_func_qa(self, aligned_func, atlas, qcdir):
         """
         A function that produces quality control information for registration
         leg of the pipeline for functional scans.
@@ -248,8 +246,6 @@ class qa_func(object):
                 - the aligned functional MRI.
             atlas:
                 - the atlas the functional brain is aligned to.
-            outdir:
-                - the directory where temporary files will be placed.
             qcdir:
                 - the directory in which quality control images will
                 be placed.
@@ -260,8 +256,7 @@ class qa_func(object):
                      maxthr=95)
         pass
 
-
-    def reg_anat_qa(self, aligned_anat, atlas, outdir, qcdir):
+    def reg_anat_qa(self, aligned_anat, atlas, qcdir):
         """
         A function that produces quality control information for registration
         leg of the pipeline for anatomical scans.
@@ -273,8 +268,6 @@ class qa_func(object):
             atlas:
                 - the atlas the functional and anatomical brains
                 were aligned to.
-            outdir:
-                - the directory where temporary files will be placed.
             qcdir:
                 - the directory in which quality control images will
                 be placed.
@@ -285,8 +278,7 @@ class qa_func(object):
         reg_mri_pngs(aligned_anat, atlas, qcdir)
         return
 
-
-    def self_reg_qa(self, freg, sreg_func_dir, sreg_anat_dir, outdir):
+    def self_reg_qa(self, freg, qa_dirs):
         """
         A function that produces self-registration quality control figures.
 
@@ -296,8 +288,6 @@ class qa_func(object):
                 - the func_register object from registration.
             sreg_func_dir:
                 - the directory to place functional qc images.
-            outdir:
-                - the directory where the temporary files will be placed.
         """
         print "Performing QA for Self-Registration..."
         # analyze the quality of each self registration performed
@@ -305,21 +295,22 @@ class qa_func(object):
                       freg.sreg_sc, freg.sreg_sc_fig)
         # make sure to note which brain is actually used
         best_sc = np.max(freg.sreg_sc)
-        sreg_f_final = "{}/{}_score_{:.0f}".format(sreg_func_dir, "epireg", best_sc*1000)
+        sreg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['sreg_f'],
+                                                   "epireg", best_sc*1000)
         self.self_reg_sc = best_sc  # so we can recover this later
-        self.reg_func_qa(freg.saligned_epi, freg.t1w, outdir, sreg_f_final)
+        self.reg_func_qa(freg.saligned_epi, freg.t1w, sreg_f_final)
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
         freg_qual = plot_overlays(t1_dat, t1brain_dat)
-        fraw_name = "{}_bet_quality.png".format(mgu.get_filename(freg.t1w_brain))
-        fname = "{}/{}".format(sreg_anat_dir, fraw_name)              
+        fraw_name = "{}_bet_quality.png".format(
+            mgu.get_filename(freg.t1w_brain))
+        fname = "{}/{}".format(sreg_f_final, fraw_name)
         freg_qual.savefig(fname)
         plt.close()
         pass
 
-
-    def temp_reg_qa(self, freg, treg_func_dir, treg_anat_dir, outdir):
+    def temp_reg_qa(self, freg, qa_dirs):
         """
         A function that produces self-registration quality control figures.
 
@@ -327,21 +318,23 @@ class qa_func(object):
 
             freg:
                 - the functional registration object.
-            treg_func_dir:
-                - the directory to place functional qc images.
-            treg_anat_dir:
-                - the directory to place anatomical qc images.
-            outdir:
-                - the directory where the temporary files will be placed.
+            qa_dirs:
+                - a dictionary of the directories to place qa files.
+            tmp_dirs:
+                - a dictionary of the directories to place temporary files.
         """
         print "Performing QA for Template-Registration..."
         # make sure to note which brain is actually used
         best_sc = np.max(freg.treg_sc)
-        treg_f_final = "{}/{}_score_{:.0f}".format(treg_func_dir, "fnirt", best_sc*1000)
-        treg_a_final = "{}/{}_score_{:.0f}".format(treg_anat_dir, "fnirt", best_sc*1000)
-        self.temp_reg_sc = best_sc  # so we can recover this later 
-        self.reg_func_qa(freg.taligned_epi, freg.atlas, outdir, treg_f_final)
-        self.reg_anat_qa(freg.taligned_t1w, freg.atlas, outdir, treg_a_final)
+        treg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_f'],
+                                                   "fnirt", best_sc*1000)
+        treg_a_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_a'],
+                                                   "fnirt", best_sc*1000)
+        self.temp_reg_sc = best_sc  # so we can recover this later
+        self.reg_func_qa(freg.taligned_epi, freg.atlas,
+                         treg_f_final)
+        self.reg_anat_qa(freg.taligned_t1w, freg.atlas,
+                         treg_a_final)
         self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
@@ -408,7 +401,7 @@ class qa_func(object):
         glmdir = "{}/{}".format(qcdir, "glm_correction")
         fftdir = "{}/{}".format(qcdir, "filtering")
 
-        cmd = "mkdir -p {} {} {} {}".format(qcdir, maskdir, glmdir, fftdir)
+        cmd = "mkdir -p {} {} {}".format(qcdir, maskdir, glmdir)
         mgu.execute_cmd(cmd)
 
         anat_name = mgu.get_filename(nuisobj.smri)
@@ -422,15 +415,19 @@ class qa_func(object):
             if mask is not None:
                 mask_dat = nb.load(mask).get_data()
                 f_mask = plot_overlays(t1w_dat, mask_dat, min_val=0, max_val=1)
-                fname_mask = "{}/{}_{}.png".format(maskdir, anat_name, maskname)
+                fname_mask = "{}/{}_{}.png".format(maskdir, anat_name,
+                                                   maskname)
                 f_mask.savefig(fname_mask, format='png')
                 plt.close()
 
         # GLM regressors
-        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg]
-        glm_names = ["csf", "wm"]
-        glm_titles = ["CSF Regressors", "White-Matter Regressors"]
-        for (reg, name, title) in zip(glm_regs, glm_names, glm_titles):
+        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg, nuisobj.friston_reg]
+        glm_names = ["csf", "wm", "friston"]
+        glm_titles = ["CSF Regressors", "White-Matter Regressors",
+                      "Friston Motion Regressors"]
+        label_include = [True, True, False]
+        for (reg, name, title, lab) in zip(glm_regs, glm_names, glm_titles,
+                label_include):
             if reg is not None:
                 regs = []
                 labels = []
@@ -438,7 +435,8 @@ class qa_func(object):
                     regs.append(reg[:, i])
                     labels.append('{} reg {}'.format(name, i))
                 fig = plot_signals(regs, labels, title=title,
-                        xlabel='Timepoint', ylabel='Intensity')
+                                   xlabel='Timepoint', ylabel='Intensity',
+                                   lab_incl=lab)
                 fname_reg = "{}/{}_{}_regressors.png".format(glmdir,
                                                              anat_name,
                                                              name)
@@ -446,12 +444,13 @@ class qa_func(object):
                 plt.close()
         # before glm compared with the signal removed and
         # signal after correction
-        fig_glm_sig = plot_signals([nuisobj.cent_nuis,
-                                    nuisobj.glm_sig, nuisobj.glm_nuis],
-                         ['Before', 'Regressed Sig', 'After'],
-                         title='Impact of GLM Regression on Average GM Signal',
-                         xlabel='Timepoint',
-                         ylabel='Intensity')
+        fig_glm_sig = plot_signals(
+                [nuisobj.cent_nuis, nuisobj.glm_sig, nuisobj.glm_nuis],
+                ['Before', 'Regressed Sig', 'After'],
+                title='Impact of GLM Regression on Average GM Signal',
+                xlabel='Timepoint',
+                ylabel='Intensity'
+        )
         fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, anat_name)
         fig_glm_sig.savefig(fname_glm_sig, format='png')
         plt.close()
@@ -460,8 +459,11 @@ class qa_func(object):
         # start by just plotting the average fft of gm voxels and compare with
         # average fft after frequency filtering
         if nuisobj.fft_reg is not None:
-            print "Here!"
-            fig_fft_pow = plot_signals([nuisobj.fft_bef, nuisobj.fft_reg],
+            cmd = "mkdir -p {}".format(fftdir)
+            mgu.execute_cmd(cmd)
+
+            fig_fft_pow = plot_signals(
+                    [nuisobj.fft_bef, nuisobj.fft_reg],
                     ['Before', 'After'],
                     title='Average Gray Matter Power Spectrum',
                     xlabel='Frequency',
@@ -471,17 +473,17 @@ class qa_func(object):
             fig_fft_pow.savefig(fname_fft_pow, format='png')
             plt.close()
             # plot the signal vs the regressed signal vs signal after
-            fig_fft_sig = plot_signals([nuisobj.glm_nuis, nuisobj.fft_sig,
-                                        nuisobj.fft_nuis],
+            fig_fft_sig = plot_signals(
+                    [nuisobj.glm_nuis, nuisobj.fft_sig, nuisobj.fft_nuis],
                     ['Before', 'Regressed Sig', 'After'],
                     title='Impact of Frequency Filtering on Average GM Signal',
                     xlabel='Timepoint',
                     ylabel='Intensity')
-            fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(fftdir, anat_name)
+            fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(
+                    fftdir,
+                    anat_name)
             fig_fft_sig.savefig(fname_fft_sig, format='png')
             plt.close()
-        else:
-            print "Not :("
         pass
 
     def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
@@ -506,7 +508,7 @@ class qa_func(object):
         print "Performing QA for ROI Timeseries..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-     
+
         reg_mri_pngs(anat, label, qcdir, minthr=10, maxthr=95)
         plot_timeseries(timeseries, qcdir=qcdir)
         pass
@@ -529,6 +531,7 @@ class qa_func(object):
         print "Performing QA for Voxel Timeseries..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        reg_mri_pngs(voxel_func, atlas_mask, qcdir, loc=0, minthr=10, maxthr=95)
+        reg_mri_pngs(voxel_func, atlas_mask, qcdir,
+                     loc=0, minthr=10, maxthr=95)
         self.voxel_qa(voxel_func, atlas_mask, qcdir)
         pass

@@ -32,7 +32,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import plotly as py
 import plotly.offline as offline
-from ndmg.timeseries import timeseries as mgts
 from ndmg.stats.qa_reg import plot_overlays
 
 
@@ -167,7 +166,7 @@ def registration_score(aligned_func, reference_mask, outdir):
         - the directory in which temporary files will be placed.
     """
     func_name = mgu.get_filename(aligned_func)
-    func_mask = mgu.name_tmps(outdir, func_name, "_brain_mask.nii.gz")
+    func_mask = "{}/{}_brain_mask.nii.gz".format(outdir, func_name)
     # extract brain and use generous 0.3 threshold with -m mask option
     mgu.extract_brain(aligned_func, func_mask, opts=' -f 0.3 -m')
 
@@ -474,7 +473,7 @@ def image_align(mri_data, ref_data, qcdir, scanid="", refid=""):
 
 
 def plot_signals(signals, labels, title=None, xlabel=None,
-                 ylabel=None, xax=None):
+                 ylabel=None, xax=None, lab_incl=True):
     """
     A utility to plot and return a figure for
     multiple signals.
@@ -493,6 +492,8 @@ def plot_signals(signals, labels, title=None, xlabel=None,
             - the y label.
         - xax:
             - the scale for the x axis.
+        - lab_incl:
+            - whether to include the labels on the plot.
     """
     fig_sig = plt.figure()
     ax_sig = fig_sig.add_subplot(111)
@@ -504,7 +505,8 @@ def plot_signals(signals, labels, title=None, xlabel=None,
         else:
             lines.append(ax_sig.plot(signal)[0])
         legs.append(label)
-    ax_sig.legend(lines, legs, loc='lower right')
+    if lab_incl:
+        ax_sig.legend(lines, legs, loc='lower right')
     ax_sig.set_title(title)
     ax_sig.set_ylabel(ylabel)
     ax_sig.set_xlabel(xlabel)
@@ -528,7 +530,7 @@ def plot_timeseries(timeseries, qcdir=None):
     fname_ts = "{}_timeseries.html".format(path)
     fname_corr = "{}_corr.png".format(path)
 
-    timeseries = mgts().load_timeseries(timeseries)
+    timeseries = mgu.load_timeseries(timeseries)
 
     fts_list = []
     for d in range(0, timeseries.T.shape[1]):
