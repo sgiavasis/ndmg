@@ -505,7 +505,6 @@ def plot_signals(signals, labels, title=None, xlabel=None,
         else:
             lines.append(ax_sig.plot(signal)[0])
         legs.append(label)
-    print len(lines)
     if lab_incl:
         ax_sig.legend(lines, legs, loc='lower right')
     ax_sig.set_title(title)

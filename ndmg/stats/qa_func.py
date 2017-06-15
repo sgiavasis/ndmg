@@ -434,7 +434,6 @@ class qa_func(object):
                 for i in range(0, reg.shape[1]):
                     regs.append(reg[:, i])
                     labels.append('{} reg {}'.format(name, i))
-                print len(regs)
                 fig = plot_signals(regs, labels, title=title,
                                    xlabel='Timepoint', ylabel='Intensity',
                                    lab_incl=lab)
