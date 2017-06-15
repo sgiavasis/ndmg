@@ -26,7 +26,8 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 
 class nuis(object):
 
-    def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None):
+    def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None,
+                 self.mc_params):
         """
         A class for nuisance correction of fMRI.
 
@@ -40,6 +41,10 @@ class nuis(object):
                 - the file path of a nuisance corrected mri
             - lv_mask:
                 - lateral-ventricles mask (optional).
+            - mc_params:
+                - the path to a motion parameters file. Should have
+                  6 parameters for x/y/z tranlations/rotations per
+                  timestep.
         """
         # store our inputs
         self.fmri = fmri  # the fmri
@@ -79,10 +84,12 @@ class nuis(object):
         self.quad_reg = None
         self.fft_reg = None
         self.fft_bef = None
+        self.friston_reg = None
 
         # signal that is removed at given steps
         self.fft_sig = None
         self.glm_sig = None
+        self.mc_params_file = mc_params
         pass
 
     def center_signal(self, data):
@@ -170,9 +177,9 @@ class nuis(object):
 
         # free for memory purposes
         mri = None
-        
-        self.fft_bef = np.square(passed_fft[:,
-            self.voxel_gm_mask].mean(axis=1))[order]
+
+        self.fft_bef = np.square(
+            passed_fft[:, self.voxel_gm_mask].mean(axis=1))[order]
         bpra = np.zeros(freq_ra.shape, dtype=bool)
         # figure out which positions we will exclude
         if highpass is not None:
@@ -192,8 +199,8 @@ class nuis(object):
         filt_sig = None
 
         passed_fft[bpra, :] = 0
-        self.fft_reg = np.square(passed_fft[:, 
-                self.voxel_gm_mask].mean(axis=1))[order]
+        self.fft_reg = np.square(
+                passed_fft[:, self.voxel_gm_mask].mean(axis=1))[order]
         # go back to time domain
         return np.apply_along_axis(irfft, 0, passed_fft)
 
@@ -341,7 +348,7 @@ class nuis(object):
 
     def linear_reg(self, voxel, csf_ts=None, wm_ts=None, n=None,
                    mc_params=None):
-        """ 
+        """
         A function to perform quadratic detrending of fMRI data.
 
         **Positional Arguments**
@@ -355,7 +362,7 @@ class nuis(object):
             wm_ts:
                 - a timeseries for white matter regression.
                   If only wm_ts is provided, wm mean regression
-                  will be performed. If n and wm_ts are provided, 
+                  will be performed. If n and wm_ts are provided,
                   compcor with n components will be performed. If
                   neither are provided, no wm regression will be
                   performed.
@@ -396,15 +403,15 @@ class nuis(object):
 
         if mc_params is not None:
             # friston 24 parameter model
-            self.friston_regs = friston_model(mc_params)
+            self.friston_reg = friston_model(mc_params)
             R = np.column_stack((R, self.friston_regs))
 
-        W = self.regress_signal(voxel, R)
-        self.glm_sig = W[:, self.voxel_gm_mask].mean(axis=1)
+        WR = self.regress_signal(voxel, R)
+        self.glm_sig = WR[:, self.voxel_gm_mask].mean(axis=1)
 
         # corr'd ts is the difference btwn the original timeseries and
         # our regressors, and then we transpose back
-        return (voxel - W)
+        return (voxel - WR)
 
     def nuis_correct(self, highpass=0.01, lowpass=None, trim=0, n=None,
                      mc_params_file=None):
@@ -468,13 +475,13 @@ class nuis(object):
             wm_ts = None
 
         # if we have motion parameters, perform motion param regression
-        if mc_params is not None:
-            mc_params = np.genfromtxt(mc_params_file).T
+        if self.mc_params_file is not None:
+            mc_params = np.genfromtxt(self.mc_params_file).T
         else:
             mc_params = None
 
         fmri_dat = None  # free for memory purposes
-        self.voxel_gm_mask = gm_mask_dat[basic_mask == True] > 0
+        self.voxel_gm_mask = gm_mask_dat[basic_mask] > 0
         gm_mask_dat = None  # free for memory
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
         # GLM for nuisance correction
@@ -487,8 +494,9 @@ class nuis(object):
         #                          lowpass=lowpass)
         # self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
-        # normalize the signal to account for anatomical intensity differences
-	# self.voxel = self.normalize_signal(self.voxel)
+        # normalize the signal to account for anatomical
+        # intensity differences
+        # self.voxel = self.normalize_signal(self.voxel)
         # put the nifti back together again and re-transpose
         fmri_dat = fmri_im.get_data()
         fmri_dat[basic_mask, :] = voxel.T
