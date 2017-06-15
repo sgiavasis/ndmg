@@ -397,9 +397,8 @@ class nuis(object):
 
         if n is not None and wm_ts is not None:
             print "Adding {} wm compcor regressors to GLM...".format(n)
-            wm_reg = self.compcor(wm_ts, n=n)
-            self.wm_reg = wm_reg  # save for QA later
-            R = np.column_stack((R, wm_reg))
+            self.wm_reg = self.compcor(wm_ts, n=n)[0]
+            R = np.column_stack((R, self.wm_reg))
         elif wm_ts is not None:
             print "Adding wm mean signal to GLM..."
             self.wm_reg = wm_ts.mean(axis=1, keepdims=True)

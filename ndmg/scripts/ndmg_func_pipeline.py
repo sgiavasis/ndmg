@@ -163,7 +163,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
                lv_mask=lv_mask, mc_params=prep.mc_params)
-    nuis.nuis_correct(trim=2, n=None)
+    nuis.nuis_correct(trim=2, n=5)
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
 
