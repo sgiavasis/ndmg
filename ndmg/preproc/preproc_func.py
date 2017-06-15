@@ -107,13 +107,13 @@ class preproc_func():
         """
         A function to preprocess a stack of 3D images.
         """
-        func_name = mgu.get_filename(func)
+        func_name = mgu.get_filename(self.func)
 
-        s0 = "{}/{}_0slice.nii.gz".format(outdir, func_name)
-        stc_func = "{}/{}_stc.nii.gz".format(outdir, func_name)
+        s0 = "{}/{}_0slice.nii.gz".format(self.outdir, func_name)
+        stc_func = "{}/{}_stc.nii.gz".format(self.outdir, func_name)
         # TODO EB: decide whether it is advantageous to align to mean image
-        if (stc is not None):
-            self.slice_time_correct(self.func, stc_func, stc)
+        if (self.stc is not None):
+            self.slice_time_correct(self.func, stc_func, self.stc)
         else:
             stc_func = self.func
         self.motion_correct(stc_func, self.motion_func, None)

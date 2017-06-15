@@ -85,7 +85,7 @@ class qa_func(object):
         print "Performing QA for Preprocessing..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        scanid = mgu.get_filename(mc_brain)
+        scanid = mgu.get_filename(prep.motion_func)
 
         mc_im = nb.load(prep.motion_func)
         mc_dat = mc_im.get_data()

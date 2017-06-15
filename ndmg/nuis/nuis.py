@@ -27,7 +27,7 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 class nuis(object):
 
     def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None,
-                 self.mc_params):
+                 mc_params=None):
         """
         A class for nuisance correction of fMRI.
 
@@ -383,28 +383,33 @@ class nuis(object):
 
         # use GLM model given regressors to approximate the weight we want
         # to regress out
+        print "Adding quadratic trendline to GLM..."
         R = np.column_stack((np.ones(time), lin_reg, quad_reg))
 
         # highpass filter voxel timeseries appropriately
 
         if csf_ts is not None:
+            print "Adding csf mean signal to GLM..."
             csf_reg = csf_ts.mean(axis=1, keepdims=True)
             self.csf_reg = csf_reg  # save for qa later
             # add coefficients to our regression
             R = np.column_stack((R, csf_reg))
 
         if n is not None and wm_ts is not None:
+            print "Adding {} wm compcor regressors to GLM...".format(n)
             wm_reg = self.compcor(wm_ts, n=n)
             self.wm_reg = wm_reg  # save for QA later
             R = np.column_stack((R, wm_reg))
         elif wm_ts is not None:
+            print "Adding wm mean signal to GLM..."
             self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
             R = np.column_stack((R, self.wm_reg))
 
         if mc_params is not None:
+            print "Adding friston 24 parameters to GLM..."
             # friston 24 parameter model
-            self.friston_reg = friston_model(mc_params)
-            R = np.column_stack((R, self.friston_regs))
+            self.friston_reg = self.friston_model(mc_params)
+            R = np.column_stack((R, self.friston_reg))
 
         WR = self.regress_signal(voxel, R)
         self.glm_sig = WR[:, self.voxel_gm_mask].mean(axis=1)
@@ -476,7 +481,7 @@ class nuis(object):
 
         # if we have motion parameters, perform motion param regression
         if self.mc_params_file is not None:
-            mc_params = np.genfromtxt(self.mc_params_file).T
+            mc_params = np.genfromtxt(self.mc_params_file)
         else:
             mc_params = None
 
@@ -485,8 +490,8 @@ class nuis(object):
         gm_mask_dat = None  # free for memory
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
         # GLM for nuisance correction
-        voxel = self.linear_reg(voxel, csf_ts=lv_ts,
-                                wm_ts=wm_ts, n=n, mc_params=None)
+        voxel = self.linear_reg(voxel, csf_ts=lv_ts, wm_ts=wm_ts,
+                                n=n, mc_params=mc_params)
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
