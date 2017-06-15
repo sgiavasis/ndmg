@@ -364,7 +364,7 @@ class func_register(register):
         # put anatomical in 2mm resolution for memory
         # efficiency if it is lower
         self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).header.get_zooms()) < 12:
+        if sum(nb.load(t1w).header.get_zooms()) < 9:
             self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
                                                     self.t1w_name)
             self.resample_fsl(t1w, self.t1w, 2)
@@ -452,7 +452,8 @@ class func_register(register):
         NOTE: for this to work, must first have called self-align.
         """
          
-        xfm_t1w2temp = "_xfm_t1w2temp.mat".format(self.outdir, self.epi_name)
+        xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_f'],
+                                                       self.epi_name)
 
         # linear registration from t1 space to atlas space
         self.align(self.t1w_brain, self.atlas_brain, xfm_t1w2temp)
@@ -460,8 +461,9 @@ class func_register(register):
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
             (self.simp is False)):
-            warp_t1w2temp = "_warp_t1w2temp.nii.gz".format(self.outdir['treg_a'],
-                                                           self.epi_name)
+            warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
+                self.outdir['treg_a'],
+                self.epi_name)
             epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
                 self.outdir['treg_f'],
                 self.epi_name)
