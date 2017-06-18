@@ -36,7 +36,7 @@ from ndmg.stats.qa_reg import *
 
 
 def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, labels,
-                       outdir, clean=True, stc=None, fmt='gpickle'):
+                       outdir, clean=False, stc=None, fmt='gpickle'):
     """
     Analyzes fMRI images and produces subject-specific derivatives.
 
@@ -213,7 +213,7 @@ def main():
                         " labels of regions of interest in atlas space")
     parser.add_argument("-s", "--stc_file", action="store",
                         help="File for STC.")
-    parser.add_argument("-c", "--clean", action="store_true", default=True,
+    parser.add_argument("-c", "--clean", action="store_true", default=False,
                         help="Whether or not to delete intemediates")
     parser.add_argument("-f", "--fmt", action="store", default='gpickle',
                         help="Determines connectome output format")

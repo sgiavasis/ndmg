@@ -481,7 +481,7 @@ class func_register(register):
             self.apply_warp(self.epi, self.atlas, self.taligned_epi,
                             warp=warp_t1w2temp, xfm=self.sreg_xfm)
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
-                            warp_t1w2temp, mask=self.atlas_mask)
+                            warp=warp_t1w2temp, mask=self.atlas_mask)
             # self.resample(t1w_nl, self.taligned_t1w, self.atlas)
             # self.resample(epi_nl, self.taligned_epi, self.atlas)
             print "Analyzing Nonlinear Template Registration Quality..."
@@ -504,12 +504,15 @@ class func_register(register):
             # t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
             #     self.outdir['treg_a'],
             #     self.epi_name) 
-            xfm_epi2temp = "{}/{}_xfm_epi2tmp.mat".format(self.outdir['treg_f'],
+            xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(self.outdir['treg_f'],
                                                           self.epi_name)
             # just apply our previously computed linear transform
-            self.combine_xfms(self.sreg_xfm, xfm_t1w2temp, xfm_epi2temp)
-            self.apply_warp(self.epi, self.atlas, self.taligned_epi,
-                            xfm=xfm_epi2temp)
+            print self.sreg_xfm
+            print xfm_t1w2temp
+            self.combine_xfms(xfm_t1w2temp, self.sreg_xfm, xfm_epi2temp)
+            print xfm_epi2temp
+            self.applyxfm(self.epi, self.atlas, xfm_epi2temp,
+                          self.taligned_epi, interp='spline')
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             xfm=xfm_t1w2temp)
             mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
