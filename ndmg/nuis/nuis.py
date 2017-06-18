@@ -27,7 +27,7 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 class nuis(object):
 
     def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None,
-                 mc_params=None):
+                 self.mc_params):
         """
         A class for nuisance correction of fMRI.
 
@@ -68,10 +68,11 @@ class nuis(object):
         self.gm_mask = "{}/{}_gmm.nii.gz".format(self.outdir, nuisname)
         self.map_path = "{}/{}_seg".format(self.outdir, nuisname)
         # segment the brain for quality control purposes
-        self.segment_anat(self.smri, self.map_path)
+        maps = mgu.segment_anat(self.smri, self.map_path)
         # extract the masks
-        self.extract_mask(self.wm_prob, self.wm_mask, .99, erode=0)
-        self.extract_mask(self.gm_prob, self.gm_mask, .95, erode=0)
+        self.wm_prob = maps['wm_prob']
+        mgu.extract_mask(maps['wm_prob'], self.wm_mask, .99)
+        mgu.extract_mask(maps['gm_prob'], self.gm_mask, .95)
         # the centered brain
         self.cent_nuis = None
         # the brain after glm
@@ -148,7 +149,6 @@ class nuis(object):
         U, s, V = np.linalg.svd(masked_ts)
         # return the top n principal components
         return U[:, 0:n], s
-        pass
 
     def freq_filter(self, mri, tr, highpass=0.01, lowpass=None):
         """
@@ -216,107 +216,10 @@ class nuis(object):
                 - a numpy ndarray of regressors to
                   regress to.
         """
-        print "GLM with Design Matrix of Dimensions " + str(R.shape) + "..."
+        print "GLM with ign Matrix of Dimensions " + str(R.shape) + "..."
         # OLS solution for GLM B = (X^TX)^(-1)X^TY
         coefs = np.linalg.inv(R.T.dot(R)).dot(R.T).dot(data)
         return R.dot(coefs)
-
-    def segment_anat(self, amri, basename, an=1):
-        """
-        A function to use FSL's FAST to segment an anatomical
-        image into GM, WM, and CSF maps.
-
-        **Positional Arguments:**
-
-            amri:
-                - an anatomical image.
-            basename:
-                - the basename for outputs. Often it will be
-                  most convenient for this to be the dataset,
-                  followed by the subject, followed by the step of
-                  processing. Note that this anticipates a path as well;
-                  ie, /path/to/dataset_sub_nuis, with no extension.
-            an:
-                - an integer representing the type of the anatomical image.
-                  (1 for T1w, 2 for T2w, 3 for PD).
-        """
-        print "Segmenting Anatomical Image into WM, GM, and CSF..."
-        # run FAST, with options -t for the image type and -n to
-        # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
-        cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
-        mgu.execute_cmd(cmd)
-
-        self.wm_prob = "{}_{}".format(basename, "pve_2.nii.gz")
-        self.gm_prob = "{}_{}".format(basename, "pve_1.nii.gz")
-        pass
-
-    def erode_mask(self, mask, v=0):
-        """
-        A function to erode a mask by a specified number of
-        voxels. Here, we define erosion as the process of checking
-        whether all the voxels within a number of voxels for a
-        mask have values.
-
-        **Positional Arguments:**
-
-            mask:
-                - a numpy array of a mask to be eroded.
-            v:
-                - the number of voxels to erode by.
-        """
-        print "Eroding Mask..."
-        for i in range(0, v):
-            # masked_vox is a tuple 0f [x]. [y]. [z] cooords
-            # wherever mask is nonzero
-            erode_mask = np.zeros(mask.shape)
-            x, y, z = np.where(mask != 0)
-            if (x.shape == y.shape and y.shape == z.shape):
-                # iterated over all the nonzero voxels
-                for j in range(0, x.shape[0]):
-                    # check that the 3d voxels within 1 voxel are 1
-                    # if so, add to the new mask
-                    md = mask.shape
-                    if (mask[x[j], y[j], z[j]] and
-                            mask[np.min((x[j]+1, md[0]-1)), y[j], z[j]] and
-                            mask[x[j], np.min((y[j]+1, md[1]-1)), z[j]] and
-                            mask[x[j], y[j], np.min((z[j]+1, md[2]-1))] and
-                            mask[np.max((x[j]-1, 0)), y[j], z[j]] and
-                            mask[x[j], np.max((y[j]-1, 0)), z[j]] and
-                            mask[x[j], y[j], np.max((z[j]-1, 0))]):
-                        erode_mask[x[j], y[j], z[j]] = 1
-            else:
-                raise ValueError('Your mask erosion has an invalid shape.')
-            mask = erode_mask
-        return mask
-
-    def extract_mask(self, prob_map, mask_path, t, erode=0):
-        """
-        A function to extract a mask from a probability map.
-        Also, performs mask erosion as a substep.
-
-        **Positional Arguments:**
-
-            prob_map:
-                - the path to probability map for the given class
-                  of brain tissue.
-            mask_path:
-                - the path to the extracted mask.
-            t:
-                - the threshold to consider voxels part of the class.
-            erode=2:
-                - the number of voxels to erode by. Defaults to 2.
-        """
-        print "Extracting Mask from probability map {}...".format(prob_map)
-        prob = nb.load(prob_map)
-        prob_dat = prob.get_data()
-        mask = (prob_dat > t).astype(int)
-        mask = self.erode_mask(mask, v=erode)
-        img = nb.Nifti1Image(mask,
-                             header=prob.header,
-                             affine=prob.get_affine())
-        # save the corrected image
-        nb.save(img, mask_path)
-        return mask_path
 
     def friston_model(self, mc_params):
         """
@@ -471,8 +374,8 @@ class nuis(object):
         if n is not None:
             self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
                                                     "wm_mask_eroded")
-            self.extract_mask(self.wm_prob, self.er_wm_mask,
-                              .99, erode=2)
+            mgu.extract_mask(self.wm_prob, self.er_wm_mask,
+                             .99, erode=2)
             wmm = nb.load(self.er_wm_mask).get_data()
             wm_ts = fmri_dat[wmm != 0, :].T
         else:
@@ -489,8 +392,8 @@ class nuis(object):
         gm_mask_dat = None  # free for memory
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
         # GLM for nuisance correction
-        voxel = self.linear_reg(voxel, csf_ts=lv_ts, wm_ts=wm_ts,
-                                n=n, mc_params=mc_params)
+        voxel = self.linear_reg(voxel, csf_ts=lv_ts,
+                                wm_ts=wm_ts, n=n, mc_params=None)
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction

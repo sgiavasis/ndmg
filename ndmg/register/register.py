@@ -41,7 +41,8 @@ class register(object):
         pass
 
     def align(self, inp, ref, xfm=None, out=None, dof=12, searchrad=True,
-              bins=256, interp=None, cost="mutualinfo", sch=None, init=None):
+              bins=256, interp=None, cost="mutualinfo", sch=None,
+              wmseg=None, init=None):
         """
         Aligns two images and stores the transform between them
 
@@ -65,6 +66,8 @@ class register(object):
                     - the interpolation method to use.
                 sch:
                     - the optional FLIRT schedule file.
+                wmseg:
+                    - an optional white-matter segmentation for bbr.
                 init:
                     - an initial guess of an alignment.
         """
@@ -86,6 +89,8 @@ class register(object):
                    "-searchrz -180 180"
         if sch is not None:
             cmd += " -schedule {}".format(sch)
+        if wmseg is not None:
+            cmd += " -wmseg {}".format(wmseg)
         if init is not None:
             cmd += " -init {}".format(init)
         mgu.execute_cmd(cmd, verb=True)
@@ -131,20 +136,20 @@ class register(object):
 
         **Positional Arguments:**
 
-                inp:
-                    - Input impage to be aligned as a nifti image file
-                ref:
-                    - Image being aligned to as a nifti image file
-                xfm:
-                    - Transform between two images
-                aligned:
-                    - Aligned output image as a nifti image file
+            inp:
+                - Input impage to be aligned as a nifti image file
+            ref:
+                - Image being aligned to as a nifti image file
+            xfm:
+                - Transform between two images
+            aligned:
+                - Aligned output image as a nifti image file
         """
         cmd = "flirt -in {} -ref {} -out {} -init {} -interp trilinear -applyxfm"
         cmd = cmd.format(inp, ref, aligned, xfm)
         mgu.execute_cmd(cmd, verb=True)
 
-    def apply_warp(self, inp, out, ref, warp, xfm=None, mask=None):
+    def apply_warp(self, in, ref, out, warp=None, xfm=None, mask=None):
         """
         Applies a warp from the functional to reference space
         in a single step, using information about the structural->ref
@@ -152,7 +157,7 @@ class register(object):
 
         **Positional Arguments:**
 
-            inp:
+            in:
                 - the input image to be aligned as a nifti image file.
             out:
                 - the output aligned image.
@@ -160,16 +165,18 @@ class register(object):
                 - the image being aligned to.
             warp:
                 - the warp from the structural to reference space.
-            premat:
-                - the affine transformation from functional to
-                structural space.
+            xfm:
+                - the affine transformation to apply to the input.
+            mask:
+                - the mask to extract around after applying the transform.
         """
-        cmd = "applywarp --ref=" + ref + " --in=" + inp + " --out=" + out +\
-              " --warp=" + warp
+        cmd = "applywarp --ref={} --in={} --out={}".format(ref, in, out)
+        if warp is not None:
+            cmd += " --warp={}".format(warp)
         if xfm is not None:
-            cmd += " --premat=" + xfm
+            cmd += " --premat={}".format(xfm)
         if mask is not None:
-            cmd += " --mask=" + mask
+            cmd += " --mask={}".format(mask)
         mgu.execute_cmd(cmd, verb=True)
 
     def align_slices(self, dwi, corrected_dwi, idx):
@@ -241,8 +248,7 @@ class register(object):
                 - the path to the output transformation
         """
         cmd = "convert_xfm -omat {} -concat {} {}".format(xfmout, xfm1, xfm2)
-        mgu.execute_cmd(cmd, verb=True)       
-
+        mgu.execute_cmd(cmd, verb=True)
 
     def dwi2atlas(self, dwi, gtab, t1w, atlas,
                   aligned_dwi, outdir, clean=False):
@@ -345,16 +351,9 @@ class func_register(register):
         self.taligned_epi = aligned_func
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
-        # strategies so we can iterate for qc later
-        self.sreg_strat = []
-        self.sreg_epi = []
-        self.sreg_sc = []
-        self.sreg_sc_fig = []
-        self.treg_strat = []
-        self.treg_epi = []
-        self.treg_t1w = []
-        self.treg_sc = []
-        self.treg_sc_fig = []
+        # paths to intermediates for qa later
+        self.sreg_results = {}
+        self.treg_results = {}
 
         # for naming temporary files
         self.epi_name = mgu.get_filename(func)
@@ -364,7 +363,7 @@ class func_register(register):
         # put anatomical in 2mm resolution for memory
         # efficiency if it is lower
         self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).header.get_zooms()) < 9:
+        if sum(nb.load(t1w).header.get_zooms()) < 12:
             self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
                                                     self.t1w_name)
             self.resample_fsl(t1w, self.t1w, 2)
@@ -379,7 +378,7 @@ class func_register(register):
         self.bet_sens = '-f 0.3 -R -B -S'
         mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.bet_sens)
         # name intermediates for self-alignment
-        self.saligned_epi = "{}/{}_self-aligned.nii.gz".format(
+        self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
             self.epi_name)
         pass
@@ -390,16 +389,12 @@ class func_register(register):
         cost function to get the two images close, and then uses bbr
         to obtain a good alignment of brain boundaries.
         """
-        epi_init = "{}/{}_self-aligned_tmp.nii.gz".format(self.outdir['sreg_f'],
-                                                          self.epi_name)
-        epi_bbr =  "{}/{}_self-aligned_bbr.nii.gz".format(self.outdir['sreg_f'],
-                                                          self.epi_name)
-        temp_aligned = "{}/{}_noresamp.nii.gz".format(self.outdir['sreg_f'],
-                                                      self.epi_name)
         xfm_init1 = "{}/{}_xfm_epi2t1w_init1.mat".format(self.outdir['sreg_f'],
                                                          self.epi_name)
         xfm_init2 = "{}/{}_xfm_epi2t1w_init2.mat".format(self.outdir['sreg_f'],
                                                          self.epi_name)
+        epi_init = "{}/{}_local.nii.gz".format(self.outdir['sreg_f'],
+                                               self.epi_name)
 
         # perform an initial alignment with a gentle translational guess
         self.align(self.epi, self.t1w_brain, xfm=xfm_init1, bins=None,
@@ -408,41 +403,47 @@ class func_register(register):
         # perform a local registration
         self.align(self.epi, self.t1w_brain, xfm=xfm_init2, init=xfm_init1,
                    bins=None, dof=None, cost=None, searchrad=None,
-                    sch="${FSLDIR}/etc/flirtsch/simple3D.sch")
-        self.applyxfm(self.epi, self.t1w_brain, xfm_init2, epi_init)
+                   out=epi_init, sch="${FSLDIR}/etc/flirtsch/simple3D.sch")
 
-        (sc_init, fig_init) = registration_score(epi_init, self.t1w_brain,
-                                                 self.outdir['sreg_f'])
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
         if not self.simp:
-            self.align_epi(epi_init, self.t1w, self.t1w_brain, epi_bbr)
-
+            xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
+                                                       self.epi_name) 
+            xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
+                                                 self.epi_name)
+            epi_bbr = "{}/{}_bbr.nii.gz".format(self.outdir['sreg_f'],
+                                                self.epi_name)
+            self.align(self.epi, self.t1w_brain, xfm=xfm_init3,
+                       init=xfm_init2, bins=None, dof=6, cost=None,
+                       searchrad=None, sch=None)
+            map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_f'],
+                                              self.t1w_name)
+            maps = mgu.segment_anat(self.t1w_brain, map_path)
+            mgu.extract_mask(maps['wm_prob'], wm_mask, 0.5)
+            self.align(self.epi, self.t1w, xfm=xfm_bbr, wmseg=wm_mask,
+                       out=epi_bbr, init=xfm_init3, interp="spline",
+                       sch="${FSLDIR}/etc/flirtsch/bbr.sch")
             print "Analyzing Self Registration Quality..."
             (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
                                                    self.outdir['sreg_f'])
-
-            self.sreg_strat.insert(0, 'epireg')
-            self.sreg_epi.insert(0, epi_bbr)
-            self.sreg_sc.insert(0, sc_bbr)
-            self.sreg_sc_fig.insert(0, fig_bbr)
-            self.sreg_epi[0] = self.saligned_epi
-            self.resample(epi_bbr, self.saligned_epi, self.t1w)
-            cmd = "rm {} {}".format(epi_bbr, epi_init)
-            mgu.execute_cmd(cmd)
-
+            self.sreg_xfm = xfm_bbr
+            self.sreg_results['strat'] = 'epireg'
+            self.sreg_results['epi'] = epi_bbr
+            self.sreg_results['score'] = sc_bbr
+            self.sreg_results['fig'] = fig_bbr
         else:
             print ("Warning: BBR self registration not "
                    "attempted, as input is low quality.")
-            self.sreg_strat.insert(0, 'flirt')
-            self.sreg_epi.insert(0, self.saligned_epi)
-            self.sreg_sc.insert(0, sc_init)
-            self.sreg_sc_fig.insert(0, fig_init)
-            self.resample(epi_init, self.saligned_epi, self.t1w)
-            cmd = "rm {}".format(epi_init)
-            mgu.execute_cmd(cmd)
+            self.sreg_xfm = xfm_init2
+            (sc_init, fig_init) = registration_score(epi_init,
+                                                     self.t1w_brain,
+                                                     self.outdir['sreg_f'])
+            self.sreg_results['strat'] = 'flirt'
+            self.sreg_results['epi'] = epi_init
+            self.sreg_results['score'] = sc_init
+            self.sreg_results['fig'] = fig_init
         pass
-
 
     def template_align(self):
         """
@@ -452,72 +453,78 @@ class func_register(register):
         NOTE: for this to work, must first have called self-align.
         """
          
-        xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_f'],
-                                                       self.epi_name)
+        xfm_t1w2temp = "_xfm_t1w2temp.mat".format(self.outdir, self.epi_name)
 
         # linear registration from t1 space to atlas space
-        self.align(self.t1w_brain, self.atlas_brain, xfm_t1w2temp)
+        self.align(self.t1w_brain, self.atlas_brain, xfm=xfm_t1w2temp,
+                   out=None, dof=12, searchrad=True, bins=256, interp="spline",
+                   wmseg=None, init=None)
 
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
             (self.simp is False)):
-            warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
-                self.outdir['treg_a'],
-                self.epi_name)
-            epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
-                self.outdir['treg_f'],
-                self.epi_name)
-            t1w_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
-                self.outdir['treg_a'],
-                self.t1w_name)
+            warp_t1w2temp = "_warp_t1w2temp.nii.gz".format(self.outdir['treg_a'],
+                                                           self.epi_name)
+            #epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
+            #    self.outdir['treg_f'],
+            #    self.epi_name)
+            #t1w_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
+            #    self.outdir['treg_a'],
+            #    self.t1w_name)
             self.align_nonlinear(self.t1w, self.atlas, xfm_t1w2temp,
                                  warp_t1w2temp, mask=self.atlas_mask)
 
-            self.apply_warp(self.saligned_epi, epi_nl, self.atlas,
-                            warp_t1w2temp)
-            self.apply_warp(self.t1w, t1w_nl, self.atlas,
+            self.apply_warp(self.epi, self.atlas, self.taligned_epi,
+                            warp=warp_t1w2temp, xfm=self.sreg_xfm)
+            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             warp_t1w2temp, mask=self.atlas_mask)
- 
+            # self.resample(t1w_nl, self.taligned_t1w, self.atlas)
+            # self.resample(epi_nl, self.taligned_epi, self.atlas)
             print "Analyzing Nonlinear Template Registration Quality..."
-            (sc_fnirt, fig_fnirt) = registration_score(epi_nl, self.atlas_brain,
-                self.outdir['treg_f'])
+            (sc_fnirt, fig_fnirt) = registration_score(self.taligned_epi,
+                                                       self.atlas_brain,
+                                                       self.outdir['treg_f'])
 
-            self.treg_strat.insert(0, 'fnirt')
-            self.treg_epi.insert(0, epi_nl)
-            self.treg_t1w.insert(0, t1w_nl)
-            self.treg_sc.insert(0, sc_fnirt)
-            self.treg_sc_fig.insert(0, fig_fnirt)
-
-            self.resample(t1w_nl, self.taligned_t1w, self.atlas)
-            self.resample(epi_nl, self.taligned_epi, self.atlas)
-            return
+            self.treg_results['strat'] = 'fnirt'
+            self.treg_results['epi'] = self.taligned_epi
+            self.treg_results['t1w'] = self.taligned_t1w
+            self.treg_results['score'] = sc_fnirt
+            self.treg_results['fig'] = fig_fnirt
         else:
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
 
-        # note that if Nonlinear failed, we will come here as well
-        epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-            self.outdir['treg_f'],
-            self.epi_name)
-        t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-            self.outdir['treg_a'],
-            self.epi_name) 
-        self.treg_strat.insert(0, 'flirt')
-        self.treg_epi.insert(0, epi_lin)
-        self.treg_t1w.insert(0, t1w_lin)
-        # just apply our previously computed linear transform
-        self.applyxfm(self.saligned_epi, self.atlas, xfm_t1w2temp, epi_lin)
-        self.applyxfm(self.t1w, self.atlas, xfm_t1w2temp, t1w_lin)
-        mgu.extract_brain(t1w_lin, t1w_lin, opts=self.bet_sens)
-        (sc_flirt, fig_flirt) = registration_score(epi_lin, self.atlas_brain,
-                                                   self.outdir['treg_f'])
-        self.treg_sc.insert(0, sc_flirt)
-        self.treg_sc_fig.insert(0, fig_flirt)
-
-        self.resample(t1w_lin, self.taligned_t1w, self.atlas)
-        self.resample(epi_lin, self.taligned_epi, self.atlas)
+            epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+                self.outdir['treg_f'],
+                self.epi_name)
+            t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+                self.outdir['treg_a'],
+                self.epi_name) 
+            self.treg_strat.insert(0, 'flirt')
+            self.treg_epi.insert(0, epi_lin)
+            self.treg_t1w.insert(0, t1w_lin)
+            xfm_epi2temp = "{}/{}_xfm_epi2tmp.mat".format(self.outdir['treg_f'],
+                                                          self.epi_name)
+            # just apply our previously computed linear transform
+            self.combine_xfm(self.sreg_xfm, xfm_t1w2temp, xfm_epi2temp)
+            self.apply_warp(self.epi, self.atlas, self.taligned_epi,
+                            xfm=xfm_epi2temp)
+            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
+                            xfm=xfm_t1w2temp)
+            mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
+                              opts=self.bet_sens)
+            # self.resample(t1w_lin, self.taligned_t1w, self.atlas)
+            # self.resample(epi_lin, self.taligned_epi, self.atlas)
+            (sc_flirt, fig_flirt) = registration_score(self.taligned_epi,
+                                                       self.atlas_brain,
+                                                       self.outdir['treg_f'])
+ 
+            self.treg_results['strat'] = 'flirt'
+            self.treg_results['epi'] = self.taligned_epi
+            self.treg_results['t1w'] = self.taligned_t1w
+            self.treg_results['score'] = sc_flirt
+            self.treg_results['fig'] = fig_flirt
         pass
-
 
     def register(self):
         """

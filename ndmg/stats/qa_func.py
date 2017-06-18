@@ -85,7 +85,7 @@ class qa_func(object):
         print "Performing QA for Preprocessing..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        scanid = mgu.get_filename(prep.motion_func)
+        scanid = mgu.get_filename(mc_brain)
 
         mc_im = nb.load(prep.motion_func)
         mc_dat = mc_im.get_data()
@@ -274,7 +274,6 @@ class qa_func(object):
         """
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-
         reg_mri_pngs(aligned_anat, atlas, qcdir)
         return
 
@@ -291,14 +290,16 @@ class qa_func(object):
         """
         print "Performing QA for Self-Registration..."
         # analyze the quality of each self registration performed
-        regiter = zip(freg.sreg_strat, freg.sreg_epi,
-                      freg.sreg_sc, freg.sreg_sc_fig)
-        # make sure to note which brain is actually used
-        best_sc = np.max(freg.sreg_sc)
-        sreg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['sreg_f'],
-                                                   "epireg", best_sc*1000)
-        self.self_reg_sc = best_sc  # so we can recover this later
-        self.reg_func_qa(freg.saligned_epi, freg.t1w, sreg_f_final)
+        self.self_reg_sc = freg.sreg_results['score']
+        sreg_f_final = "{}/{}_score_{:.0f}".format(
+            qa_dirs['sreg_f'],
+            freg.sreg_results['strat'],
+            self.self_reg_sc*1000
+        )
+        # so we can recover this later
+        self.reg_func_qa(freg.sreg_results['epi'],
+                         freg.t1w_brain,
+                         sreg_f_final)
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
@@ -325,16 +326,21 @@ class qa_func(object):
         """
         print "Performing QA for Template-Registration..."
         # make sure to note which brain is actually used
-        best_sc = np.max(freg.treg_sc)
-        treg_f_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_f'],
-                                                   "fnirt", best_sc*1000)
-        treg_a_final = "{}/{}_score_{:.0f}".format(qa_dirs['treg_a'],
-                                                   "fnirt", best_sc*1000)
-        self.temp_reg_sc = best_sc  # so we can recover this later
-        self.reg_func_qa(freg.taligned_epi, freg.atlas,
-                         treg_f_final)
-        self.reg_anat_qa(freg.taligned_t1w, freg.atlas,
-                         treg_a_final)
+        self.temp_reg_sc = freg.treg_results['score']
+        treg_f_final = "{}/{}_score_{:.0f}".format(
+            qa_dirs['treg_f'],
+            freg.treg_results['strat'],
+            self.temp_reg_sc*1000
+        )
+        treg_a_final = "{}/{}_score_{:.0f}".format(
+            qa_dirs['treg_a'],
+            freg.treg_results['strat'],
+            self.temp_reg_sc*1000
+        )
+        self.reg_func_qa(freg.taligned_epi,
+                         freg.atlas, treg_f_final)
+        self.reg_anat_qa(freg.taligned_t1w,
+                         freg.atlas, treg_a_final)
         self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
