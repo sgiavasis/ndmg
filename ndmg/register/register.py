@@ -130,7 +130,7 @@ class register(object):
             cmd += " --refmask={}".format(mask)
         out, err = mgu.execute_cmd(cmd, verb=True)
 
-    def applyxfm(self, inp, ref, xfm, aligned):
+    def applyxfm(self, inp, ref, xfm, aligned, interp='trilinear'):
         """
         Aligns two images with a given transform
 
@@ -144,9 +144,11 @@ class register(object):
                 - Transform between two images
             aligned:
                 - Aligned output image as a nifti image file
+            interp:
+                - the interpolation method to use from fsl.
         """
-        cmd = "flirt -in {} -ref {} -out {} -init {} -interp trilinear -applyxfm"
-        cmd = cmd.format(inp, ref, aligned, xfm)
+        cmd = "flirt -in {} -ref {} -out {} -init {} -interp {} -applyxfm"
+        cmd = cmd.format(inp, ref, aligned, xfm, interp)
         mgu.execute_cmd(cmd, verb=True)
 
     def apply_warp(self, inp, ref, out, warp=None, xfm=None, mask=None):
@@ -363,7 +365,7 @@ class func_register(register):
         # put anatomical in 2mm resolution for memory
         # efficiency if it is lower
         self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).header.get_zooms()) < 12:
+        if sum(nb.load(t1w).header.get_zooms()) < 9:
             self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
                                                     self.t1w_name)
             self.resample_fsl(t1w, self.t1w, 2)
@@ -494,19 +496,16 @@ class func_register(register):
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
 
-            epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-                self.outdir['treg_f'],
-                self.epi_name)
-            t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-                self.outdir['treg_a'],
-                self.epi_name) 
-            self.treg_strat.insert(0, 'flirt')
-            self.treg_epi.insert(0, epi_lin)
-            self.treg_t1w.insert(0, t1w_lin)
+            # epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+            #     self.outdir['treg_f'],
+            #     self.epi_name)
+            # t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
+            #     self.outdir['treg_a'],
+            #     self.epi_name) 
             xfm_epi2temp = "{}/{}_xfm_epi2tmp.mat".format(self.outdir['treg_f'],
                                                           self.epi_name)
             # just apply our previously computed linear transform
-            self.combine_xfm(self.sreg_xfm, xfm_t1w2temp, xfm_epi2temp)
+            self.combine_xfms(self.sreg_xfm, xfm_t1w2temp, xfm_epi2temp)
             self.apply_warp(self.epi, self.atlas, self.taligned_epi,
                             xfm=xfm_epi2temp)
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,

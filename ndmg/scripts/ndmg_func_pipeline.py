@@ -122,7 +122,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
 
     # Create derivative output file names
     preproc_func = "{}/{}_preproc.nii.gz".format(tmp_dirs['prep'], func_name)
-    aligned_func = "{}/reg/func/{}_aligned.nii.gz".format(outdir, func_name)
+    aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
     aligned_t1w = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_a'], t1w_name)
     motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['prep'], func_name)
     nuis_func = "{}/{}_nuis.nii.gz".format(tmp_dirs['nuis'], func_name)

@@ -182,7 +182,7 @@ def extract_brain(inp, out, opts="-B"):
     pass
 
 
-def segment_anat(self, amri, basename, an=1):
+def segment_anat(amri, basename, an=1):
     """
     A function to use FSL's FAST to segment an anatomical
     image into GM, WM, and CSF prob maps.
@@ -205,7 +205,7 @@ def segment_anat(self, amri, basename, an=1):
     # run FAST, with options -t for the image type and -n to
     # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
     cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
-    mgu.execute_cmd(cmd)
+    execute_cmd(cmd)
     out = {}  # the outputs
     out['wm_prob'] = "{}_{}".format(basename, "pve_2.nii.gz")
     out['gm_prob'] = "{}_{}".format(basename, "pve_1.nii.gz")
@@ -213,7 +213,7 @@ def segment_anat(self, amri, basename, an=1):
     return out
 
 
-def erode_mask(self, mask, v=0):
+def erode_mask(mask, v=0):
     """
     A function to erode a mask by a specified number of
     voxels. Here, we define erosion as the process of checking
@@ -253,7 +253,7 @@ def erode_mask(self, mask, v=0):
     return mask
 
 
-def extract_mask(self, prob_map, mask_path, t, erode=0):
+def extract_mask(prob_map, mask_path, t, erode=0):
     """
     A function to extract a mask from a probability map.
     Also, performs mask erosion as a substep.
