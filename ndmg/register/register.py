@@ -422,6 +422,8 @@ class func_register(register):
             map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_f'],
                                               self.t1w_name)
             maps = mgu.segment_anat(self.t1w_brain, map_path)
+            wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_f'],
+                                                self.t1w_name)
             mgu.extract_mask(maps['wm_prob'], wm_mask, 0.5)
             self.align(self.epi, self.t1w, xfm=xfm_bbr, wmseg=wm_mask,
                        out=epi_bbr, init=xfm_init3, interp="spline",
