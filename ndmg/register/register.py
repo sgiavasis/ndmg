@@ -455,7 +455,8 @@ class func_register(register):
         NOTE: for this to work, must first have called self-align.
         """
          
-        xfm_t1w2temp = "_xfm_t1w2temp.mat".format(self.outdir, self.epi_name)
+        xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_a'],
+            self.epi_name)
 
         # linear registration from t1 space to atlas space
         self.align(self.t1w_brain, self.atlas_brain, xfm=xfm_t1w2temp,
@@ -465,8 +466,10 @@ class func_register(register):
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
             (self.simp is False)):
-            warp_t1w2temp = "_warp_t1w2temp.nii.gz".format(self.outdir['treg_a'],
-                                                           self.epi_name)
+            warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
+                self.outdir['treg_a'],
+                self.epi_name
+            )
             #epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
             #    self.outdir['treg_f'],
             #    self.epi_name)
@@ -475,7 +478,6 @@ class func_register(register):
             #    self.t1w_name)
             self.align_nonlinear(self.t1w, self.atlas, xfm_t1w2temp,
                                  warp_t1w2temp, mask=self.atlas_mask)
-
             self.apply_warp(self.epi, self.atlas, self.taligned_epi,
                             warp=warp_t1w2temp, xfm=self.sreg_xfm)
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
