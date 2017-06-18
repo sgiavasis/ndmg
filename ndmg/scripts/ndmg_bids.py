@@ -145,10 +145,11 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
         else:
             print ("fMRI file: {}".format(func[i]))
             print ("Acquisition pattern: {}".format(stc))
-
-            ndmg_func_pipeline(func[i], anat[i], atlas, atlas_brain, atlas_mask,
-                               lv_mask, labels, outDir, clean=(not debug), stc=stc)
-
+            try:
+                ndmg_func_pipeline(func[i], anat[i], atlas, atlas_brain, atlas_mask,
+                                   lv_mask, labels, outDir, clean=(not debug), stc=stc)
+            except Exception, e:
+                print "Failed for subject {}: {}".format(func[i], str(e))
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, dwi=True):
