@@ -507,10 +507,7 @@ class func_register(register):
             xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(self.outdir['treg_f'],
                                                           self.epi_name)
             # just apply our previously computed linear transform
-            print self.sreg_xfm
-            print xfm_t1w2temp
             self.combine_xfms(xfm_t1w2temp, self.sreg_xfm, xfm_epi2temp)
-            print xfm_epi2temp
             self.applyxfm(self.epi, self.atlas, xfm_epi2temp,
                           self.taligned_epi, interp='spline')
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
