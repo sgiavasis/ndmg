@@ -27,7 +27,7 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 class nuis(object):
 
     def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None,
-                 self.mc_params):
+                 mc_params=None):
         """
         A class for nuisance correction of fMRI.
 

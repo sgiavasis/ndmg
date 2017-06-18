@@ -179,6 +179,7 @@ def extract_brain(inp, out, opts="-B"):
     """
     cmd = "bet {} {} {}".format(inp, out, opts)
     execute_cmd(cmd, verb=True)
+    pass
 
 
 def segment_anat(self, amri, basename, an=1):
@@ -200,7 +201,7 @@ def segment_anat(self, amri, basename, an=1):
             - an integer representing the type of the anatomical image.
               (1 for T1w, 2 for T2w, 3 for PD).
     """
-    print "Segmenting Anatomical Image into WM, GM, and CSF..."
+    print("Segmenting Anatomical Image into WM, GM, and CSF...")
     # run FAST, with options -t for the image type and -n to
     # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
     cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
@@ -226,7 +227,7 @@ def erode_mask(self, mask, v=0):
         v:
     	- the number of voxels to erode by.
     """
-    print "Eroding Mask..."
+    print("Eroding Mask...")
     for i in range(0, v):
         # masked_vox is a tuple 0f [x]. [y]. [z] cooords
         # wherever mask is nonzero
@@ -245,7 +246,7 @@ def erode_mask(self, mask, v=0):
                     mask[np.max((x[j]-1, 0)), y[j], z[j]] and
                     mask[x[j], np.max((y[j]-1, 0)), z[j]] and
     	            mask[x[j], y[j], np.max((z[j]-1, 0))]):
-                erode_mask[x[j], y[j], z[j]] = 1
+                    erode_mask[x[j], y[j], z[j]] = 1
         else:
             raise ValueError('Your mask erosion has an invalid shape.')
         mask = erode_mask
@@ -269,7 +270,7 @@ def extract_mask(self, prob_map, mask_path, t, erode=0):
         erode=2:
     	- the number of voxels to erode by. Defaults to 0.
     """
-    print "Extracting Mask from probability map {}...".format(prob_map)
+    print("Extracting Mask from probability map {}...".format(prob_map))
     prob = nb.load(prob_map)
     prob_dat = prob.get_data()
     mask = (prob_dat > t).astype(int)

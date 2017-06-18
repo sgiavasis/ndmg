@@ -149,7 +149,7 @@ class register(object):
         cmd = cmd.format(inp, ref, aligned, xfm)
         mgu.execute_cmd(cmd, verb=True)
 
-    def apply_warp(self, in, ref, out, warp=None, xfm=None, mask=None):
+    def apply_warp(self, inp, ref, out, warp=None, xfm=None, mask=None):
         """
         Applies a warp from the functional to reference space
         in a single step, using information about the structural->ref
@@ -157,7 +157,7 @@ class register(object):
 
         **Positional Arguments:**
 
-            in:
+            inp:
                 - the input image to be aligned as a nifti image file.
             out:
                 - the output aligned image.
@@ -170,7 +170,7 @@ class register(object):
             mask:
                 - the mask to extract around after applying the transform.
         """
-        cmd = "applywarp --ref={} --in={} --out={}".format(ref, in, out)
+        cmd = "applywarp --ref={} --in={} --out={}".format(ref, inp, out)
         if warp is not None:
             cmd += " --warp={}".format(warp)
         if xfm is not None:
