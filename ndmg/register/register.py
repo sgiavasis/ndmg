@@ -377,7 +377,7 @@ class func_register(register):
                                                      self.t1w_name)
         # Applies skull stripping to T1 volume
         # using a very low sensitivity for thresholding
-        self.t1_bet_sens = '-f 0.3 -R -B -S'
+        self.t1_bet_sens = '-f 0.35 -R -B -S'
         self.fm_bet_sens = '-f 0.3 -R'
         mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.t1_bet_sens)
         # name intermediates for self-alignment
