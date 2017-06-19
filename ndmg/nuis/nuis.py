@@ -397,9 +397,9 @@ class nuis(object):
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
-        # voxel = self.freq_filter(voxel, tr, highpass=highpass,
-        #                          lowpass=lowpass)
-        # self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        voxel = self.freq_filter(voxel, tr, highpass=highpass,
+                                 lowpass=lowpass)
+        self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # normalize the signal to account for anatomical
         # intensity differences
