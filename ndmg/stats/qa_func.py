@@ -492,6 +492,7 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
 
         reg_mri_pngs(anat, label, qcdir, minthr=10, maxthr=95)
+        reg_mri_pngs(func, label, qcdir, minthr=10, maxthr=95)
         plot_timeseries(timeseries, qcdir=qcdir)
         pass
 

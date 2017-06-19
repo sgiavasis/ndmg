@@ -179,7 +179,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
         connectome.cor_graph(ts)
         connectome.summary()
         connectome.save_graph(connectomes[idx], fmt=fmt)
-        qc_func.roi_ts_qa(roi_ts[idx], nuis_func, aligned_t1w,
+        qc_func.roi_ts_qa(roi_ts[idx], aligned_func, aligned_t1w,
                        labels[idx], labeldir)
     # save our statistics so that we can do group level
     qc_func.save(qc_stats)
