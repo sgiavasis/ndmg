@@ -438,7 +438,6 @@ class func_register(register):
             self.sreg_xfm = xfm_init2
             self.sreg_brain = epi_init
             self.sreg_strat = 'flirt'
-        print "Analyzing self registration quality..."
         mgu.extract_brain(self.sreg_brain, self.sreg_brain,
                           opts=self.fm_bet_sens)
         pass
@@ -500,7 +499,6 @@ class func_register(register):
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             xfm=xfm_t1w2temp) 
             self.treg_strat = 'flirt'
-        print "Analyzing Template Registration quality..."
         self.taligned_epi_mask = "{}/{}_temp-aligned_mask.nii.gz".format(
             self.outdir['treg_f'],
             self.epi_name
