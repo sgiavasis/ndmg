@@ -317,7 +317,7 @@ class qa_func(object):
         t1w2temp_fig.savefig(
             "{}/{}_t1w2temp.png".format(treg_a_final, t1w_name)
         )
-        self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
+        self.voxel_qa(freg.epi_aligned_skull, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
         """
@@ -515,5 +515,4 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
         reg_mri_pngs(voxel_func, atlas_mask, qcdir,
                      loc=0, minthr=10, maxthr=95)
-        self.voxel_qa(voxel_func, atlas_mask, qcdir)
         pass

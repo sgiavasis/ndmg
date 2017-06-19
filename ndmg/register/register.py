@@ -458,6 +458,10 @@ class func_register(register):
                    out=None, dof=12, searchrad=True, bins=256, interp="spline",
                    wmseg=None, init=None)
 
+        self.epi_aligned_skull = "{}/{}_temp-aligned_skull.nii.gz".format(
+             self.outdir['treg_f'],
+             self.epi_name
+        )
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
             (self.simp is False)):
@@ -465,15 +469,9 @@ class func_register(register):
                 self.outdir['treg_a'],
                 self.epi_name
             )
-            #epi_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
-            #    self.outdir['treg_f'],
-            #    self.epi_name)
-            #t1w_nl = "{}/{}_temp-aligned_nonlinear.nii.gz".format(
-            #    self.outdir['treg_a'],
-            #    self.t1w_name)
             self.align_nonlinear(self.t1w, self.atlas, xfm_t1w2temp,
                                  warp_t1w2temp, mask=self.atlas_mask)
-            self.apply_warp(self.epi, self.atlas, self.taligned_epi,
+            self.apply_warp(self.epi, self.atlas, self.epi_aligned_skull,
                             warp=warp_t1w2temp, xfm=self.sreg_xfm)
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             warp=warp_t1w2temp)
@@ -482,12 +480,6 @@ class func_register(register):
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
 
-            # epi_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-            #     self.outdir['treg_f'],
-            #     self.epi_name)
-            # t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-            #     self.outdir['treg_a']
-            #     self.epi_name)
             xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(
                 self.outdir['treg_f'],
                 self.epi_name
@@ -495,7 +487,7 @@ class func_register(register):
             # just apply our previously computed linear transform
             self.combine_xfms(xfm_t1w2temp, self.sreg_xfm, xfm_epi2temp)
             self.applyxfm(self.epi, self.atlas, xfm_epi2temp,
-                          self.taligned_epi, interp='spline')
+                          self.epi_aligned_skull, interp='spline')
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             xfm=xfm_t1w2temp) 
             self.treg_strat = 'flirt'
@@ -503,9 +495,9 @@ class func_register(register):
             self.outdir['treg_f'],
             self.epi_name
         )
-        mgu.extract_brain(self.taligned_epi, self.taligned_epi_mask,
+        mgu.extract_brain(self.epi_aligned_skull, self.taligned_epi_mask,
                           opts=self.fm_bet_sens + ' -m')
-        mgu.apply_mask(self.taligned_epi, self.taligned_epi,
+        mgu.apply_mask(self.epi_aligned_skull, self.taligned_epi,
                        self.taligned_epi_mask)
         mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
                           opts=self.t1_bet_sens)
