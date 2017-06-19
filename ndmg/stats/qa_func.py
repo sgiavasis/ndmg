@@ -24,7 +24,8 @@ import os.path
 import matplotlib
 import numpy as np
 from ndmg.utils import utils as mgu
-from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals
+from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals, \
+    registration_score
 from ndmg.stats.qa_reg import reg_mri_pngs, plot_brain, plot_overlays
 from ndmg.register.register import func_register as ndfr
 matplotlib.use('Agg')
@@ -235,48 +236,6 @@ class qa_func(object):
         fstat.close()
         return
 
-    def reg_func_qa(self, aligned_func, atlas, qcdir):
-        """
-        A function that produces quality control information for registration
-        leg of the pipeline for functional scans.
-
-        **Positional Arguments**
-
-            aligned_func:
-                - the aligned functional MRI.
-            atlas:
-                - the atlas the functional brain is aligned to.
-            qcdir:
-                - the directory in which quality control images will
-                be placed.
-        """
-        cmd = "mkdir -p {}".format(qcdir)
-        mgu.execute_cmd(cmd)
-        reg_mri_pngs(aligned_func, atlas, qcdir, mean=True, minthr=10,
-                     maxthr=95)
-        pass
-
-    def reg_anat_qa(self, aligned_anat, atlas, qcdir):
-        """
-        A function that produces quality control information for registration
-        leg of the pipeline for anatomical scans.
-
-        **Positional Arguments**
-
-            aligned_anat:
-                - the aligned anatomical MRI.
-            atlas:
-                - the atlas the functional and anatomical brains
-                were aligned to.
-            qcdir:
-                - the directory in which quality control images will
-                be placed.
-        """
-        cmd = "mkdir -p {}".format(qcdir)
-        mgu.execute_cmd(cmd)
-        reg_mri_pngs(aligned_anat, atlas, qcdir)
-        return
-
     def self_reg_qa(self, freg, qa_dirs):
         """
         A function that produces self-registration quality control figures.
@@ -289,24 +248,33 @@ class qa_func(object):
                 - the directory to place functional qc images.
         """
         print "Performing QA for Self-Registration..."
-        # analyze the quality of each self registration performed
-        self.self_reg_sc = freg.sreg_results['score']
+        (sreg_sc, sreg_fig) = registration_score(
+            freg.sreg_brain,
+            freg.t1w_brain
+        )
+        self.self_reg_sc = sreg_sc
         sreg_f_final = "{}/{}_score_{:.0f}".format(
             qa_dirs['sreg_f'],
-            freg.sreg_results['strat'],
+            freg.sreg_strat,
             self.self_reg_sc*1000
         )
-        # so we can recover this later
-        self.reg_func_qa(freg.sreg_results['epi'],
-                         freg.t1w_brain,
-                         sreg_f_final)
+        sreg_a_final = "{}/{}_score_{:.0f}".format(
+            qa_dirs['sreg_a'],
+            freg.sreg_strat,
+            self.self_reg_sc*1000
+        )
+        cmd = "mkdir -p {} {}".format(sreg_f_final, sreg_a_final)
+        mgu.execute_cmd(cmd)
+        func_name = mgu.get_filename(freg.sreg_brain)
+        t1w_name = mgu.get_filename(freg.t1w)
+        sreg_fig.savefig(
+            "{}/{}_epi2t1w.png".format(sreg_f_final, func_name)  
+        )
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
         freg_qual = plot_overlays(t1_dat, t1brain_dat)
-        fraw_name = "{}_bet_quality.png".format(
-            mgu.get_filename(freg.t1w_brain))
-        fname = "{}/{}".format(sreg_f_final, fraw_name)
+        fname = "{}/{}_bet_quality.png".format(sreg_a_final, t1w_name)
         freg_qual.savefig(fname)
         plt.close()
         pass
@@ -321,26 +289,34 @@ class qa_func(object):
                 - the functional registration object.
             qa_dirs:
                 - a dictionary of the directories to place qa files.
-            tmp_dirs:
-                - a dictionary of the directories to place temporary files.
         """
         print "Performing QA for Template-Registration..."
-        # make sure to note which brain is actually used
-        self.temp_reg_sc = freg.treg_results['score']
+        (treg_sc, treg_fig) = registration_score(
+            freg.taligned_epi,
+            freg.atlas_brain
+        )
+        self.temp_reg_sc = treg_sc
         treg_f_final = "{}/{}_score_{:.0f}".format(
             qa_dirs['treg_f'],
-            freg.treg_results['strat'],
+            freg.treg_strat,
             self.temp_reg_sc*1000
         )
         treg_a_final = "{}/{}_score_{:.0f}".format(
             qa_dirs['treg_a'],
-            freg.treg_results['strat'],
+            freg.treg_strat,
             self.temp_reg_sc*1000
         )
-        self.reg_func_qa(freg.taligned_epi,
-                         freg.atlas, treg_f_final)
-        self.reg_anat_qa(freg.taligned_t1w,
-                         freg.atlas, treg_a_final)
+        cmd = "mkdir -p {} {}".format(treg_f_final, treg_a_final)
+        mgu.execute_cmd(cmd)
+        func_name = mgu.get_filename(freg.taligned_epi)
+        treg_fig.savefig(
+            "{}/{}_epi2temp.png".format(treg_f_final, func_name)  
+        )
+        t1w_name = mgu.get_filename(freg.taligned_t1w)
+        t1w2temp_fig = plot_overlays(freg.taligned_t1w, freg.atlas_brain)
+        t1w2temp_fig.savefig(
+            "{}/{}_t1w2temp.png".format(treg_a_final, t1w_name)
+        )
         self.voxel_qa(freg.taligned_epi, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):

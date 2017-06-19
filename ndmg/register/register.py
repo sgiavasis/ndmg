@@ -354,8 +354,8 @@ class func_register(register):
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
         # paths to intermediates for qa later
-        self.sreg_results = {}
-        self.treg_results = {}
+        self.sreg_strat = None
+        self.treg_strat = None
 
         # for naming temporary files
         self.epi_name = mgu.get_filename(func)
@@ -377,8 +377,9 @@ class func_register(register):
                                                      self.t1w_name)
         # Applies skull stripping to T1 volume
         # using a very low sensitivity for thresholding
-        self.bet_sens = '-f 0.3 -R -B -S'
-        mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.bet_sens)
+        self.t1_bet_sens = '-f 0.3 -R -B -S'
+        self.fm_bet_sens = '-f 0.3 -R'
+        mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.t1_bet_sens)
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
@@ -428,25 +429,18 @@ class func_register(register):
             self.align(self.epi, self.t1w, xfm=xfm_bbr, wmseg=wm_mask,
                        out=epi_bbr, init=xfm_init3, interp="spline",
                        sch="${FSLDIR}/etc/flirtsch/bbr.sch")
-            print "Analyzing Self Registration Quality..."
-            (sc_bbr, fig_bbr) = registration_score(epi_bbr, self.t1w_brain,
-                                                   self.outdir['sreg_f'])
             self.sreg_xfm = xfm_bbr
-            self.sreg_results['strat'] = 'epireg'
-            self.sreg_results['epi'] = epi_bbr
-            self.sreg_results['score'] = sc_bbr
-            self.sreg_results['fig'] = fig_bbr
+            self.sreg_brain = epi_bbr
+            self.sreg_strat = 'epireg'
         else:
             print ("Warning: BBR self registration not "
                    "attempted, as input is low quality.")
             self.sreg_xfm = xfm_init2
-            (sc_init, fig_init) = registration_score(epi_init,
-                                                     self.t1w_brain,
-                                                     self.outdir['sreg_f'])
-            self.sreg_results['strat'] = 'flirt'
-            self.sreg_results['epi'] = epi_init
-            self.sreg_results['score'] = sc_init
-            self.sreg_results['fig'] = fig_init
+            self.sreg_brain = epi_init
+            self.sreg_strat = 'flirt'
+        print "Analyzing self registration quality..."
+        mgu.extract_brain(self.sreg_brain, self.sreg_brain,
+                          opts=self.fm_bet_sens)
         pass
 
     def template_align(self):
@@ -483,19 +477,8 @@ class func_register(register):
             self.apply_warp(self.epi, self.atlas, self.taligned_epi,
                             warp=warp_t1w2temp, xfm=self.sreg_xfm)
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
-                            warp=warp_t1w2temp, mask=self.atlas_mask)
-            # self.resample(t1w_nl, self.taligned_t1w, self.atlas)
-            # self.resample(epi_nl, self.taligned_epi, self.atlas)
-            print "Analyzing Nonlinear Template Registration Quality..."
-            (sc_fnirt, fig_fnirt) = registration_score(self.taligned_epi,
-                                                       self.atlas_brain,
-                                                       self.outdir['treg_f'])
-
-            self.treg_results['strat'] = 'fnirt'
-            self.treg_results['epi'] = self.taligned_epi
-            self.treg_results['t1w'] = self.taligned_t1w
-            self.treg_results['score'] = sc_fnirt
-            self.treg_results['fig'] = fig_fnirt
+                            warp=warp_t1w2temp)
+            self.treg_strat = 'fnirt'
         else:
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
@@ -504,29 +487,30 @@ class func_register(register):
             #     self.outdir['treg_f'],
             #     self.epi_name)
             # t1w_lin = "{}/{}_temp-aligned_linear.nii.gz".format(
-            #     self.outdir['treg_a'],
-            #     self.epi_name) 
-            xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(self.outdir['treg_f'],
-                                                          self.epi_name)
+            #     self.outdir['treg_a']
+            #     self.epi_name)
+            xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(
+                self.outdir['treg_f'],
+                self.epi_name
+            )
             # just apply our previously computed linear transform
             self.combine_xfms(xfm_t1w2temp, self.sreg_xfm, xfm_epi2temp)
             self.applyxfm(self.epi, self.atlas, xfm_epi2temp,
                           self.taligned_epi, interp='spline')
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
-                            xfm=xfm_t1w2temp)
-            mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
-                              opts=self.bet_sens)
-            # self.resample(t1w_lin, self.taligned_t1w, self.atlas)
-            # self.resample(epi_lin, self.taligned_epi, self.atlas)
-            (sc_flirt, fig_flirt) = registration_score(self.taligned_epi,
-                                                       self.atlas_brain,
-                                                       self.outdir['treg_f'])
- 
-            self.treg_results['strat'] = 'flirt'
-            self.treg_results['epi'] = self.taligned_epi
-            self.treg_results['t1w'] = self.taligned_t1w
-            self.treg_results['score'] = sc_flirt
-            self.treg_results['fig'] = fig_flirt
+                            xfm=xfm_t1w2temp) 
+            self.treg_strat = 'flirt'
+        print "Analyzing Template Registration quality..."
+        self.taligned_epi_mask = "{}/{}_temp-aligned_mask.nii.gz".format(
+            self.outdir['treg_f'],
+            self.epi_name
+        )
+        mgu.extract_brain(self.taligned_epi, self.taligned_epi_mask,
+                          opts=self.fm_bet_sens + ' -m')
+        mgu.apply_mask(self.taligned_epi, self.taligned_epi,
+                       self.taligned_epi_mask)
+        mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
+                          opts=self.t1_bet_sens)
         pass
 
     def register(self):

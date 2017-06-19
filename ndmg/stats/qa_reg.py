@@ -106,6 +106,7 @@ def plot_brain(brain, minthr=2, maxthr=95):
                       vmin=min_val, vmax=max_val)
 
     fbr.set_size_inches(12.5, 10.5, forward=True)
+    fbr.tight_layout()
     return fbr
 
 
@@ -115,6 +116,12 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
                          'axes.titlesize': 'x-large'})
     foverlay = plt.figure()
 
+    if isinstance(atlas, basestring):
+        atlas = nb.load(atlas).get_data()
+    if isinstance(b0, basestring):
+        b0 = nb.load(b0).get_data()
+    if atlas.shape != b0.shape:
+        raise ValueError('Brains are not the same shape.')
     if cmaps is None:
         cmap1 = LinearSegmentedColormap.from_list('mycmap1',
                                                   ['black', 'magenta'])
@@ -168,6 +175,7 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
                      vmin=min_val, vmax=max_val)
 
     foverlay.set_size_inches(12.5, 10.5, forward=True)
+    foverlay.tight_layout()
     return foverlay
 
 

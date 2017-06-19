@@ -153,38 +153,32 @@ def percent_overlap(array1, array2):
     return overlap.sum()/float(occupied_space.sum())
 
 
-def registration_score(aligned_func, reference_mask, outdir):
+def registration_score(aligned_func, reference):
     """
 	A function to compute the registration score between two images.
 
     **Positional Arguments:**
         aligned_func:
-        - the brain being aligned. assumed to be a 4d fMRI scan.
-        reference_mask:
-        - the template being aligned to. assumed to be a 3d mask.
-        outdir:
-        - the directory in which temporary files will be placed.
+            - the brain being aligned. assumed to be a 4d fMRI scan that has
+              been masked.
+        reference:
+            - the template being aligned to. assumed to be a 3d brain or mask.
     """
     func_name = mgu.get_filename(aligned_func)
-    func_mask = "{}/{}_brain_mask.nii.gz".format(outdir, func_name)
-    # extract brain and use generous 0.3 threshold with -m mask option
-    mgu.extract_brain(aligned_func, func_mask, opts=' -f 0.3 -m')
 
-    func = nb.load(func_mask)
-    mask = nb.load(reference_mask)
+    func = nb.load(aligned_func)
+    ref = nb.load(reference)
     fid = mgu.get_filename(aligned_func)
 
     fdat = func.get_data()
-    mdat = mask.get_data()
-
-    prod_im = np.multiply(fdat, mdat)
+    rdat = ref.get_data()
 
     if fdat.ndim == 4:
         # if our data is 4d, mean over the temporal dimension
         fdat = fdat.mean(axis=3)
 
-    freg_qual = plot_overlays(mdat, fdat)
-    reg_score = percent_overlap(fdat, mdat)
+    freg_qual = plot_overlays(rdat, fdat)
+    reg_score = percent_overlap(fdat, rdat)
     return (reg_score, freg_qual)
 
 
