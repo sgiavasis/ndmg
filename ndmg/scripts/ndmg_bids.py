@@ -36,7 +36,8 @@ import ndmg
 import os.path as op
 import os
 import sys
-import multiprocessing
+from multiprocessing import Pool
+from functools import partial
 
 atlas_dir = '/ndmg_atlases'  # This location bc it is convenient for containers
 
@@ -120,6 +121,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
         assert(len(bvecs) == len(dwis))
         assert(len(bvals) == len(dwis))
     else:
+        anats, funcs = result
         assert(len(anats) == len(funcs))
 
     # put the arguments for each iteration as lists forming
@@ -138,7 +140,9 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                        zip(funcs, anats)])
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
-    p = multiprocessing.Pool(nthreads)
+    print args
+    print kwargs
+    p = Pool(nthreads)
     p.map(partial(f, **kwargs), args)               
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
