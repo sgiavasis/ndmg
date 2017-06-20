@@ -102,6 +102,9 @@ def get_atlas(atlas_dir, dwi=True):
     return (labels, atlas, atlas_mask, atlas_brain, lv_mask)
 
 
+def worker_wrapper((f, args, kwargs)):
+    return f(*args, **kwargs)
+
 def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                       stc=None, dwi=True, nthreads=1):
     """
@@ -135,15 +138,17 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                        in zip(dwis, bvals, bvecs, nats)])
         f = ndmg_dwi_pipeline  # the function of choice
     else:
-        args = tuple([[func, anat, atlas, atlas_brain, atlas_mask,
-                       lv_mask, labels, outDir] for (func, anat) in
-                       zip(funcs, anats)])
+        args = [[func, anat, atlas, atlas_brain, atlas_mask,
+                 lv_mask, labels, outDir] for (func, anat) in
+                 zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
+    # wrap one more time
+    arg_list = [(f, arg, kwargs) for arg in args]
     print args
     print kwargs
     p = Pool(nthreads)
-    p.map(partial(f, **kwargs), args)               
+    p.map(worker_wrapper, arg_list)
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, dwi=True):
