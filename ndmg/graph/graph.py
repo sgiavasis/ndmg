@@ -31,7 +31,7 @@ import time
 
 
 class graph(object):
-    def __init__(self, N, rois, attr=None):
+    def __init__(self, N, rois, attr=None, sens="dwi"):
         """
         Initializes the graph with nodes corresponding to the number of ROIs
 
@@ -59,7 +59,7 @@ class graph(object):
                           date=time.asctime(time.localtime()),
                           source="http://m2g.io",
                           region="brain",
-                          sensor="Diffusion MRI",
+                          sensor=sens,
                           ecount=0,
                           vcount=len(n_ids)
                           )
@@ -105,7 +105,6 @@ class graph(object):
 
         edge_list = [(k[0], k[1], v) for k, v in self.edge_dict.items()]
         self.g.add_weighted_edges_from(edge_list)
-        pass
 
     def get_graph(self):
         """
