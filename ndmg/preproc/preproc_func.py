@@ -15,8 +15,8 @@
 # limitations under the License.
 #
 
-# preproc_fmri.py
-# Created by Eric Bridgeford on 2016-06-20-16.
+# preproc_func.py
+# Created by Eric Bridgeford on 2016-06-20.
 # Email: ebridge2@jhu.edu
 
 import numpy as np
@@ -25,14 +25,13 @@ import sys
 import os.path as op
 import os.path
 import nilearn as nl
-from ndmg.utils import utils as mgu
+from ndmg import utils as mgu
 from scipy import signal
 
 
 class preproc_func():
 
-    def __init__(self, func, preproc_func, motion_func,
-                   outdir, stc=None, scanid=""):
+    def __init__(self, func, preproc_func, motion_func, outdir):
         """
         Enables preprocessing of single images for single images. Has options
         to perform motion correction.
@@ -41,8 +40,6 @@ class preproc_func():
         self.preproc_func = preproc_func
         self.motion_func = motion_func
         self.outdir = outdir
-        self.stc = stc
-        self.scanid = scanid
         pass
 
     def motion_correct(self, mri, corrected_mri, idx=None):
@@ -103,7 +100,7 @@ class preproc_func():
         else:
             print "Skipping slice timing correction."
 
-    def preprocess(self):
+    def preprocess(self, stc=None):
         """
         A function to preprocess a stack of 3D images.
         """

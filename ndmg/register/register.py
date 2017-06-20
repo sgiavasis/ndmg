@@ -353,7 +353,7 @@ class func_register(register):
         self.taligned_epi = aligned_func
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
-        # paths to intermediates for qa later
+        # trategies for qa later
         self.sreg_strat = None
         self.treg_strat = None
 
@@ -362,24 +362,10 @@ class func_register(register):
         self.t1w_name = mgu.get_filename(t1w)
         self.atlas_name = mgu.get_filename(atlas)
 
-        # put anatomical in 2mm resolution for memory
-        # efficiency if it is lower
-        self.simp=False  # for simple inputs
-        if sum(nb.load(t1w).header.get_zooms()) < 9:
-            self.t1w = "{}/{}_resamp.nii.gz".format(self.outdir['sreg_a'],
-                                                    self.t1w_name)
-            self.resample_fsl(t1w, self.t1w, 2)
+        if sum(nb.load(t1w).header.get_zooms()) == 6:
+            self.simp = False
         else:
             self.simp = True  # if the input is poor
-            self.t1w = t1w
-        # since we will need the t1w brain multiple times
-        self.t1w_brain = "{}/{}_brain.nii.gz".format(self.outdir['sreg_a'],
-                                                     self.t1w_name)
-        # Applies skull stripping to T1 volume
-        # using a very low sensitivity for thresholding
-        self.t1_bet_sens = '-f 0.4 -R -B -S'
-        self.fm_bet_sens = '-f 0.3 -R'
-        mgu.extract_brain(self.t1w, self.t1w_brain, opts=self.t1_bet_sens)
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
