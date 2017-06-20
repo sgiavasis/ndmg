@@ -88,7 +88,6 @@ def get_atlas(atlas_dir, dwi=True):
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
 
-    print fils
     ope = op.exists
     if any(not ope(f) for f in fils):
         print("Cannot find atlas information; downloading...")
@@ -129,8 +128,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
 
     # put the arguments for each iteration as lists forming
     # the elements of a tuple of jobs in args
-    # store the function we would be calling in f
-
+    # store the function we will be calling in f
     kwargs = {'clean': (not debug)}  # our keyword arguments
     if dwi:
         args = tuple([[dw, bval, bvec, anat, atlas, atlas_mask,
@@ -143,12 +141,12 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                  zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
-    # wrap one more time
+    # optional args stored in kwargs
+    # use worker wrapper to call function f with args arg
+    # and keyword args kwargs
     arg_list = [(f, arg, kwargs) for arg in args]
-    print args
-    print kwargs
-    p = Pool(nthreads)
-    p.map(worker_wrapper, arg_list)
+    p = Pool(nthreads)  # start nthreads in parallel
+    p.map(worker_wrapper, arg_list)  # run them
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, dwi=True):
