@@ -36,7 +36,7 @@ import ndmg
 import os.path as op
 import os
 import sys
-
+import multiprocessing
 
 atlas_dir = '/ndmg_atlases'  # This location bc it is convenient for containers
 
@@ -102,7 +102,7 @@ def get_atlas(atlas_dir, dwi=True):
 
 
 def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
-                      stc=None, dwi=True):
+                      stc=None, dwi=True, nthreads=1):
     """
     Crawls the given BIDS organized directory for data pertaining to the given
     subject and session, and passes necessary files to ndmg_dwi_pipeline for
@@ -115,41 +115,31 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
     result = crawl_bids_directory(inDir, subjs, sesh, dwi=dwi)
    
     if dwi:
-	anat, dwi, bval, bvec = result 
-        assert(len(anat) == len(dwi))
-        assert(len(bvec) == len(dwi))
-        assert(len(bval) == len(dwi))
-        # TODO remove below
-        print anat
-        print dwi
-        print bvec
-        print bval
-        # TODO remove above
+	anats, dwis, bvals, bvecs = result
+        assert(len(anats) == len(dwis))
+        assert(len(bvecs) == len(dwis))
+        assert(len(bvals) == len(dwis))
     else:
-        anat, func = result
-        assert(len(anat) == len(func))
-        print anat
-        print func
-        print len(anat)
-        print len(func)
+        assert(len(anats) == len(funcs))
 
-    for i, scans in enumerate(anat):
-        print("T1 file: {}".format(anat[i]))
-        if dwi:
-            print("DWI file: {}".format(dwi[i]))
-            print("Bval file: {}".format(bval[i]))
-            print("Bvec file: {}".format(bvec[i]))
+    # put the arguments for each iteration as lists forming
+    # the elements of a tuple of jobs in args
+    # store the function we would be calling in f
 
-            ndmg_dwi_pipeline(dwi[i], bval[i], bvec[i], anat[i], atlas, atlas_mask,
-                          labels, outDir, clean=(not debug))
-        else:
-            print ("fMRI file: {}".format(func[i]))
-            print ("Acquisition pattern: {}".format(stc))
-            try:
-                ndmg_func_pipeline(func[i], anat[i], atlas, atlas_brain, atlas_mask,
-                                   lv_mask, labels, outDir, clean=(not debug), stc=stc)
-            except Exception, e:
-                print "Failed for subject {}: {}".format(func[i], str(e))
+    kwargs = {'clean': (not debug)}  # our keyword arguments
+    if dwi:
+        args = tuple([[dw, bval, bvec, anat, atlas, atlas_mask,
+                       labels, outDir] for (dw, bval, bvec, anat)
+                       in zip(dwis, bvals, bvecs, nats)])
+        f = ndmg_dwi_pipeline  # the function of choice
+    else:
+        args = tuple([[func, anat, atlas, atlas_brain, atlas_mask,
+                       lv_mask, labels, outDir] for (func, anat) in
+                       zip(funcs, anats)])
+        f = ndmg_func_pipeline
+        kwargs['stc'] = stc
+    p = multiprocessing.Pool(nthreads)
+    p.map(partial(f, **kwargs), args)               
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, dwi=True):
@@ -244,6 +234,10 @@ def main():
                         '(where each line is the shift in TRs), '
                         'up (ie, bottom to top), down (ie, top to bottom), '
                         'and interleaved.', default=None)
+    parser.add_argument("--nthreads", action="store", help="The number of "
+                        "threads you have available. Should be approximately "
+                        "min(ncpu*hyperthreads/cpu, maxram/10)", default=1,
+                        type=int)
     result = parser.parse_args()
 
     inDir = result.bids_dir
@@ -257,7 +251,8 @@ def main():
     stc = result.stc
     debug = result.debug
     dwi = result.modality == 'dwi'
-    
+    nthreads = result.nthreads
+
     minimal = result.minimal
     log = result.log
     atlas = result.atlas
@@ -282,7 +277,7 @@ def main():
             else: 
                 s3_get_data(buck, remo, inDir, public=creds)
         modif = 'ndmg_{}'.format(ndmg.version.replace('.', '-'))
-        participant_level(inDir, outDir, subj, sesh, debug, stc, dwi)
+        participant_level(inDir, outDir, subj, sesh, debug, stc, dwi, nthreads)
 
     elif level == 'group':
         if buck is not None and remo is not None:
