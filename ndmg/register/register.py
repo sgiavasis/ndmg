@@ -414,8 +414,10 @@ class func_register(register):
             self.sreg_xfm = xfm_init2
             self.sreg_brain = epi_init
             self.sreg_strat = 'flirt'
-        mgru.extract_epi_brain(self.sreg_brain, self.sreg_brain,
-                               self.outdir['sreg_f'])
+        # have to use bet for this, as afni 3dautomask
+        # only works on 4d volumes
+        mgu.extract_brain(self.sreg_brain, self.sreg_brain,
+                          opts='-f 0.3 -R')
         pass
 
     def template_align(self):

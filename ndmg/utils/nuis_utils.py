@@ -112,7 +112,7 @@ def segment_anat(amri, basename, an=1):
     # run FAST, with options -t for the image type and -n to
     # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
     cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
-    execute_cmd(cmd)
+    mgu.execute_cmd(cmd)
     out = {}  # the outputs
     out['wm_prob'] = "{}_{}".format(basename, "pve_2.nii.gz")
     out['gm_prob'] = "{}_{}".format(basename, "pve_1.nii.gz")
