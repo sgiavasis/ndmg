@@ -472,5 +472,5 @@ class func_register(register):
         mgru.extract_epi_brain(self.epi_aligned_skull, self.taligned_epi,
                               self.outdir['treg_f'])
         mgru.extract_t1w_brain(self.taligned_t1w, self.taligned_t1w,
-                              self.outdir['treg_a'])
+                               self.outdir['treg_a'])
         pass
