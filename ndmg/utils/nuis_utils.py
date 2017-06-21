@@ -93,29 +93,31 @@ def probmap2mask(prob_map, mask_path, t, erode=0):
     return mask_path
 
 
-def segment_anat(amri, basename, an=1):
+def segment_t1w(t1w, basename, opts=''):
     """
     A function to use FSL's FAST to segment an anatomical
     image into GM, WM, and CSF prob maps.
 
     **Positional Arguments:**
 
-        amri:
-            - an anatomical image.
+        t1w:
+            - an anatomical T1w image.
         basename:
             - the basename for outputs. Often it will be
               most convenient for this to be the dataset,
               followed by the subject, followed by the step of
               processing. Note that this anticipates a path as well;
               ie, /path/to/dataset_sub_nuis, with no extension.
-        an:
-            - an integer representing the type of the anatomical image.
-              (1 for T1w, 2 for T2w, 3 for PD).
+        opts:
+            - additional options that can optionally be passed to
+              fast. Desirable options might be -P, which will use
+              prior probability maps if the input T1w MRI is in
+              standard space.
     """
     print("Segmenting Anatomical Image into WM, GM, and CSF...")
     # run FAST, with options -t for the image type and -n to
     # segment into CSF (pve_0), WM (pve_1), GM (pve_2)
-    cmd = " ".join(["fast -t", str(int(an)), "-n 3 -o", basename, amri])
+    cmd = "fast -t 1 {} -n 3 -o {}".format(opts, basename)
     mgu.execute_cmd(cmd, verb=True)
     out = {}  # the outputs
     out['wm_prob'] = "{}_{}".format(basename, "pve_2.nii.gz")

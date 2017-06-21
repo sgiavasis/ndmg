@@ -69,7 +69,7 @@ class nuis(object):
         self.gm_mask = "{}/{}_gmm.nii.gz".format(self.outdir, nuisname)
         self.map_path = "{}/{}_seg".format(self.outdir, nuisname)
         # segment the brain for quality control purposes
-        maps = mgnu.segment_anat(self.smri, self.map_path)
+        maps = mgnu.segment_t1w(self.smri, self.map_path, opts='-P')
         # extract the masks
         self.wm_prob = maps['wm_prob']
         mgnu.probmap2mask(maps['wm_prob'], self.wm_mask, .99)

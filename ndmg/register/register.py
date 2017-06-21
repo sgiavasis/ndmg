@@ -398,7 +398,7 @@ class func_register(register):
                        searchrad=None, sch=None)
             map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_f'],
                                               self.t1w_name)
-            maps = mgu.segment_anat(self.t1w_brain, map_path)
+            maps = mgnu.segment_t1w(self.t1w_brain, map_path)
             wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_f'],
                                                 self.t1w_name)
             mgu.extract_mask(maps['wm_prob'], wm_mask, 0.5)
