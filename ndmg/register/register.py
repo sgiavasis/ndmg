@@ -220,22 +220,6 @@ class register(object):
         # Saves new image
         nb.save(target_im, ingested)
 
-    def resample_fsl(self, base, res, goal_res, interp='nearestneighbour'):
-        """
-        A function to resample a base image in fsl to that of a template.
-        **Positional Arguments:**
-
-            base:
-                - the path to the base image to resample.
-            res:
-                - the filename after resampling.
-            goal_res:
-                - the desired resolution.
-        """
-        cmd = "flirt -in {} -ref {} -out {} -applyisoxfm {} -interp {}"
-        cmd = cmd.format(base, base, res, goal_res, interp)
-        mgu.execute_cmd(cmd, verb=True)
-
     def combine_xfms(self, xfm1, xfm2, xfmout):
         """
         A function to combine two transformations, and output the
@@ -309,7 +293,7 @@ class register(object):
 
         # Applies combined transform to dwi image volume
         self.applyxfm(temp_aligned, atlas, xfm, temp_aligned2)
-        self.resample(temp_aligned2, aligned_dwi, atlas)
+        self.resamp(temp_aligned2, aligned_dwi, atlas)
 
         if clean:
             cmd = "rm -f {} {} {} {} {}*".format(dwi2, temp_aligned, b0,
@@ -368,9 +352,9 @@ class func_register(register):
         self.atlas_name = mgu.get_filename(atlas)
 
         if sum(nb.load(t1w).header.get_zooms()) == 6:
-            self.resample = False
+            self.resamp = False
         else:
-            self.resample = True  # if the input is poor
+            self.resamp = True  # if the input is poor
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
@@ -401,7 +385,7 @@ class func_register(register):
 
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
-        if not self.resample:
+        if not self.resamp:
             xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
                                                        self.epi_name) 
             xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
@@ -455,7 +439,7 @@ class func_register(register):
         )
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
-            (self.resample is False)):
+            (self.resamp is False)):
             warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
                 self.outdir['treg_a'],
                 self.epi_name

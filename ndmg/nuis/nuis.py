@@ -19,6 +19,7 @@
 # Created by Eric Bridgeford on 2016-06-20-16.
 # Email: ebridge2@jhu.edu
 from ndmg.utils import utils as mgu
+from ndmg.utils import nuis_utils as mgnu
 import nibabel as nb
 import numpy as np
 from scipy.fftpack import rfft, irfft, rfftfreq
@@ -68,11 +69,11 @@ class nuis(object):
         self.gm_mask = "{}/{}_gmm.nii.gz".format(self.outdir, nuisname)
         self.map_path = "{}/{}_seg".format(self.outdir, nuisname)
         # segment the brain for quality control purposes
-        maps = mgu.segment_anat(self.smri, self.map_path)
+        maps = mgnu.segment_anat(self.smri, self.map_path)
         # extract the masks
         self.wm_prob = maps['wm_prob']
-        mgu.extract_mask(maps['wm_prob'], self.wm_mask, .99)
-        mgu.extract_mask(maps['gm_prob'], self.gm_mask, .95)
+        mgnu.probmap2mask(maps['wm_prob'], self.wm_mask, .99)
+        mgnu.probmap2mask(maps['gm_prob'], self.gm_mask, .95)
         # the centered brain
         self.cent_nuis = None
         # the brain after glm
@@ -374,7 +375,7 @@ class nuis(object):
         if n is not None:
             self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
                                                     "wm_mask_eroded")
-            mgu.extract_mask(self.wm_prob, self.er_wm_mask,
+            mgnu.probmap2mask(self.wm_prob, self.er_wm_mask,
                              .99, erode=2)
             wmm = nb.load(self.er_wm_mask).get_data()
             wm_ts = fmri_dat[wmm != 0, :].T

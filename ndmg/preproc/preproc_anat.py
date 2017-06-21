@@ -20,7 +20,7 @@
 # Email: ebridge2@jhu.edu
 
 from ndmg import utils as mgu
-from ndmg.register import resample_fsl
+from ndmg.utils import reg_utils as mgru
 
 
 class preproc_anat():
