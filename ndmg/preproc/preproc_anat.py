@@ -19,8 +19,9 @@
 # Created by Eric Bridgeford on 2017-06-20.
 # Email: ebridge2@jhu.edu
 
-from ndmg import utils as mgu
+from ndmg.utils import utils as mgu
 from ndmg.utils import reg_utils as mgru
+import nibabel as nb
 
 
 class preproc_anat():
@@ -57,14 +58,15 @@ class preproc_anat():
             - res:
                 - the resampling resolution to use if the input is high res.
         """
-        mgu.normalize_t1w(self.anat, self.anat_intens)
+        mgru.normalize_t1w(self.anat, self.anat_intens)
         # resample if the image is at a high resolution to 2mm for consistency
         if sum(nb.load(self.anat).header.get_zooms()) < 6:
-            resample_fsl(self.anat_intens, self.anat_preproc, 2)
+            mgru.resample_fsl(self.anat_intens, self.anat_preproc, 2)
             self.resample = True
         else:
             cmd = "mv {} {}".format(self.anat_intens, self.anat_preproc)
+            mgu.execute_cmd(cmd, verb=True)
             self.anat_intens = None
-        mgu.extract_t1w_brain(self.anat_preproc, self.anat_preproc_brain,
-                              outdir)
+        mgru.extract_t1w_brain(self.anat_preproc, self.anat_preproc_brain,
+                               self.outdir)
         pass

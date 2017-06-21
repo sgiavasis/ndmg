@@ -23,6 +23,7 @@
 from subprocess import Popen, PIPE
 import os.path as op
 import ndmg.utils as mgu
+from ndmg.utils import reg_utils as mgru
 import nibabel as nb
 import numpy as np
 import nilearn.image as nl
@@ -413,8 +414,8 @@ class func_register(register):
             self.sreg_xfm = xfm_init2
             self.sreg_brain = epi_init
             self.sreg_strat = 'flirt'
-        mgu.extract_brain(self.sreg_brain, self.sreg_brain,
-                          opts=self.fm_bet_sens)
+        mgru.extract_epi_brain(self.sreg_brain, self.sreg_brain,
+                               self.outdir['sreg_f'])
         pass
 
     def template_align(self):
@@ -466,14 +467,8 @@ class func_register(register):
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
                             xfm=xfm_t1w2temp) 
             self.treg_strat = 'flirt'
-        self.taligned_epi_mask = "{}/{}_temp-aligned_mask.nii.gz".format(
-            self.outdir['treg_f'],
-            self.epi_name
-        )
-        mgu.extract_brain(self.epi_aligned_skull, self.taligned_epi_mask,
-                          opts=self.fm_bet_sens + ' -m')
-        mgu.apply_mask(self.epi_aligned_skull, self.taligned_epi,
-                       self.taligned_epi_mask)
-        mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
-                          opts=self.t1_bet_sens)
+        mgru.extract_epi_brain(self.epi_aligned_skull, self.taligned_epi,
+                              self.outdir['treg_f'])
+        mgru.extract_t1w_brain(self.taligned_t1w, self.taligned_t1w,
+                              self.outdir['treg_a'])
         pass

@@ -236,7 +236,7 @@ class qa_func(object):
         fstat.close()
         pass
 
-    def preproc_anat_qa(self, prep, qa_dir):
+    def anat_preproc_qa(self, prep, qa_dir):
         """
         A function that produces anatomical preprocessing quality assurance
         figures.

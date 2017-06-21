@@ -54,7 +54,7 @@ def extract_epi_brain(epi, out, tmpdir):
         - tmpdir:
             - the directory to place temporary files.
     """
-    epi_name = get_filename(epi)
+    epi_name = mgu.get_filename(epi)
     epi_mask = "{}/{}_mask.nii.gz".format(tmpdir, epi_name)
     extract_mask(epi, epi_mask)
     apply_mask(epi, epi_mask, out)
@@ -64,7 +64,7 @@ def extract_epi_brain(epi, out, tmpdir):
 def extract_mask(inp, out):
     """
     A function that extracts a mask from images using AFNI's
-    3dAutoMask algorithm.
+    3dAutomask algorithm.
 
     **Positional Arguments:**
 
@@ -74,7 +74,7 @@ def extract_mask(inp, out):
         - out:
             - the path to the extracted mask.
     """
-    cmd = "3dAutoMask -prefix {} {}".format(out, inp)
+    cmd = "3dAutomask -prefix {} {}".format(out, inp)
     mgu.execute_cmd(cmd, verb=True) 
     pass
 
@@ -93,10 +93,10 @@ def extract_t1w_brain(t1w, out, tmpdir):
         - tmpdir:
             - the temporary directory to store images.
     """
-    t1w_name = get_filename(t1w)
+    t1w_name = mgu.get_filename(t1w)
     # the t1w image with the skull removed.
     skull_t1w = "{}/{}_noskull.nii.gz".format(tmpdir, t1w_name)
-    t1w_skullstrip(t1w, skull-off_t1w)
+    t1w_skullstrip(t1w, skull_t1w)
     apply_mask(t1w, skull_t1w, out)
     pass
 
@@ -114,7 +114,7 @@ def normalize_t1w(inp, out):
         - out:
             - the output intensity-normalized image.
     """
-    cmd = "3dUnifize -prefix {} {}".format(out, inp)
+    cmd = "3dUnifize -prefix {} -input {}".format(out, inp)
     mgu.execute_cmd(cmd, verb=True)
     pass
 
@@ -156,7 +156,6 @@ def t1w_skullstrip(t1w, out):
         - out:
             - the output skull-stripped image.
     """
-    # orig_vol preserves original values
-    cmd = "3dSkullStrip -prefix {} {}".format(out, inp)
+    cmd = "3dSkullStrip -prefix {} -input {}".format(out, t1w)
     mgu.execute_cmd(cmd, verb=True)
     pass

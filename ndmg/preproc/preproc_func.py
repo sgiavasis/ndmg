@@ -109,8 +109,8 @@ class preproc_func():
         s0 = "{}/{}_0slice.nii.gz".format(self.outdir, func_name)
         stc_func = "{}/{}_stc.nii.gz".format(self.outdir, func_name)
         # TODO EB: decide whether it is advantageous to align to mean image
-        if (self.stc is not None):
-            self.slice_time_correct(self.func, stc_func, self.stc)
+        if (stc is not None):
+            self.slice_time_correct(self.func, stc_func, stc)
         else:
             stc_func = self.func
         self.motion_correct(stc_func, self.motion_func, None)

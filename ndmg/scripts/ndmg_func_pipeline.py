@@ -129,7 +129,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
                                                             t1w_name)
     aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
     aligned_t1w = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_a'], t1w_name)
-    motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['prep'], func_name)
+    motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['f_prep'], func_name)
     nuis_func = "{}/{}_nuis.nii.gz".format(tmp_dirs['nuis'], func_name)
     voxel_ts = "{}/timeseries/voxel/{}_voxel.npz".format(outdir, func_name)
 
@@ -175,7 +175,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     # ------- Nuisance Correction Steps ---------------------------- #
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
-               lv_mask=lv_mask, mc_params=prep.mc_params)
+               lv_mask=lv_mask, mc_params=f_prep.mc_params)
     nuis.nuis_correct(trim=2, n=5)
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
