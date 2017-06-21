@@ -119,7 +119,7 @@ def normalize_t1w(inp, out):
     pass
 
 
-def resample_fsl(self, base, res, goal_res, interp='spline'):
+def resample_fsl(base, res, goal_res, interp='spline'):
     """
     A function to resample a base image in fsl to that of a template.
 
