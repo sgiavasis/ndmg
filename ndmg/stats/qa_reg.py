@@ -31,7 +31,7 @@ from scipy import ndimage
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib as mpl
 mpl.use('Agg')  # very important above pyplot import
-from nilearn.plotting.edge_detect import _edge_detect as edge_detect
+from nilearn.plotting.edge_detect import _edge_map as edge_map
 import matplotlib.pyplot as plt
 
 
@@ -132,7 +132,7 @@ def plot_brain(brain, minthr=2, maxthr=95, edge=False):
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
             if edge:
-                image = edge_detect(image)[1]
+                image = edge_map(image)
                 alpha = 1
             else:
                 alpha = 0.6

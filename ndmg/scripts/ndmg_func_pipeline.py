@@ -252,10 +252,14 @@ def main():
     print "Creating output temp directory: {}/tmp".format(result.outdir)
     mgu.execute_cmd("mkdir -p {} {}/tmp".format(result.outdir, result.outdir))
 
-    ndmg_func_pipeline(result.func, result.t1w, result.atlas,
-                       result.atlas_brain, result.atlas_mask, result.lv_mask,
-                       result.labels, result.outdir, result.clean, result.stc,
-                       result.fmt)
+    try:
+        ndmg_func_pipeline(result.func, result.t1w, result.atlas,
+                           result.atlas_brain, result.atlas_mask,
+                           result.lv_mask, result.labels, result.outdir,
+                           result.clean, result.stc, result.fmt)
+    except Exception, e:
+        print "Error: {} for scan {}".format(str(e),
+                                             mgu.get_filename(result.func))
 
 if __name__ == "__main__":
     main()
