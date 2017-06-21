@@ -36,7 +36,7 @@ class preproc_anat():
             - anat_preproc:
                 - the preprocessed anatomical image.
             - anat_preproc_brain:
-                - the brain of the preprocessed anatomical image.
+                - the preprocessed anatomical brain image.
             - outdir:
                 - the output directory.
         """
@@ -63,7 +63,8 @@ class preproc_anat():
             resample_fsl(self.anat_intens, self.anat_preproc, 2)
             self.resample = True
         else:
-            self.anat_preproc = self.anat_intens
+            cmd = "mv {} {}".format(self.anat_intens, self.anat_preproc)
+            self.anat_intens = None
         mgu.extract_t1w_brain(self.anat_preproc, self.anat_preproc_brain,
                               outdir)
         pass

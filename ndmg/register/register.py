@@ -319,7 +319,7 @@ class register(object):
 
 
 class func_register(register):
-    def __init__(self, func, t1w, atlas, atlas_brain, atlas_mask,
+    def __init__(self, func, t1w, t1w_brain, atlas, atlas_brain, atlas_mask,
                  aligned_func, aligned_t1w, outdir):
         """
         A class to change brain spaces from a subject's epi sequence
@@ -330,7 +330,9 @@ class func_register(register):
             func:
                 - the path of the preprocessed fmri image.
             t1w:
-                - the path of the T1 scan.
+                - the path of the T1w scan.
+            t1w_brain:
+                - the path of the brain extracted T1w scan.
             atlas:
                 - the template atlas.
             atlas_brain:
@@ -347,12 +349,15 @@ class func_register(register):
         super(register, self).__init__()
         # our basic dependencies
         self.epi = func
+        self.t1w = t1w
+        self.t1w_brain = t1w_brain
         self.atlas = atlas
         self.atlas_brain = atlas_brain
         self.atlas_mask = atlas_mask
         self.taligned_epi = aligned_func
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
+
         # trategies for qa later
         self.sreg_strat = None
         self.treg_strat = None
@@ -363,9 +368,9 @@ class func_register(register):
         self.atlas_name = mgu.get_filename(atlas)
 
         if sum(nb.load(t1w).header.get_zooms()) == 6:
-            self.simp = False
+            self.resample = False
         else:
-            self.simp = True  # if the input is poor
+            self.resample = True  # if the input is poor
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
@@ -396,7 +401,7 @@ class func_register(register):
 
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
-        if not self.simp:
+        if not self.resample:
             xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
                                                        self.epi_name) 
             xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
@@ -450,7 +455,7 @@ class func_register(register):
         )
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
-            (self.simp is False)):
+            (self.resample is False)):
             warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
                 self.outdir['treg_a'],
                 self.epi_name
@@ -487,13 +492,4 @@ class func_register(register):
                        self.taligned_epi_mask)
         mgu.extract_brain(self.taligned_t1w, self.taligned_t1w,
                           opts=self.t1_bet_sens)
-        pass
-
-    def register(self):
-        """
-        A function to perform self registration followed by
-        template registration.
-        """
-        self.self_align()
-        self.template_align()
         pass

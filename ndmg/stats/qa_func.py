@@ -68,7 +68,7 @@ class qa_func(object):
         f.close()
         pass
 
-    def preproc_qa(self, prep, qcdir=None):
+    def func_preproc_qa(self, prep, qcdir):
         """
         A function for performing quality control given motion
         correction information. Produces plots of the motion correction
@@ -83,7 +83,7 @@ class qa_func(object):
             qcdir:
                 - the quality control directory.
         """
-        print "Performing QA for Preprocessing..."
+        print "Performing QA for Functional Preprocessing..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
         scanid = mgu.get_filename(prep.motion_func)
@@ -234,7 +234,32 @@ class qa_func(object):
                 x = x + 1
 
         fstat.close()
-        return
+        pass
+
+    def preproc_anat_qa(self, prep, qa_dir):
+        """
+        A function that produces anatomical preprocessing quality assurance
+        figures.
+
+        **Positional Arguments:**
+
+            - prep:
+                - the preprocessing object.
+            - qa_dir:
+                - the directory to place figures.
+        """
+        print "Performing QA for Anatoical Preprocessing..."
+        figs = {}
+        figs['raw_anat'] = plot_brain(prep.anat)
+        if prep.resample:
+            figs['intensity_normalized'] = plot_brain(prep.anat_intens)
+        figs['preproc'] = plot_brain(prep.anat_preproc)
+        figs['preproc_brain'] = plot_brain(prep.anat_preproc_brain)
+        for plotname, fig in figs.iteritems():
+            fname = "{}/{}_{}.png".format(qa_dir, prep.anat_name, plotname)
+            fig.tight_layout()
+            fig.savefig(fname)
+        pass
 
     def self_reg_qa(self, freg, qa_dirs):
         """
