@@ -31,11 +31,12 @@ from scipy import ndimage
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib as mpl
 mpl.use('Agg')  # very important above pyplot import
-
+from nilearn.plotting.edge_detect import _edge_detect as edge_detect
 import matplotlib.pyplot as plt
 
 
-def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False, minthr=2, maxthr=95):
+def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False, minthr=2,
+                 maxthr=95, edge=False):
     """
     outdir: directory where output png file is saved
     fname: name of output file WITHOUT FULL PATH. Path provided in outdir.
@@ -53,16 +54,43 @@ def reg_mri_pngs(mri, atlas, outdir, loc=0, mean=False, minthr=2, maxthr=95):
     cmap1 = LinearSegmentedColormap.from_list('mycmap1', ['black', 'magenta'])
     cmap2 = LinearSegmentedColormap.from_list('mycmap2', ['black', 'green'])
 
-    fig = plot_overlays(atlas_data, mr_data, (cmap1, cmap2), minthr, maxthr)
+    fig = plot_overlays(atlas_data, mr_data, [cmap1, cmap2], minthr, maxthr,
+                        edge)
 
     # name and save the file
     fname = os.path.split(mri)[1].split(".")[0] + '.png'
     fig.savefig(outdir + '/' + fname, format='png')
     plt.close()
 
-def plot_brain(brain, minthr=2, maxthr=95):
+
+def opaque_colorscale(basemap, reference, vmin=None, vmax=None, alpha=1):
+    """
+    A function to return a colorscale, with opacities
+    dependent on reference intensities.
+
+    **Positional Arguments:**
+
+        - basemap:
+            - the colormap to use for this colorscale.
+        - reference:
+            - the reference matrix.
+    """
+    reference = reference.astype(float)
+    if vmin is not None:
+        reference[reference > vmax] = vmax
+    if vmax is not None:
+        reference[reference < vmin] = vmin
+    cmap = basemap(reference)
+    # all values beteween 0 opacity and 1
+    opaque_scale = alpha*reference/float(np.nanmax(reference))
+    # remaps intensities
+    cmap[:, :, 3] = opaque_scale
+    return cmap
+
+
+def plot_brain(brain, minthr=2, maxthr=95, edge=False):
     brain = mgu.get_braindata(brain)
-    cmap = LinearSegmentedColormap.from_list('mycmap2', ['black', 'magenta'])
+    cmap = LinearSegmentedColormap.from_list('mycmap2', ['black', 'green'])
     plt.rcParams.update({'axes.labelsize': 'x-large',
                          'axes.titlesize': 'x-large'})
     fbr = plt.figure()
@@ -103,7 +131,12 @@ def plot_brain(brain, minthr=2, maxthr=95):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
-            ax.imshow(image, interpolation='none', cmap=cmap, alpha=0.5,
+            if edge:
+                image = edge_detect(image)[1]
+                alpha = 1
+            else:
+                alpha = 0.6
+            ax.imshow(image, interpolation='none', cmap=cmap, alpha=alpha,
                       vmin=min_val, vmax=max_val)
 
     fbr.set_size_inches(12.5, 10.5, forward=True)
@@ -111,8 +144,7 @@ def plot_brain(brain, minthr=2, maxthr=95):
     return fbr
 
 
-def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
-                  max_val=None):
+def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
     plt.rcParams.update({'axes.labelsize': 'x-large',
                          'axes.titlesize': 'x-large'})
     foverlay = plt.figure()
@@ -126,7 +158,7 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
                                                   ['black', 'magenta'])
         cmap2 = LinearSegmentedColormap.from_list('mycmap2',
                                                   ['black', 'green'])
-        cmaps = (cmap1, cmap2)
+        cmaps = [cmap1, cmap2]
 
     if b0.shape == (182, 218, 182):
         x = [78, 90, 100]
@@ -146,8 +178,14 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
     # create subplot for first slice
     # and customize all labels
     idx = 0
-    if (min_val is None) and (max_val is None):
-        min_val, max_val = get_min_max(b0, minthr, maxthr)
+
+    min_val, max_val = get_min_max(b0, minthr, maxthr)
+
+    alpha = 0.7
+    if edge:
+        alpha = 1.0
+    alpha1 = 0.7
+
     for i, coord in enumerate(coords):
         for pos in coord:
             idx += 1
@@ -168,20 +206,22 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, min_val=None,
                 ax.set_ylabel(labs[i])
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
+            if edge: 
+                image = edge_detect(image)[1]
 
-            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=0.5)
-            ax.imshow(image, interpolation='none', cmap=cmaps[1], alpha=0.5,
-                     vmin=min_val, vmax=max_val)
+            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=alpha1)
+            ax.imshow(opaque_colorscale(cmaps[1], image, alpha=alpha,
+                      vmin=min_val, vmax=max_val))
 
     foverlay.set_size_inches(12.5, 10.5, forward=True)
     foverlay.tight_layout()
     return foverlay
 
 
-def get_min_max(data, minth=2, maxthr=95):
+def get_min_max(data, minthr=2, maxthr=95):
     '''
     data: regmri data to threshold.
     '''
-    min_val = np.percentile(data, 2)
-    max_val = np.percentile(data, 95)
+    min_val = np.percentile(data, minthr)
+    max_val = np.percentile(data, maxthr)
     return (min_val, max_val)

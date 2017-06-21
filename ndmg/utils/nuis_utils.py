@@ -17,6 +17,10 @@
 # Created by Eric W Bridgeford on 2017-07-21.
 # Email: ebridge2@jhu.edu
 
+from ndmg.utils import utils as mgu
+import nibabel as nb
+import numpy as np
+
 
 def erode_mask(mask, v=0):
     """

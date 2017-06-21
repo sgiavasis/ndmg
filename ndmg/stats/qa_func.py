@@ -254,7 +254,10 @@ class qa_func(object):
         if prep.resample:
             figs['intensity_normalized'] = plot_brain(prep.anat_intens)
         figs['preproc'] = plot_brain(prep.anat_preproc)
-        figs['preproc_brain'] = plot_brain(prep.anat_preproc_brain)
+        figs['preproc_brain'] = plot_overlays(prep.anat_preproc,
+                                              prep.anat_preproc_brain,
+                                              minthr=0, maxthr=100,
+                                              edge=True)
         for plotname, fig in figs.iteritems():
             fname = "{}/{}_{}.png".format(qa_dir, prep.anat_name, plotname)
             fig.tight_layout()
@@ -298,7 +301,8 @@ class qa_func(object):
         # provide qc for the skull stripping step
         t1brain_dat = nb.load(freg.t1w_brain).get_data()
         t1_dat = nb.load(freg.t1w).get_data()
-        freg_qual = plot_overlays(t1_dat, t1brain_dat)
+        freg_qual = plot_overlays(t1_dat, t1brain_dat, edge=True,
+                                  minthr=0, maxthr=100)
         fname = "{}/{}_bet_quality.png".format(sreg_a_final, t1w_name)
         freg_qual.savefig(fname)
         plt.close()
@@ -338,7 +342,8 @@ class qa_func(object):
             "{}/{}_epi2temp.png".format(treg_f_final, func_name)  
         )
         t1w_name = mgu.get_filename(freg.taligned_t1w)
-        t1w2temp_fig = plot_overlays(freg.taligned_t1w, freg.atlas_brain)
+        t1w2temp_fig = plot_overlays(freg.taligned_t1w, freg.atlas_brain,
+                                     edge=True, minthr=0, maxthr=100)
         t1w2temp_fig.savefig(
             "{}/{}_t1w2temp.png".format(treg_a_final, t1w_name)
         )
@@ -421,7 +426,7 @@ class qa_func(object):
         for mask, maskname in zip(masks, masknames):
             if mask is not None:
                 mask_dat = nb.load(mask).get_data()
-                f_mask = plot_overlays(t1w_dat, mask_dat, min_val=0, max_val=1)
+                f_mask = plot_overlays(t1w_dat, mask_dat, minthr=0, maxthr=100)
                 fname_mask = "{}/{}_{}.png".format(maskdir, anat_name,
                                                    maskname)
                 f_mask.savefig(fname_mask, format='png')

@@ -177,7 +177,7 @@ def registration_score(aligned_func, reference):
         # if our data is 4d, mean over the temporal dimension
         fdat = fdat.mean(axis=3)
 
-    freg_qual = plot_overlays(rdat, fdat)
+    freg_qual = plot_overlays(fdat, rdat, edge=True)
     reg_score = percent_overlap(fdat, rdat)
     return (reg_score, freg_qual)
 
