@@ -26,7 +26,7 @@ import os.path as op
 from argparse import ArgumentParser
 from datetime import datetime
 from ndmg.utils import utils as mgu
-from ndmg import func_register as mgreg
+from ndmg import epi_register as mgreg
 from ndmg import graph as mgg
 from ndmg.timeseries import timeseries as mgts
 from ndmg.stats.qa_func import qa_func
@@ -159,7 +159,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
     qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
 
     a_prep = mgap(t1w, preproc_t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
-    a_prep.preprocess(res=2)
+    a_prep.preprocess()
     qc_func.anat_preproc_qa(a_prep, qa_dirs['a_prep'])
 
     # ------- Alignment Steps -------------------------------------- #

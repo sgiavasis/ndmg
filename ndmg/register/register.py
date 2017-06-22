@@ -155,9 +155,9 @@ class register(object):
 
     def apply_warp(self, inp, ref, out, warp=None, xfm=None, mask=None):
         """
-        Applies a warp from the functional to reference space
+        Applies a warp from the input to reference space
         in a single step, using information about the structural->ref
-        mapping as well as the functional to structural mapping.
+        mapping as well as the epi to structural mapping.
 
         **Positional Arguments:**
 
@@ -304,16 +304,16 @@ class register(object):
             mgu.execute_cmd(cmd)
 
 
-class func_register(register):
-    def __init__(self, func, t1w, t1w_brain, atlas, atlas_brain, atlas_mask,
-                 aligned_func, aligned_t1w, outdir):
+class epi_register(register):
+    def __init__(self, epi, t1w, t1w_brain, atlas, atlas_brain, atlas_mask,
+                 aligned_epi, aligned_t1w, outdir):
         """
         A class to change brain spaces from a subject's epi sequence
         to that of a standardized atlas.
 
         **Positional Arguments:**
 
-            func:
+            epi:
                 - the path of the preprocessed fmri image.
             t1w:
                 - the path of the T1w scan.
@@ -325,7 +325,7 @@ class func_register(register):
                 - the template brain.
             atlas_mask:
                 - the template mask.
-            aligned_func:
+            aligned_epi:
                 - the name of the aligned fmri scan to produce.
             aligned_t1w:
                 - the name of the aligned anatomical scan to produce
@@ -335,18 +335,18 @@ class func_register(register):
         super(register, self).__init__()
 
         # for naming temporary files
-        self.epi_name = mgu.get_filename(func)
+        self.epi_name = mgu.get_filename(epi)
         self.t1w_name = mgu.get_filename(t1w)
         self.atlas_name = mgu.get_filename(atlas)
 
         # our basic dependencies
-        self.epi = func
+        self.epi = epi
         self.t1w = t1w
         self.t1w_brain = t1w_brain
         self.atlas = atlas
         self.atlas_brain = atlas_brain
         self.atlas_mask = atlas_mask
-        self.taligned_epi = aligned_func
+        self.taligned_epi = aligned_epi
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
         t1w_skull = "{}/{}_temp-aligned_skull.nii.gz"
