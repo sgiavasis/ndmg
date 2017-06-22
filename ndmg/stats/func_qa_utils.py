@@ -153,7 +153,7 @@ def percent_overlap(array1, array2):
     return overlap.sum()/float(occupied_space.sum())
 
 
-def registration_score(aligned_func, reference):
+def registration_score(aligned_func, reference, edge=False):
     """
 	A function to compute the registration score between two images.
 
@@ -163,6 +163,8 @@ def registration_score(aligned_func, reference):
               been masked.
         reference:
             - the template being aligned to. assumed to be a 3d brain or mask.
+        edge:
+            - whether to plot the edges or not.
     """
     func_name = mgu.get_filename(aligned_func)
 
@@ -177,7 +179,7 @@ def registration_score(aligned_func, reference):
         # if our data is 4d, mean over the temporal dimension
         fdat = fdat.mean(axis=3)
 
-    freg_qual = plot_overlays(fdat, rdat, edge=True)
+    freg_qual = plot_overlays(fdat, rdat, edge=edge)
     reg_score = percent_overlap(fdat, rdat)
     return (reg_score, freg_qual)
 

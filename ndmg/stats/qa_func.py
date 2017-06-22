@@ -255,13 +255,12 @@ class qa_func(object):
             figs['intensity_normalized'] = plot_brain(prep.anat_intens)
         figs['preproc'] = plot_brain(prep.anat_preproc)
         figs['preproc_brain'] = plot_overlays(prep.anat_preproc,
-                                              prep.anat_preproc_brain,
-                                              minthr=0, maxthr=100,
-                                              edge=True)
+                                              prep.anat_preproc_brain)
         for plotname, fig in figs.iteritems():
             fname = "{}/{}_{}.png".format(qa_dir, prep.anat_name, plotname)
             fig.tight_layout()
             fig.savefig(fname)
+            plt.close(fig)
         pass
 
     def self_reg_qa(self, freg, qa_dirs):
@@ -291,21 +290,14 @@ class qa_func(object):
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
-        cmd = "mkdir -p {} {}".format(sreg_f_final, sreg_a_final)
+        cmd = "mkdir -p {}".format(sreg_f_final)
         mgu.execute_cmd(cmd)
         func_name = mgu.get_filename(freg.sreg_brain)
         t1w_name = mgu.get_filename(freg.t1w)
         sreg_fig.savefig(
             "{}/{}_epi2t1w.png".format(sreg_f_final, func_name)  
         )
-        # provide qc for the skull stripping step
-        t1brain_dat = nb.load(freg.t1w_brain).get_data()
-        t1_dat = nb.load(freg.t1w).get_data()
-        freg_qual = plot_overlays(t1_dat, t1brain_dat, edge=True,
-                                  minthr=0, maxthr=100)
-        fname = "{}/{}_bet_quality.png".format(sreg_a_final, t1w_name)
-        freg_qual.savefig(fname)
-        plt.close()
+        plt.close(sreg_fig)
         pass
 
     def temp_reg_qa(self, freg, qa_dirs):
@@ -322,7 +314,8 @@ class qa_func(object):
         print "Performing QA for Template-Registration..."
         (treg_sc, treg_fig) = registration_score(
             freg.taligned_epi,
-            freg.atlas_brain
+            freg.atlas_brain,
+            edge=True
         )
         self.temp_reg_sc = treg_sc
         treg_f_final = "{}/{}_score_{:.0f}".format(
@@ -341,12 +334,14 @@ class qa_func(object):
         treg_fig.savefig(
             "{}/{}_epi2temp.png".format(treg_f_final, func_name)  
         )
+        plt.close(treg_fig)
         t1w_name = mgu.get_filename(freg.taligned_t1w)
         t1w2temp_fig = plot_overlays(freg.taligned_t1w, freg.atlas_brain,
                                      edge=True, minthr=0, maxthr=100)
         t1w2temp_fig.savefig(
             "{}/{}_t1w2temp.png".format(treg_a_final, t1w_name)
         )
+        plt.close(t1w2temp_fig)
         self.voxel_qa(freg.epi_aligned_skull, freg.atlas_mask, treg_f_final)
 
     def voxel_qa(self, func, mask, qadir):
@@ -394,7 +389,7 @@ class qa_func(object):
         for plotname, plot in plots.iteritems():
             fname = "{}/{}_{}.png".format(qadir, scanid, plotname)
             plot.savefig(fname, format='png')
-            plt.close()
+            plt.close(plot)
         pass
 
     def nuisance_qa(self, nuisobj, qcdir):
@@ -430,7 +425,7 @@ class qa_func(object):
                 fname_mask = "{}/{}_{}.png".format(maskdir, anat_name,
                                                    maskname)
                 f_mask.savefig(fname_mask, format='png')
-                plt.close()
+                plt.close(f_mask)
 
         # GLM regressors
         glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg, nuisobj.friston_reg]
@@ -453,7 +448,7 @@ class qa_func(object):
                                                              anat_name,
                                                              name)
                 fig.savefig(fname_reg, format='png')
-                plt.close()
+                plt.close(fig)
         # before glm compared with the signal removed and
         # signal after correction
         fig_glm_sig = plot_signals(
@@ -465,7 +460,7 @@ class qa_func(object):
         )
         fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, anat_name)
         fig_glm_sig.savefig(fname_glm_sig, format='png')
-        plt.close()
+        plt.close(fig_glm_sig)
 
         # Frequency Filtering
         # start by just plotting the average fft of gm voxels and compare with
@@ -483,7 +478,7 @@ class qa_func(object):
                     xax=nuisobj.freq_ra)
             fname_fft_pow = '{}/{}_fft_power.png'.format(fftdir, anat_name)
             fig_fft_pow.savefig(fname_fft_pow, format='png')
-            plt.close()
+            plt.close(fig_fft_pow)
             # plot the signal vs the regressed signal vs signal after
             fig_fft_sig = plot_signals(
                     [nuisobj.glm_nuis, nuisobj.fft_sig, nuisobj.fft_nuis],
@@ -495,7 +490,7 @@ class qa_func(object):
                     fftdir,
                     anat_name)
             fig_fft_sig.savefig(fname_fft_sig, format='png')
-            plt.close()
+            plt.close(fig_fft_sig)
         pass
 
     def roi_ts_qa(self, timeseries, func, anat, label, qcdir):

@@ -333,6 +333,12 @@ class func_register(register):
                 - the output base directory.
         """
         super(register, self).__init__()
+
+        # for naming temporary files
+        self.epi_name = mgu.get_filename(func)
+        self.t1w_name = mgu.get_filename(t1w)
+        self.atlas_name = mgu.get_filename(atlas)
+
         # our basic dependencies
         self.epi = func
         self.t1w = t1w
@@ -343,15 +349,12 @@ class func_register(register):
         self.taligned_epi = aligned_func
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
-
+        t1w_skull = "{}/{}_temp-aligned_skull.nii.gz"
+        self.taligned_t1w_skull = t1w_skull.format(self.outdir['sreg_a'],
+                                                   self.t1w_name)
         # trategies for qa later
         self.sreg_strat = None
         self.treg_strat = None
-
-        # for naming temporary files
-        self.epi_name = mgu.get_filename(func)
-        self.t1w_name = mgu.get_filename(t1w)
-        self.atlas_name = mgu.get_filename(atlas)
 
         if sum(nb.load(t1w).header.get_zooms()) == 6:
             self.resamp = False
@@ -402,7 +405,7 @@ class func_register(register):
             maps = mgnu.segment_t1w(self.t1w_brain, map_path)
             wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_f'],
                                                 self.t1w_name)
-            mgu.extract_mask(maps['wm_prob'], wm_mask, 0.5)
+            mgnu.probmap2mask(maps['wm_prob'], wm_mask, 0.5)
             self.align(self.epi, self.t1w, xfm=xfm_bbr, wmseg=wm_mask,
                        out=epi_bbr, init=xfm_init3, interp="spline",
                        sch="${FSLDIR}/etc/flirtsch/bbr.sch")
@@ -452,7 +455,7 @@ class func_register(register):
                                  warp_t1w2temp, mask=self.atlas_mask)
             self.apply_warp(self.epi, self.atlas, self.epi_aligned_skull,
                             warp=warp_t1w2temp, xfm=self.sreg_xfm)
-            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
+            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w_skull,
                             warp=warp_t1w2temp)
             self.treg_strat = 'fnirt'
         else:
@@ -467,11 +470,11 @@ class func_register(register):
             self.combine_xfms(xfm_t1w2temp, self.sreg_xfm, xfm_epi2temp)
             self.applyxfm(self.epi, self.atlas, xfm_epi2temp,
                           self.epi_aligned_skull, interp='spline')
-            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w,
+            self.apply_warp(self.t1w, self.atlas, self.taligned_t1w_skull,
                             xfm=xfm_t1w2temp) 
             self.treg_strat = 'flirt'
         mgru.extract_epi_brain(self.epi_aligned_skull, self.taligned_epi,
                               self.outdir['treg_f'])
-        mgru.extract_t1w_brain(self.taligned_t1w, self.taligned_t1w,
+        mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
                                self.outdir['treg_a'])
         pass

@@ -201,12 +201,12 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
             if edge: 
                 image = edge_map(image).data
-                image[image > 0] = 1
-                image[image == 0] = 0
+                image[image > 0] = max_val
+                image[image == 0] = min_val
 
             ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=.9)
             ax.imshow(opaque_colorscale(cmaps[1], image, alpha=.9,
-                      vmin=0, vmax=1))
+                      vmin=min_val, vmax=max_val))
 
     foverlay.set_size_inches(12.5, 10.5, forward=True)
     foverlay.tight_layout()
