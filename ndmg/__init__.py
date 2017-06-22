@@ -4,7 +4,7 @@ from . import *
 from .graph.graph import graph as graph
 from .utils import utils
 from .register.register import register as register
-from .register.register import func_register as func_register
+from .register.register import epi_register as epi_register
 from .stats.qa_func import qa_func as qa_func
 from .stats.group_func import group_func as group_func
 from .track.track import track as track
