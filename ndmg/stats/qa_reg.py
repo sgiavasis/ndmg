@@ -67,22 +67,21 @@ def opaque_colorscale(basemap, reference, vmin=None, vmax=None, alpha=1):
     """
     A function to return a colorscale, with opacities
     dependent on reference intensities.
-
     **Positional Arguments:**
-
         - basemap:
             - the colormap to use for this colorscale.
         - reference:
             - the reference matrix.
     """
-    reference = reference.astype(float)
+    reference = reference
     if vmin is not None:
-        reference[reference > vmax.astype] = vmax
+        reference[reference > vmax] = vmax
     if vmax is not None:
-        reference[reference < vmin.astype] = vmin
+        reference[reference < vmin] = vmin
     cmap = basemap(reference)
+    maxval = np.nanmax(reference)
     # all values beteween 0 opacity and 1
-    opaque_scale = alpha*reference/float(np.nanmax(reference))
+    opaque_scale = alpha*reference/float(maxval)
     # remaps intensities
     cmap[:, :, 3] = opaque_scale
     return cmap
@@ -132,7 +131,7 @@ def plot_brain(brain, minthr=2, maxthr=95, edge=False):
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
 
             if edge:
-                image = edge_map(image)
+                image = edge_map(image).data
             ax.imshow(image, interpolation='none', cmap=cmap, alpha=1,
                       vmin=min_val, vmax=max_val)
 
@@ -175,8 +174,11 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
     # create subplot for first slice
     # and customize all labels
     idx = 0
-
-    min_val, max_val = get_min_max(b0, minthr, maxthr)
+    if edge:
+        min_val = 0
+        max_val = 1
+    else:
+        min_val, max_val = get_min_max(b0, minthr, maxthr)
 
     for i, coord in enumerate(coords):
         for pos in coord:
@@ -198,11 +200,13 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
             if edge: 
-                image = edge_map(image)
+                image = edge_map(image).data
+                image[image > 0] = 1
+                image[image == 0] = 0
 
-            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=1)
+            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=.9)
             ax.imshow(opaque_colorscale(cmaps[1], image, alpha=.9,
-                      vmin=min_val, vmax=max_val))
+                      vmin=0, vmax=1))
 
     foverlay.set_size_inches(12.5, 10.5, forward=True)
     foverlay.tight_layout()
