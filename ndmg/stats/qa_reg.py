@@ -77,9 +77,9 @@ def opaque_colorscale(basemap, reference, vmin=None, vmax=None, alpha=1):
     """
     reference = reference.astype(float)
     if vmin is not None:
-        reference[reference > vmax] = vmax
+        reference[reference > vmax.astype] = vmax
     if vmax is not None:
-        reference[reference < vmin] = vmin
+        reference[reference < vmin.astype] = vmin
     cmap = basemap(reference)
     # all values beteween 0 opacity and 1
     opaque_scale = alpha*reference/float(np.nanmax(reference))
@@ -133,10 +133,7 @@ def plot_brain(brain, minthr=2, maxthr=95, edge=False):
 
             if edge:
                 image = edge_map(image)
-                alpha = 1
-            else:
-                alpha = 0.6
-            ax.imshow(image, interpolation='none', cmap=cmap, alpha=alpha,
+            ax.imshow(image, interpolation='none', cmap=cmap, alpha=1,
                       vmin=min_val, vmax=max_val)
 
     fbr.set_size_inches(12.5, 10.5, forward=True)
@@ -181,16 +178,10 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
 
     min_val, max_val = get_min_max(b0, minthr, maxthr)
 
-    alpha = 0.7
-    if edge:
-        alpha = 1.0
-    alpha1 = 0.7
-
     for i, coord in enumerate(coords):
         for pos in coord:
             idx += 1
             ax = foverlay.add_subplot(3, 3, idx)
-            ax.set_axis_bgcolor('black')
             ax.set_title(var[i] + " = " + str(pos))
             if i == 0:
                 image = ndimage.rotate(b0[pos, :, :], 90)
@@ -207,10 +198,10 @@ def plot_overlays(atlas, b0, cmaps=None, minthr=2, maxthr=95, edge=False):
                 ax.yaxis.set_ticks([0, image.shape[0]/2, image.shape[0] - 1])
                 ax.xaxis.set_ticks([0, image.shape[1]/2, image.shape[1] - 1])
             if edge: 
-                image = edge_detect(image)[1]
+                image = edge_map(image)
 
-            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=alpha1)
-            ax.imshow(opaque_colorscale(cmaps[1], image, alpha=alpha,
+            ax.imshow(atl, interpolation='none', cmap=cmaps[0], alpha=1)
+            ax.imshow(opaque_colorscale(cmaps[1], image, alpha=.9,
                       vmin=min_val, vmax=max_val))
 
     foverlay.set_size_inches(12.5, 10.5, forward=True)
@@ -224,4 +215,4 @@ def get_min_max(data, minthr=2, maxthr=95):
     '''
     min_val = np.percentile(data, minthr)
     max_val = np.percentile(data, maxthr)
-    return (min_val, max_val)
+    return (min_val.astype(float), max_val.astype(float))
