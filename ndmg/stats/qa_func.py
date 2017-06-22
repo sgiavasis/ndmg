@@ -251,8 +251,6 @@ class qa_func(object):
         print "Performing QA for Anatoical Preprocessing..."
         figs = {}
         figs['raw_anat'] = plot_brain(prep.anat)
-        if prep.resample:
-            figs['intensity_normalized'] = plot_brain(prep.anat_intens)
         figs['preproc'] = plot_brain(prep.anat_preproc)
         figs['preproc_brain'] = plot_overlays(prep.anat_preproc,
                                               prep.anat_preproc_brain)

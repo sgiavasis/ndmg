@@ -198,7 +198,7 @@ class register(object):
         cmd = "eddy_correct {} {} {}".format(dwi, corrected_dwi, idx)
         status = mgu.execute_cmd(cmd, verb=True)
 
-    def resample(self, base, ingested, template):
+    def simplele(self, base, ingested, template):
         """
         Resamples the image such that images which have already been aligned
         in real coordinates also overlap in the image/voxel space.
@@ -215,7 +215,7 @@ class register(object):
         template_im = nb.load(template)
         base_im = nb.load(base)
         # Aligns images
-        target_im = nl.resample_img(base_im,
+        target_im = nl.simplele_img(base_im,
                                     target_affine=template_im.get_affine(),
                                     target_shape=template_im.get_data().shape,
                                     interpolation="nearest")
@@ -295,7 +295,7 @@ class register(object):
 
         # Applies combined transform to dwi image volume
         self.applyxfm(temp_aligned, atlas, xfm, temp_aligned2)
-        self.resamp(temp_aligned2, aligned_dwi, atlas)
+        self.simple(temp_aligned2, aligned_dwi, atlas)
 
         if clean:
             cmd = "rm -f {} {} {} {} {}*".format(dwi2, temp_aligned, b0,
@@ -356,10 +356,10 @@ class func_register(register):
         self.sreg_strat = None
         self.treg_strat = None
 
-        if sum(nb.load(t1w).header.get_zooms()) == 6:
-            self.resamp = False
+        if sum(nb.load(t1w).header.get_zooms()) <= 6:
+            self.simple = False
         else:
-            self.resamp = True  # if the input is poor
+            self.simple = True  # if the input is poor
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
             self.outdir['sreg_f'],
@@ -390,7 +390,7 @@ class func_register(register):
 
         # attempt EPI registration. note that this sometimes does not
         # work great if our EPI has a low field of view.
-        if not self.resamp:
+        if not self.simple:
             xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
                                                        self.epi_name) 
             xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
@@ -446,7 +446,7 @@ class func_register(register):
         )
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
-            (self.resamp is False)):
+            (self.simple is False)):
             warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
                 self.outdir['treg_a'],
                 self.epi_name

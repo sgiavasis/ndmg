@@ -45,11 +45,10 @@ class preproc_anat():
         self.anat_name = mgu.get_filename(anat)
         self.anat_intens = "{}/{}_intens.nii.gz".format(outdir, self.anat_name)
         self.anat_preproc = anat_preproc
-        self.resample = False  # default to no resample
         self.anat_preproc_brain = anat_preproc_brain
         self.outdir = outdir
 
-    def preprocess(self, res=2):
+    def preprocess(self):
         """
         A function to to perform anatomical preprocessing.
 
@@ -58,15 +57,7 @@ class preproc_anat():
             - res:
                 - the resampling resolution to use if the input is high res.
         """
-        mgru.normalize_t1w(self.anat, self.anat_intens)
-        # resample if the image is at a high resolution to 2mm for consistency
-        if sum(nb.load(self.anat).header.get_zooms()) < 6:
-            mgru.resample_fsl(self.anat_intens, self.anat_preproc, 2)
-            self.resample = True
-        else:
-            cmd = "mv {} {}".format(self.anat_intens, self.anat_preproc)
-            mgu.execute_cmd(cmd, verb=True)
-            self.anat_intens = None
+        mgru.normalize_t1w(self.anat, self.anat_preproc)
         mgru.extract_t1w_brain(self.anat_preproc, self.anat_preproc_brain,
                                self.outdir)
         pass
