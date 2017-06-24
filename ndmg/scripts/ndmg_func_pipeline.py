@@ -36,14 +36,14 @@ from ndmg.nuis import nuis as mgn
 from ndmg.stats.qa_reg import *
 
 
-def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, labels,
-                       outdir, clean=False, stc=None, fmt='gpickle'):
+def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
+                     labels, outdir, clean=False, stc=None, fmt='gpickle'):
     """
-    Analyzes fMRI images and produces subject-specific derivatives.
+    analyzes fmri images and produces subject-specific derivatives.
 
-    **Positional Arguments:**
+    **positional arguments:**
         func:
-            - the path to a 4D (fMRI) image.
+            - the path to a 4d (fmri) image.
         t1w:
             - the path to a 3d (anatomical) image.
         atlas:
@@ -57,16 +57,17 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
         labels:
             - a list of labels files.
         stc:
-            - a slice timing correction file. See slice_time_correct() in the
+            - a slice timing correction file. see slice_time_correct() in the
               preprocessing module for details.
         outdir:
             - the base output directory to place outputs.
         clean:
             - a flag whether or not to clean out directories once finished.
         fmt:
-            - the format for produced . Supported options are gpickle and
-            graphml.
+            - the format for produced connectomes. supported options are gpickle
+              and graphml.
     """
+    try:
     startTime = datetime.now()
 
     # Create derivative output directories
@@ -205,6 +206,43 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask, label
          mgu.execute_cmd(cmd)
     print("Complete!")
 
+def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
+                       labels, outdir, clean=False, stc=None, fmt='gpickle'):
+    """
+    analyzes fmri images and produces subject-specific derivatives.
+
+    **positional arguments:**
+        func:
+            - the path to a 4d (fmri) image.
+        t1w:
+            - the path to a 3d (anatomical) image.
+        atlas:
+            - the path to a reference atlas.
+        atlas_brain:
+            - the path to a reference atlas, brain extracted.
+        atlas_mask:
+            - the path to a reference brain mask.
+        lv_mask:
+            - the path to the lateral ventricles mask.
+        labels:
+            - a list of labels files.
+        stc:
+            - a slice timing correction file. see slice_time_correct() in the
+              preprocessing module for details.
+        outdir:
+            - the base output directory to place outputs.
+        clean:
+            - a flag whether or not to clean out directories once finished.
+        fmt:
+            - the format for produced . supported options are gpickle and
+            graphml.
+    """
+    try:
+        ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
+                         labels, outdir, clean=clean, stc=stc, fmt=fmt)
+    except Exception, e:
+        print "Error: {} for scan {}".format(str(e),
+                                             mgu.get_filename(result.func))
 
 def main():
     parser = ArgumentParser(description="This is an end-to-end connectome"
@@ -252,14 +290,10 @@ def main():
     print "Creating output temp directory: {}/tmp".format(result.outdir)
     mgu.execute_cmd("mkdir -p {} {}/tmp".format(result.outdir, result.outdir))
 
-    try:
-        ndmg_func_pipeline(result.func, result.t1w, result.atlas,
-                           result.atlas_brain, result.atlas_mask,
-                           result.lv_mask, result.labels, result.outdir,
-                           result.clean, result.stc, result.fmt)
-    except Exception, e:
-        print "Error: {} for scan {}".format(str(e),
-                                             mgu.get_filename(result.func))
+    ndmg_func_pipeline(result.func, result.t1w, result.atlas,
+                       result.atlas_brain, result.atlas_mask,
+                       result.lv_mask, result.labels, result.outdir,
+                       result.clean, result.stc, result.fmt)
 
 if __name__ == "__main__":
     main()
