@@ -241,7 +241,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
                          labels, outdir, clean=clean, stc=stc, fmt=fmt)
     except Exception, e:
         print "Error: {} for scan {}".format(str(e),
-                                             mgu.get_filename(result.func))
+                                             mgu.get_filename(func))
 
 def main():
     parser = ArgumentParser(description="This is an end-to-end connectome"
