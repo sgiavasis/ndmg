@@ -67,7 +67,6 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
             - the format for produced connectomes. supported options are gpickle
               and graphml.
     """
-    try:
     startTime = datetime.now()
 
     # Create derivative output directories
