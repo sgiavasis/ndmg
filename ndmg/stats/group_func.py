@@ -237,6 +237,9 @@ class group_func(object):
                 # so our connectomes are in the format expected by
                 # graphing qa
                 label_connectomes[subj] = gname
+            print "{}".format(label_dir)
+            print label_connectomes.values()
+            print "{}".format(label_dir)
             compute_metrics(label_connectomes.values(), label_dir, label)
             outf = os.path.join(label_dir, "{}_plot".format(label))
             make_panel_plot(label_dir, outf, dataset=self.dataset,
