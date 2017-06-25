@@ -92,6 +92,9 @@ class qa_func(object):
         # is significant, will show a poorly defined border
         # since the brain will be moving in time
         rawfig = plot_brain(raw_dat.mean(axis=3), minthr=10)
+        rawfig.savefig(
+            "{}/{}_raw.png".format(qcdir, func_name)
+        )
 
         prep_im = nb.load(prep.preproc_func)
         prep_dat = prep_im.get_data()
@@ -101,17 +104,20 @@ class qa_func(object):
         # due to motion correction
         prepfig = plot_brain(prep_dat.mean(axis=3), minthr=10)
         nvols = prep_dat.shape[3]
+        prepfig.savefig(
+            "{}/{}_preproc.png".format(qcdir, func_name)
+        )
 
         # get the functional preprocessing motion parameters
         mc_params = np.genfromtxt(prep.mc_params)
 
         # Note that our translational parameters (first 3 columns of motion
         # params) are already in mm. For the rotational params, we use
-        # Power et. al and assume brain rad of 50 mm, and given our radial
+        # Power et. al and assume brain rad of 500 mm, and given our radial
         # coords translate back to euclidian space so our displacement of
         # the x, y, z rotations is the displacement of the outer edge
         # of the brain
-        mc_params[:, 0:3] = 50*np.pi*mc_params[:, 0:3]/180
+        mc_params[:, 0:3] = 500*np.pi*mc_params[:, 0:3]/180
 
         vd_pars = np.zeros(mc_params.shape)
 
@@ -133,15 +139,15 @@ class qa_func(object):
         mc_pars = [trans_pars, rot_pars, [fd_pars]]
 
         # names to append to plots so they can be found easily
-        mp_names = ["FD", "trans", "rot"]
+        mp_names = ["trans", "rot", "FD"]
         # titles for the plots
-        mp_titles = ["Framewise Displacement", "Translational Parameters",
-                     "Rotational Parameters"]
+        mp_titles = ["Translational Parameters",
+                     "Rotational Parameters", "Framewise Displacement"]
         # list of lists of the line labels
-        linelegs = [['x rot', 'y rot', 'z rot'],
-                    ['x trans', 'y trans', 'z trans'], ['framewise']]
-        xlab = 'Timepoint'
-        ylab = 'Displacement'
+        linelegs = [['x trans', 'y trans', 'z trans'],
+                    ['x rot', 'y rot', 'z rot'], ['framewise']]
+        xlab = 'Timepoint (TR)'
+        ylab = 'Displacement (mm)'
         # iterate over tuples of the lists we store our plot variables in
         for (param_type, name, title, legs) in zip(mc_pars, mp_names,
                                                    mp_titles, linelegs):
