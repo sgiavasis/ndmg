@@ -127,7 +127,7 @@ def hdist(array1, array2):
                           np.sqrt(array2)) ** 2)) / float(np.sqrt(2))
 
 
-def percent_overlap(array1, array2):
+def jaccard_index(array1, array2):
     """
     A function to compute the degree of overlap between two binarized
     arrays. Assumes that inputs are already appropriately thresholded,
@@ -147,7 +147,7 @@ def percent_overlap(array1, array2):
 
     if array1.shape != array2.shape:
         raise ValueError("Your overlap arrays are not the same shape.")
-
+    # definition of the jaccard index is |(A & B)|/|(A | B)|
     overlap = np.logical_and(array1, array2)
     occupied_space = np.logical_or(array1, array2)
     return overlap.sum()/float(occupied_space.sum())
@@ -155,7 +155,7 @@ def percent_overlap(array1, array2):
 
 def registration_score(aligned_func, reference, edge=False):
     """
-	A function to compute the registration score between two images.
+    A function to compute the registration score between two images.
 
     **Positional Arguments:**
         aligned_func:
@@ -179,293 +179,12 @@ def registration_score(aligned_func, reference, edge=False):
         # if our data is 4d, mean over the temporal dimension
         fdat = fdat.mean(axis=3)
 
+    # plot overlay of the thing being aligned with the reference,
+    # using the edge-detection algorithm if desired
     freg_qual = plot_overlays(fdat, rdat, edge=edge)
-    reg_score = percent_overlap(fdat, rdat)
+    # compute jaccard index
+    reg_score = jaccard_index(fdat, rdat)
     return (reg_score, freg_qual)
-
-
-def check_alignments(mri_bname, mri_aname, refname, qcdir,
-                     fname, title=""):
-    """
-    A function to check alignments and generate descriptive statistics
-    and plots based on the overlap between two images.
-
-    **Positional Arguments**
-        mri_bname:
-            - the 4d mri file before an operation has taken place
-        mri_aname:
-            - the 4d mri file after an operation has taken place
-        refname:
-            - the 3d file used as a reference for the operation
-        qcdir:
-            - the output directory for the plots
-        title:
-            - a string (such as the operation name) for use in the plot
-                 titles (defaults to "")
-        fname:
-            - a string to use in the file handle for easy finding
-    """
-    print "Performing Quality Control for " + title + "..."
-    print "\tBefore " + title + ": " + mri_bname
-    print "\tAfter " + title + ": " + mri_aname
-    print "\tReference " + title + ": " + refname
-
-    # load the nifti images
-    mri_before = nb.load(mri_bname)
-    mri_after = nb.load(mri_aname)
-    reference = nb.load(refname)
-
-    # resample if not in same image space
-    if not all(x in mri_after.header.get_zooms()[:3] for x in
-               mri_before.header.get_zooms()[:3]) or not all(x
-               in mri_after.header.get_data_shape()[:3] for x in
-               mri_before.header.get_data_shape()[:3]):
-
-        mri_tname = qcdir + "/" + fname + "_res.nii.gz"
-        from ndmg import register as mgr
-        mgr().resample_fsl(mri_bname, mri_tname, refname)
-        mri_before = nb.load(mri_tname)
-
-    # load the data contained for each image
-    mri_bdata = mri_before.get_data()
-    mri_adata = mri_after.get_data()
-    refdata = reference.get_data()
-
-    nvols = mri_bdata.shape[3]
-    nslices = mri_bdata.shape[2]
-
-    v_bef = []
-    v_aft = []
-
-    refdata = np.divide(refdata, np.mean(refdata) + 1)
-    for t in range(0, nvols):
-        mribefdat = np.divide(mri_bdata[:, :, :, t],
-                              np.mean(mri_bdata[:, :, :, t]) + 1)
-        mriaftdat = np.divide(mri_adata[:, :, :, t],
-                              np.mean(mri_adata[:, :, :, t]) + 1)
-        for s in range(0, nslices):
-            v_bef.append(tuple((s + ran.random(),
-                                self.mse(mribefdat[:, :, s],
-                                         refdata[:, :, s]))))
-            v_aft.append(tuple((s + ran.random(),
-                                self.mse(mriaftdat[:, :, s],
-                                         refdata[:, :, s]))))
-
-    kdes = self.compute_kdes(zip(*v_bef)[1], zip(*v_aft)[1])
-
-    xlim = tuple((0, np.nanmax(kdes[0])))
-    ylim = tuple((0, max(np.nanmax(kdes[1]), np.nanmax(kdes[2]))))
-    axkde_list = []
-    axkde_list.append(py.graph_objs.Scatter(x=kdes[0], y=kdes[1],
-                      fillcolor='(0, 0, 255, 1)', mode='lines',
-                      name='before mean = %.2E' % np.mean(zip(*v_bef)[1])))
-    axkde_list.append(py.graph_objs.Scatter(x=kdes[0], y=kdes[2],
-                      fillcolor='(255, 0, 0, 1)', mode='lines',
-                      name='after mean = %.2E' % np.mean(zip(*v_aft)[1])))
-    layout = dict(title=title +
-                  (" Hellinger Distance = %.4E" %
-                   self.hdist(zip(*v_bef)[1], zip(*v_aft)[1])),
-                  xaxis=dict(title='MSE', range=xlim),
-                  yaxis=dict(title='Density', range=ylim))
-    fkde = dict(data=axkde_list, layout=layout)
-    path = qcdir + "/" + fname + "_kde.html"
-    offline.plot(fkde, filename=path, auto_open=False)
-
-    xlim = tuple((0, nslices + 1))
-    ylim = tuple((0, max(np.nanmax(zip(*v_bef)[1]),
-                         np.nanmax(zip(*v_aft)[1]))))
-    axjit_list = []
-    axjit_list.append(py.graph_objs.Scatter(x=zip(*v_bef)[0],
-                      y=zip(*v_bef)[1],
-                      name='before mean = %.2E' % np.mean(zip(*v_bef)[1]),
-                      marker=dict(size=3.0, color='rgba(0, 0, 255, 1)'),
-                      mode='markers'))
-    axjit_list.append(py.graph_objs.Scatter(x=zip(*v_aft)[0],
-                      y=zip(*v_aft)[1],
-                      name='after mean = %.2E' % np.mean(zip(*v_aft)[1]),
-                      marker=dict(size=3.0, color='rgba(255, 0, 0, 1)'),
-                      mode='markers'))
-    layout = dict(title="Jitter Plot showing slicewise impact of " +
-                  title,
-                  xaxis=dict(title='Slice Number', range=xlim),
-                  yaxis=dict(title='MSE', range=ylim))
-    fjit = dict(data=axjit_list, layout=layout)
-    path = qcdir + "/" + fname + "_jitter.html"
-    offline.plot(fjit, filename=path, auto_open=False)
-    pass
-
-
-def opaque_colorscale(basemap, reference, alpha=0.5):
-    """
-    A function to return a colorscale, with opacities
-    dependent on reference intensities.
-
-    **Positional Arguments:**
-        - basemap:
-            - the colormap to use for this colorscale.
-        - reference:
-            - the reference matrix.
-    """
-    cmap = basemap(reference)
-    # all values beteween 0 opacity and .6
-    denom = np.nanmax(reference)
-    if denom == 0:  # avoid divide by zero
-         denom = 1
-    opaque_scale = alpha*reference/float(denom)
-    # remaps intensities
-    cmap[:, :, 3] = opaque_scale
-    return cmap
-
-
-def expected_variance(s, n, qcdir, scanid="", title=""):
-    """
-    A function to show the expected variance of each component
-    in nuisance regression.
-
-    **Positional Arguments:**
-        - s:
-            - an array of the variance of each component, or the
-              eigenvalues computed in SVD/eigendecomposition for each
-              component (should be sorted by variance).
-        - n:
-            - the number of components chosen for compcor.
-        - qcdir:
-            - the directory to place outputs in.
-        - scanid:
-            - the id of the particular subject.
-        - title:
-            - the method being employed that an expected variance
-              plot is neede for. Examples are "CompCor" or "PCA".
-    """
-    # normalize so that it sums to one
-    s = s/np.sum(s)
-    total_var = np.cumsum(s)
-    # the variance accounted for by the top used components
-    var_acct = total_var[n-1]
-
-    colors = ['rgba(255,0, 0,1)'] * s.shape[0]
-    colors[n] = 'rgba(26,200,255,1)'
-    axvar = [py.graph_objs.Bar(x=range(s.shape[0]), y=s,
-             marker=dict(color=colors))]
-    layout = dict(title=" ".join([title, "Scree Plot,", "N=", str(n),
-                                  ",", "Var=", str(var_acct)]),
-                  xaxis=dict(title='Component'),
-                  yaxis=dict(title='Variance'))
-    fvar = dict(data=axvar, layout=layout)
-    offline.plot(fvar, filename=str(qcdir + "/" + scanid + "_scree.html"),
-                 auto_open=False)
-
-
-def mask_align(mri_data, ref_data, qcdir, scanid="", refid=""):
-    """
-    A function to produce an image showing the alignments of two
-    reference images for checking mask alignments.
-
-    **Positional Arguments:**
-        mri_image:
-            - the first matrix.
-        ref_image:
-            - the reference matrix.
-        qcdir:
-            - the path to a directory to dump the outputs.
-        scan_id:
-            - the id of the scan being analyzed.
-        refid:
-            - the id of the reference being analyzed.
-    """
-    cmd = "mkdir -p " + qcdir
-    mgu.execute_cmd(cmd)
-    mri_data = mgu.get_braindata(mri_data)
-    ref_data = mgu.get_braindata(ref_data)
-
-    # if we have 4d data, np.mean() to get 3d data
-    if len(mri_data.shape) == 4:
-        mri_data = np.nanmean(mri_data, axis=3)
-
-    falign = plt.figure()
-
-    depth = mri_data.shape[2]
-
-    depth_seq = np.unique(np.round(np.linspace(0, depth-1, 25)))
-    nrows = np.ceil(np.sqrt(depth_seq.shape[0]))
-    ncols = np.ceil(depth_seq.shape[0]/float(nrows))
-
-    # produce figures for each slice in the image
-    for d in range(0, depth_seq.shape[0]):
-        # TODO EB: create nifti image with these values
-        # and allow option to add overlap with mni vs mprage
-        i = depth_seq[d]
-        axalign = falign.add_subplot(nrows, ncols, d+1)
-        axalign.imshow(self.opaque_colorscale(matplotlib.cm.Blues,
-                                              mri_data[:, :, i], 0.6))
-        axalign.imshow(self.opaque_colorscale(matplotlib.cm.Reds,
-                                              ref_data[:, :, i], 0.4))
-        axalign.set_xlabel('Position (res)')
-        axalign.set_ylabel('Position (res)')
-        axalign.set_title('%d slice' % i)
-    falign.set_size_inches(nrows*6, ncols*6)
-    falign.tight_layout()
-    fname = qcdir + "/" + scanid + "_" + refid + "_overlap.png"
-    falign.savefig(fname)
-    plt.close(falign)
-    # return the figpath so we can save it back to the html
-    return fname
-
-
-def image_align(mri_data, ref_data, qcdir, scanid="", refid=""):
-    """
-    A function to produce an image showing the alignments of two
-    reference images.
-
-    **Positional Arguments:**
-        mri_image:
-            - the first matrix.
-        ref_image:
-            - the reference matrix.
-        qcdir:
-            - the path to a directory to dump the outputs.
-        scan_id:
-            - the id of the scan being analyzed.
-        refid:
-            - the id of the reference being analyzed.
-    """
-    cmd = "mkdir -p " + qcdir
-    mgu.execute_cmd(cmd)
-    mri_data = mgu.get_braindata(mri_data)
-    ref_data = mgu.get_braindata(ref_data)
-
-    # if we have 4d data, np.mean() to get 3d data
-    if len(mri_data.shape) == 4:
-        mri_data = np.nanmean(mri_data, axis=3)
-
-    falign = plt.figure()
-
-    depth = mri_data.shape[2]
-
-    depth_seq = np.unique(np.round(np.linspace(0, depth - 1, 25))).astype(int)
-    nrows = np.ceil(np.sqrt(depth_seq.shape[0]))
-    ncols = np.ceil(depth_seq.shape[0]/float(nrows))
-
-    # produce figures for each slice in the image
-    for d in range(0, depth_seq.shape[0]):
-        # TODO EB: create nifti image with these values
-        # and allow option to add overlap with mni vs mprage
-        i = depth_seq[d]
-        axalign = falign.add_subplot(nrows, ncols, d+1)
-        axalign.imshow(self.opaque_colorscale(matplotlib.cm.Blues,
-                                              mri_data[:, :, i]))
-        axalign.imshow(self.opaque_colorscale(matplotlib.cm.Reds,
-                                              ref_data[:, :, i]))
-        axalign.set_xlabel('Position (res)')
-        axalign.set_ylabel('Position (res)')
-        axalign.set_title('%d slice' % i)
-    falign.set_size_inches(nrows*6, ncols*6)
-    falign.tight_layout()
-    fname = qcdir + "/" + scanid + "_" + refid + "_overlap.png"
-    falign.savefig(fname)
-    plt.close(falign)
-    # return the figpath so we can save it back to the html
-    return fname
 
 
 def plot_signals(signals, labels, title=None, xlabel=None,
@@ -497,19 +216,24 @@ def plot_signals(signals, labels, title=None, xlabel=None,
     ax_sig = fig_sig.add_subplot(111)
     lines = []
     legs = []
+    # iterate over the signals and the labels
     for (signal, label) in zip(signals, labels):
+        # if we have an x axis, use it, otherwise just use
+        # range(0, ... end) which is the default behavior
         if xax is not None:
             lines.append(ax_sig.plot(xax, signal, linewidth=lwidth)[0])
         else:
             lines.append(ax_sig.plot(signal, linewidth=lwidth)[0])
-        legs.append(label)
+        legs.append(label)  # add the label to our legend
     if lab_incl:
+        # if we want to include labels, then plot them
         ax_sig.legend(lines, legs, loc='lower right')
     ax_sig.set_title(title)
     ax_sig.set_ylabel(ylabel)
     ax_sig.set_xlabel(xlabel)
     fig_sig.tight_layout()
     return fig_sig
+
 
 def plot_timeseries(timeseries, qcdir=None):
     """
@@ -531,20 +255,25 @@ def plot_timeseries(timeseries, qcdir=None):
     timeseries = mgu.load_timeseries(timeseries)
 
     fts_list = []
+
+    # iterate over the roi timeseries to plot a line for each
+    # roi
     for d in range(0, timeseries.T.shape[1]):
         fts_list.append(py.graph_objs.Scatter(
                         x=range(0, timeseries.T.shape[0]),
                         y=timeseries.T[:, d], mode='lines'))
-
+    # use plotly so that users can select which rois to display
+    # easily with a html
     layout = dict(title=" ".join([scan, "ROI Timeseries"]),
                   xaxis=dict(title='Time Point (TRs)',
                              range=[0, timeseries.T.shape[0]]),
                   yaxis=dict(title='Intensity'),
                   showlegend=False)  # height=405, width=720)
     fts = dict(data=fts_list, layout=layout)
-    # py.plotly.image.save_as(fts, filename=fname_ts)
     offline.plot(fts, filename=fname_ts, auto_open=False)
 
+    # plot correlation matrix as the absolute correlation
+    # of the timeseries for each roi
     fcorr = plt.figure()
     axcorr = fcorr.add_subplot(111)
     cax = axcorr.imshow(np.abs(np.corrcoef(timeseries)),

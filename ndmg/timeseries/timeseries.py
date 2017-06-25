@@ -105,4 +105,3 @@ class timeseries(object):
         if roits_file:
             np.savez(roits_file, roi=roi_ts)
         return roi_ts
-

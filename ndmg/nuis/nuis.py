@@ -201,7 +201,7 @@ class nuis(object):
 
         passed_fft[bpra, :] = 0
         self.fft_reg = np.square(
-                passed_fft[:, self.voxel_gm_mask].mean(axis=1))[order]
+            passed_fft[:, self.voxel_gm_mask].mean(axis=1))[order]
         # go back to time domain
         return np.apply_along_axis(irfft, 0, passed_fft)
 
@@ -376,7 +376,7 @@ class nuis(object):
             self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
                                                     "wm_mask_eroded")
             mgnu.probmap2mask(self.wm_prob, self.er_wm_mask,
-                             .99, erode=2)
+                              .99, erode=2)
             wmm = nb.load(self.er_wm_mask).get_data()
             wm_ts = fmri_dat[wmm != 0, :].T
         else:

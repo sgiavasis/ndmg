@@ -140,28 +140,27 @@ class qa_func(object):
         mp_titles = ["Framewise Displacement", "Translational Parameters",
                      "Rotational Parameters"]
         # list of lists of the line labels
-        linelegs = [['x rot', 'y rot', 'z rot'], ['x trans', 'y trans', 'z trans'],
-                    ['framewise']]
+        linelegs = [['x rot', 'y rot', 'z rot'],
+                    ['x trans', 'y trans', 'z trans'], ['framewise']]
         xlab = 'Timepoint'
         ylab = 'Displacement'
         # iterate over tuples of the lists we store our plot variables in
         for (param_type, name, title, legs) in zip(mc_pars, mc_names,
-                glm_titles, linelegs):
+                                                   glm_titles, linelegs):
             params = []
             labels = []
             # iterate over the parameters while iterating over the legend
             # labels for each param
-            for param, leg in zip(param_type, legs):
-                regs.append(param)
-                labels.append('{} displacement'.format(leg))
+            params = [param for param in param_types]
+            labels = [' {} displacement'.format(leg) for leg in legs]
             fig = plot_signals(regs, labels, title=title,
                                xlabel=xlab, ylabel=ylab)
 
             fname_reg = "{}/{}_{}_parameters.png".format(qcdir,
                                                          func_name,
                                                          name)
-                fig.savefig(fname_reg, format='png')
-                plt.close(fig)
+            fig.savefig(fname_reg, format='png')
+            plt.close(fig)
         self.fd_params
         mc_file = "{}/{}_stats.txt".format(qcdir, func_name)
 
@@ -172,7 +171,7 @@ class qa_func(object):
         # number of framewise displacements greater than .2 mm
         prep.num_fd_gt_200um = np.sum(fd_pars > .2)
         # number of framewise displacements greater than .5 mm
-        prep.num_fd_gt_500um = np.sum(fd_pars > .5) 
+        prep.num_fd_gt_500um = np.sum(fd_pars > .5)
         fstat.close()
         pass
 
@@ -224,24 +223,24 @@ class qa_func(object):
             freg.t1w_brain
         )
         self.self_reg_sc = sreg_sc
-        # use the dice score in the filepath to easily
+        # use the jaccard score in the filepath to easily
         # identify failed subjects
-        sreg_f_final = "{}/{}_dice_{:.0f}".format(
+        sreg_f_final = "{}/{}_jaccard_{:.0f}".format(
             qa_dirs['sreg_f'],
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
-         sreg_a_final = "{}/{}_dice_{:.0f}".format(
-             qa_dirs['sreg_a'],
-             freg.sreg_strat,
-             self.self_reg_sc*1000
+        sreg_a_final = "{}/{}_jaccard_{:.0f}".format(
+            qa_dirs['sreg_a'],
+            freg.sreg_strat,
+            self.self_reg_sc*1000
         )
         cmd = "mkdir -p {} {}".format(sreg_f_final, sreg_a_final)
         mgu.execute_cmd(cmd)
         func_name = mgu.get_filename(freg.sreg_brain)
         t1w_name = mgu.get_filename(freg.t1w)
         sreg_fig.savefig(
-            "{}/{}_epi2t1w.png".format(sreg_f_final, func_name)  
+            "{}/{}_epi2t1w.png".format(sreg_f_final, func_name)
         )
         # produce plot of the white-matter mask used during bbr
         if freg.wm_mask is not None:
@@ -278,12 +277,12 @@ class qa_func(object):
         # use the registration score in the filepath for easy
         # identification of failed subjects
         self.temp_reg_sc = treg_sc
-        treg_f_final = "{}/{}_dice_{:.0f}".format(
+        treg_f_final = "{}/{}_jaccard_{:.0f}".format(
             qa_dirs['treg_f'],
             freg.treg_strat,
             self.temp_reg_sc*1000
         )
-        treg_a_final = "{}/{}_dice_{:.0f}".format(
+        treg_a_final = "{}/{}_jaccard_{:.0f}".format(
             qa_dirs['treg_a'],
             freg.treg_strat,
             self.temp_reg_sc*1000
@@ -292,7 +291,7 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
         func_name = mgu.get_filename(freg.taligned_epi)
         treg_fig.savefig(
-            "{}/{}_epi2temp.png".format(treg_f_final, func_name)  
+            "{}/{}_epi2temp.png".format(treg_f_final, func_name)
         )
         plt.close(treg_fig)
         t1w_name = mgu.get_filename(freg.taligned_t1w)
@@ -387,8 +386,8 @@ class qa_func(object):
         for mask, maskname in zip(masks, masknames):
             if mask is not None:
                 mask_dat = nb.load(mask).get_data()
-                # produce overlay figure between the t1w image that is segmented
-                # and the respective mask
+                # produce overlay figure between the t1w image that has
+                # segmentation performed on it and the respective mask
                 f_mask = plot_overlays(t1w_dat, mask_dat, minthr=0, maxthr=100)
                 fname_mask = "{}/{}_{}.png".format(maskdir, anat_name,
                                                    maskname)
@@ -404,7 +403,7 @@ class qa_func(object):
         label_include = [True, True, False]
         # iterate over tuples of our plotting variables
         for (reg, name, title, lab) in zip(glm_regs, glm_names, glm_titles,
-                label_include):
+                                           label_include):
             # if we have a particular regressor
             if reg is not None:
                 regs = []
@@ -427,11 +426,11 @@ class qa_func(object):
         # signal before compared with the signal removed and
         # signal after correction
         fig_glm_sig = plot_signals(
-                [nuisobj.cent_nuis, nuisobj.glm_sig, nuisobj.glm_nuis],
-                ['Before', 'Regressed Sig', 'After'],
-                title='Impact of GLM Regression on Average GM Signal',
-                xlabel='Timepoint',
-                ylabel='Intensity'
+            [nuisobj.cent_nuis, nuisobj.glm_sig, nuisobj.glm_nuis],
+            ['Before', 'Regressed Sig', 'After'],
+            title='Impact of GLM Regression on Average GM Signal',
+            xlabel='Timepoint',
+            ylabel='Intensity'
         )
         fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, anat_name)
         fig_glm_sig.savefig(fname_glm_sig, format='png')
@@ -444,25 +443,26 @@ class qa_func(object):
             # start by just plotting the average fft of gm voxels and
             # compare with average fft after frequency filtering
             fig_fft_pow = plot_signals(
-                    [nuisobj.fft_bef, nuisobj.fft_reg],
-                    ['Before', 'After'],
-                    title='Average Gray Matter Power Spectrum',
-                    xlabel='Frequency',
-                    ylabel='Power',
-                    xax=nuisobj.freq_ra)
+                [nuisobj.fft_bef, nuisobj.fft_reg],
+                ['Before', 'After'],
+                title='Average Gray Matter Power Spectrum',
+                xlabel='Frequency',
+                ylabel='Power',
+                xax=nuisobj.freq_ra)
             fname_fft_pow = '{}/{}_fft_power.png'.format(fftdir, anat_name)
             fig_fft_pow.savefig(fname_fft_pow, format='png')
             plt.close(fig_fft_pow)
             # plot the signal vs the regressed signal vs signal after
             fig_fft_sig = plot_signals(
-                    [nuisobj.glm_nuis, nuisobj.fft_sig, nuisobj.fft_nuis],
-                    ['Before', 'Regressed Sig', 'After'],
-                    title='Impact of Frequency Filtering on Average GM Signal',
-                    xlabel='Timepoint',
-                    ylabel='Intensity')
+                [nuisobj.glm_nuis, nuisobj.fft_sig, nuisobj.fft_nuis],
+                ['Before', 'Regressed Sig', 'After'],
+                title='Impact of Frequency Filtering on Average GM Signal',
+                xlabel='Timepoint',
+                ylabel='Intensity')
             fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(
-                    fftdir,
-                    anat_name)
+                fftdir,
+                anat_nam
+            )
             fig_fft_sig.savefig(fname_fft_sig, format='png')
             plt.close(fig_fft_sig)
         pass

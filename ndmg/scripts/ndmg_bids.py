@@ -29,7 +29,7 @@ from ndmg.utils.bids import *
 from ndmg.stats.qa_graphs import *
 from ndmg.stats.qa_graphs_plotting import *
 from ndmg.stats.group_func import group_func
-from ndmg.scripts.ndmg_func_pipeline import ndmg_func_pipeline  #TODO rename
+from ndmg.scripts.ndmg_func_pipeline import ndmg_func_pipeline
 from glob import glob
 import ndmg.utils as mgu
 import ndmg
@@ -61,7 +61,8 @@ def get_atlas(atlas_dir, dwi=True):
     """
     if dwi:
         atlas = op.join(atlas_dir, 'atlas/MNI152_T1_1mm.nii.gz')
-        atlas_mask = op.join(atlas_dir, 'atlas/MNI152_T1_1mm_brain_mask.nii.gz')
+        atlas_mask = op.join(atlas_dir,
+                             'atlas/MNI152_T1_1mm_brain_mask.nii.gz')
         labels = ['labels/AAL.nii.gz', 'labels/desikan.nii.gz',
                   'labels/HarvardOxford.nii.gz', 'labels/CPAC200.nii.gz',
                   'labels/Talairach.nii.gz', 'labels/JHU.nii.gz',
@@ -80,7 +81,8 @@ def get_atlas(atlas_dir, dwi=True):
         atlas_func = op.join(atlas_dir, 'func_atlases')
         atlas = op.join(atlas_func, 'atlas/MNI152_T1-2mm.nii.gz')
         atlas_brain = op.join(atlas_func, 'atlas/MNI152_T1-2mm_brain.nii.gz')
-        atlas_mask = op.join(atlas_func, 'mask/MNI152_T1-2mm_brain_mask.nii.gz')
+        atlas_mask = op.join(atlas_func,
+                             'mask/MNI152_T1-2mm_brain_mask.nii.gz')
         lv_mask = op.join(atlas_func, 'mask/HarvOx_lv_thr25-2mm.nii.gz')
         labels = ['label/HarvardOxford-cort-maxprob-thr25-2mm.nii.gz',
                   'label/aal-2mm.nii.gz', 'label/brodmann-2mm.nii.gz',
@@ -92,7 +94,8 @@ def get_atlas(atlas_dir, dwi=True):
     if any(not ope(f) for f in fils):
         print("Cannot find atlas information; downloading...")
         mgu.execute_cmd('mkdir -p ' + atlas_dir)
-        cmd = 'wget -rnH --cut-dirs=3 --no-parent -P {} http://openconnecto.me/mrdata/share/atlases/'.format(atlas_dir)
+        cmd = 'wget -rnH --cut-dirs=3 --no-parent -P {} '.format(atlas_dir)
+        cmd += 'http://openconnecto.me/mrdata/share/atlases/'
         mgu.execute_cmd(cmd)
 
     if dwi:
@@ -102,7 +105,12 @@ def get_atlas(atlas_dir, dwi=True):
 
 
 def worker_wrapper((f, args, kwargs)):
+    # allows us to wrap the per-subject module and remap the arguments
+    # so that we can take lists of args since f in this case can be
+    # ndmg_dwi_pipeline or ndmg_func_pipeline, and each takes slightly
+    # different arguments
     return f(*args, **kwargs)
+
 
 def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                       stc=None, dwi=True, nthreads=1):
@@ -116,9 +124,9 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
     mgu.execute_cmd("mkdir -p {} {}/tmp".format(outDir, outDir))
 
     result = crawl_bids_directory(inDir, subjs, sesh, dwi=dwi)
-   
+
     if dwi:
-	anats, dwis, bvals, bvecs = result
+        anats, dwis, bvals, bvecs = result
         assert(len(anats) == len(dwis))
         assert(len(bvecs) == len(dwis))
         assert(len(bvals) == len(dwis))
@@ -131,14 +139,14 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
     # store the function we will be calling in f
     kwargs = {'clean': (not debug)}  # our keyword arguments
     if dwi:
-        args = tuple([[dw, bval, bvec, anat, atlas, atlas_mask,
-                       labels, outDir] for (dw, bval, bvec, anat)
-                       in zip(dwis, bvals, bvecs, nats)])
+        args = [[dw, bval, bvec, anat, atlas, atlas_mask,
+                 labels, outDir] for (dw, bval, bvec, anat)
+                in zip(dwis, bvals, bvecs, nats)]
         f = ndmg_dwi_pipeline  # the function of choice
     else:
         args = [[func, anat, atlas, atlas_brain, atlas_mask,
                  lv_mask, labels, outDir] for (func, anat) in
-                 zip(funcs, anats)]
+                zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
     # optional args stored in kwargs
@@ -147,6 +155,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
     arg_list = [(f, arg, kwargs) for arg in args]
     p = Pool(nthreads)  # start nthreads in parallel
     p.map(worker_wrapper, arg_list)  # run them
+
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, dwi=True):
@@ -174,7 +183,7 @@ def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
               if fl.endswith(".graphml") or fl.endswith(".gpickle")]
         tmp_out = op.join(outDir, label)
         mgu.execute_cmd("mkdir -p {}".format(tmp_out))
-        
+
         compute_metrics(fs, tmp_out, label)
         outf = op.join(tmp_out, '{}_plot'.format(label))
         make_panel_plot(tmp_out, outf, dataset=dataset, atlas=label,
@@ -281,7 +290,7 @@ def main():
                         tpath = '{}/sub-{}'.format(remo, sub)
                         tindir = '{}/sub-{}'.format(inDir, sub)
                 s3_get_data(buck, tpath, tindir, public=creds)
-            else: 
+            else:
                 s3_get_data(buck, remo, inDir, public=creds)
         modif = 'ndmg_{}'.format(ndmg.version.replace('.', '-'))
         participant_level(inDir, outDir, subj, sesh, debug, stc, dwi, nthreads)

@@ -28,13 +28,13 @@ def erode_mask(mask, v=0):
     voxels. Here, we define erosion as the process of checking
     whether all the voxels within a number of voxels for a
     mask have values.
-    
+
     **Positional Arguments:**
-    
+
         mask:
-    	- a numpy array of a mask to be eroded.
+            - a numpy array of a mask to be eroded.
         v:
-    	- the number of voxels to erode by.
+            - the number of voxels to erode by.
     """
     print("Eroding Mask...")
     for i in range(0, v):
@@ -45,16 +45,16 @@ def erode_mask(mask, v=0):
         if (x.shape == y.shape and y.shape == z.shape):
             # iterated over all the nonzero voxels
             for j in range(0, x.shape[0]):
-    	        # check that the 3d voxels within 1 voxel are 1
+                # check that the 3d voxels within 1 voxel are 1
                 # if so, add to the new mask
                 md = mask.shape
                 if (mask[x[j], y[j], z[j]] and
-       	            mask[np.min((x[j]+1, md[0]-1)), y[j], z[j]] and
-                    mask[x[j], np.min((y[j]+1, md[1]-1)), z[j]] and
-                    mask[x[j], y[j], np.min((z[j]+1, md[2]-1))] and
-                    mask[np.max((x[j]-1, 0)), y[j], z[j]] and
-                    mask[x[j], np.max((y[j]-1, 0)), z[j]] and
-    	            mask[x[j], y[j], np.max((z[j]-1, 0))]):
+                        mask[np.min((x[j]+1, md[0]-1)), y[j], z[j]] and
+                        mask[x[j], np.min((y[j]+1, md[1]-1)), z[j]] and
+                        mask[x[j], y[j], np.min((z[j]+1, md[2]-1))] and
+                        mask[np.max((x[j]-1, 0)), y[j], z[j]] and
+                        mask[x[j], np.max((y[j]-1, 0)), z[j]] and
+                        mask[x[j], y[j], np.max((z[j]-1, 0))]):
                     erode_mask[x[j], y[j], z[j]] = 1
         else:
             raise ValueError('Your mask erosion has an invalid shape.')
@@ -66,18 +66,18 @@ def probmap2mask(prob_map, mask_path, t, erode=0):
     """
     A function to extract a mask from a probability map.
     Also, performs mask erosion as a substep.
-    
+
     **Positional Arguments:**
-    
+
         prob_map:
-    	- the path to probability map for the given class
-    	  of brain tissue.
+            - the path to probability map for the given class
+              of brain tissue.
         mask_path:
-    	- the path to the extracted mask.
+            - the path to the extracted mask.
         t:
-    	- the threshold to consider voxels part of the class.
-        erode=2:
-    	- the number of voxels to erode by. Defaults to 0.
+            - the threshold to consider voxels part of the class.
+        erode=0:
+            - the number of voxels to erode by. Defaults to 0.
     """
     print("Extracting Mask from probability map {}...".format(prob_map))
     prob = nb.load(prob_map)

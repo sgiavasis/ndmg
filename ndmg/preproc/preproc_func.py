@@ -56,9 +56,11 @@ class preproc_func():
                   alignment. Uses the meanvolume if not specified
         """
         if idx is None:
+            # defaults to mean volume
             cmd = "mcflirt -in {} -out {} -plots -meanvol"
             cmd = cmd.format(mri, corrected_mri)
         else:
+            # if user provides a volume index, use it
             cmd = "mcflirt -in {} -out {} -plots -refvol {}"
             cmd = cmd.format(mri, corrected_mri, idx)
         mgu.execute_cmd(cmd, verb=True)
@@ -91,7 +93,7 @@ class preproc_func():
             elif stc == "interleaved":
                 cmd += " --odd"
             elif stc == "up":
-                cmd += '' # default
+                cmd += ''  # default of slicetimer
             elif op.isfile(stc):
                 cmd += " --tcustom {}".format(stc)
             zooms = nb.load(func).header.get_zooms()
@@ -108,11 +110,12 @@ class preproc_func():
 
         s0 = "{}/{}_0slice.nii.gz".format(self.outdir, func_name)
         stc_func = "{}/{}_stc.nii.gz".format(self.outdir, func_name)
-        # TODO EB: decide whether it is advantageous to align to mean image
+        # use slicetimer if user passes slicetiming information
         if (stc is not None):
             self.slice_time_correct(self.func, stc_func, stc)
         else:
             stc_func = self.func
+        # motion correct using the mean volume (FSL default)
         self.motion_correct(stc_func, self.motion_func, None)
         self.mc_params = "{}.par".format(self.motion_func)
         cmd = "cp {} {}".format(self.motion_func, self.preproc_func)

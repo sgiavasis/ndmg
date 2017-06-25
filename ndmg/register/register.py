@@ -126,7 +126,8 @@ class register(object):
         """
         # if we are doing fnirt, use predefined fnirt config file
         # since the config is most robust
-        cmd = "fnirt --in={} --aff={} --cout={} --ref={} --config=T1_2_MNI152_2mm"
+        cmd = "fnirt --in={} --aff={} --cout={} --ref={}"
+        cmd += " --config=T1_2_MNI152_2mm"
         cmd = cmd.format(inp, xfm, warp, ref)
         if mask is not None:
             cmd += " --refmask={}".format(mask)
@@ -299,7 +300,7 @@ class register(object):
 
         if clean:
             cmd = "rm -f {} {} {} {} {}*".format(dwi2, temp_aligned, b0,
-                                                    xfm, t1w_name)
+                                                 xfm, t1w_name)
             print("Cleaning temporary registration files...")
             mgu.execute_cmd(cmd)
 
@@ -397,7 +398,7 @@ class epi_register(register):
         # a decent segmentation, and then we can use bbr from flirt
         if not self.simple:
             xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
-                                                       self.epi_name) 
+                                                       self.epi_name)
             xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
                                                  self.epi_name)
             epi_bbr = "{}/{}_bbr.nii.gz".format(self.outdir['sreg_f'],
@@ -447,9 +448,8 @@ class epi_register(register):
         registration instead.
         NOTE: for this to work, must first have called self-align.
         """
-         
         xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_a'],
-            self.epi_name)
+                                                       self.epi_name)
 
         # linear registration from t1 space to atlas space with a 12 dof
         # linear registration to serve as our initializer
@@ -458,12 +458,12 @@ class epi_register(register):
                    wmseg=None, init=None)
 
         self.epi_aligned_skull = "{}/{}_temp-aligned_skull.nii.gz".format(
-             self.outdir['treg_f'],
-             self.epi_name
+            self.outdir['treg_f'],
+            self.epi_name
         )  # template-aligned with skull
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
-            (self.simple is False)):
+                (self.simple is False)):
             warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
                 self.outdir['treg_a'],
                 self.epi_name
@@ -481,7 +481,7 @@ class epi_register(register):
                             warp=warp_t1w2temp)
             self.treg_strat = 'fnirt'  # strategy details
         else:
-            # if we don't have 2mm mni or a low quality t1w, FNIRT is unsuitable
+            # if we dont have 2mm mni or a low quality t1w, FNIRT is unsuitable
             print "Atlas is not 2mm MNI, or input is low quality."
             print "Using linear template registration."
 
@@ -502,7 +502,7 @@ class epi_register(register):
             self.treg_strat = 'flirt'  # strategy
         # use AFNI to extract brain from our epi volume
         mgru.extract_epi_brain(self.epi_aligned_skull, self.taligned_epi,
-                              self.outdir['treg_f'])
+                               self.outdir['treg_f'])
         # use AFNI to extract brain from our t1w volume
         mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
                                self.outdir['treg_a'])

@@ -56,7 +56,9 @@ def extract_epi_brain(epi, out, tmpdir):
     """
     epi_name = mgu.get_filename(epi)
     epi_mask = "{}/{}_mask.nii.gz".format(tmpdir, epi_name)
+    # 3d automask to extract the mask itself from the 4d data
     extract_mask(epi, epi_mask)
+    # 3d calc to apply the mask to the 4d image
     apply_mask(epi, epi_mask, out)
     pass
 
@@ -75,7 +77,7 @@ def extract_mask(inp, out):
             - the path to the extracted mask.
     """
     cmd = "3dAutomask -prefix {} {}".format(out, inp)
-    mgu.execute_cmd(cmd, verb=True) 
+    mgu.execute_cmd(cmd, verb=True)
     pass
 
 
@@ -96,7 +98,9 @@ def extract_t1w_brain(t1w, out, tmpdir):
     t1w_name = mgu.get_filename(t1w)
     # the t1w image with the skull removed.
     skull_t1w = "{}/{}_noskull.nii.gz".format(tmpdir, t1w_name)
+    # 3dskullstrip to extract the brain-only t1w
     t1w_skullstrip(t1w, skull_t1w)
+    # 3dcalc to apply the mask over the 4d image
     apply_mask(t1w, skull_t1w, out)
     pass
 
@@ -134,6 +138,7 @@ def resample_fsl(base, res, goal_res, interp='spline'):
         interp:
             - the interpolation strategy to use.
     """
+    # resample using an isometric transform in fsl
     cmd = "flirt -in {} -ref {} -out {} -applyisoxfm {} -interp {}"
     cmd = cmd.format(base, base, res, goal_res, interp)
     mgu.execute_cmd(cmd, verb=True)

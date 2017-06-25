@@ -64,8 +64,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         clean:
             - a flag whether or not to clean out directories once finished.
         fmt:
-            - the format for produced connectomes. supported options are gpickle
-              and graphml.
+            - the format for produced connectomes. supported options are
+              gpickle and graphml.
     """
     startTime = datetime.now()
 
@@ -75,17 +75,17 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     atlas_name = mgu.get_filename(atlas)
 
     paths = {'f_prep': "reg/func/preproc",
-        'a_prep': "reg/t1w/preproc",
-        'sreg_f': "reg/func/align/self",
-        'sreg_a': "reg/t1w/align/self",
-        'treg_f': "reg/func/align/template",
-        'treg_a': "reg/t1w/align/template",
-        'nuis': "nuis",
-        'ts_voxel': "timeseries/voxel",
-        'ts_roi': "timeseries/roi"}
+             'a_prep': "reg/t1w/preproc",
+             'sreg_f': "reg/func/align/self",
+             'sreg_a': "reg/t1w/align/self",
+             'treg_f': "reg/func/align/template",
+             'treg_a': "reg/t1w/align/template",
+             'nuis': "nuis",
+             'ts_voxel': "timeseries/voxel",
+             'ts_roi': "timeseries/roi"}
     finals = {'ts_roi': paths['ts_roi'],
-        'ts_voxel': paths['ts_voxel'],
-        'conn': "connectomes"}
+              'ts_voxel': paths['ts_voxel'],
+              'conn': "connectomes"}
 
     tmpdir = '{}/tmp/{}'.format(outdir, func_name)
     qadir = "{}/qa/{}".format(outdir, func_name)
@@ -183,7 +183,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     # ------ Voxelwise Timeseries Steps ---------------------------- #
     print "Extracting Voxelwise Timeseries..."
     voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
-    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask, qcdir=qa_dirs['ts_voxel'])
+    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask,
+                        qcdir=qa_dirs['ts_voxel'])
 
     # ------ ROI Timeseries Steps ---------------------------------- #
     for idx, label in enumerate(label_name):
@@ -195,15 +196,16 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         connectome.summary()
         connectome.save_graph(connectomes[idx], fmt=fmt)
         qc_func.roi_ts_qa(roi_ts[idx], aligned_func, aligned_t1w,
-                       labels[idx], labeldir)
+                          labels[idx], labeldir)
     # save our statistics so that we can do group level
     qc_func.save(qc_stats)
 
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
-         cmd = "rm -rf {}".format(tmpdir)
-         mgu.execute_cmd(cmd)
+        cmd = "rm -rf {}".format(tmpdir)
+        mgu.execute_cmd(cmd)
     print("Complete!")
+
 
 def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
                        labels, outdir, clean=False, stc=None, fmt='gpickle'):
@@ -243,6 +245,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         print "Error: {} for scan {}".format(str(e),
                                              mgu.get_filename(func))
 
+
 def main():
     parser = ArgumentParser(description="This is an end-to-end connectome"
                             " estimation pipeline from sMRI and DTI images")
@@ -276,8 +279,8 @@ def main():
     if result.stc == "file":
         if result.stc_file is None:
             sys.exit("Selected 'file' option for slice timing correction but"
-                      " did not pass a file. Please select another option or"
-                      " provide a file.")
+                     " did not pass a file. Please select another option or"
+                     " provide a file.")
         else:
             if not op.isfile(result.stc_file):
                 sys.exit("Invalid file for STC provided.")
