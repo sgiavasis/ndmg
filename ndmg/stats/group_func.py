@@ -163,24 +163,21 @@ class group_func(object):
         trans_abs_gt = np.zeros((len(self.qa_objects)))
         trans_rel_gt = np.zeros((len(self.qa_objects)))
 
-        for i, sub in enumerate(self.qa_objects):
-            abs_m = np.linalg.norm(sub.abs_pos[:, 3:6], axis=1)
-            rel_m = np.linalg.norm(sub.rel_pos[:, 3:6], axis=1)
-            trans_abs[i] = np.mean(abs_m)
-            trans_rel[i] = np.mean(rel_m)
-            trans_abs_gt[i] = np.sum(abs_m > 0.2)
-            trans_rel_gt[i] = np.sum(rel_m > 0.1)
+        FD_mean = [sub.fd_mean for sub in self.qa_objects]
+        FD_max = [sub.fd_max for sub in self.qa_objects]
+        FD_gt_100um = [sub.fd_gt_100um for sub in self.qa_objects]
+        FD_gt_200um = [sub.fd_gt_200um for sub in self.qa_objects]
 
-        fig_abs = plot_rugdensity(trans_abs)
-        fig_rel = plot_rugdensity(trans_rel)
-        fig_abs_gt = plot_rugdensity(trans_abs_gt)
-        fig_rel_gt = plot_rugdensity(trans_rel_gt)
+        fig_mean = plot_rugdensity(FD_mean)
+        fig_max = plot_rugdensity(FD_max)
+        fig_gt_100um = plot_rugdensity(FD_gt_100um)
+        fig_gt_200um = plot_rugdensity(FD_gt_200um)
 
-        figs = [fig_abs, fig_rel, fig_abs_gt, fig_rel_gt]
-        names = ['Average Absolute Translational Motion', 'Average Relative Translational Motion',
-                 'Number of Absolute Motions > 0.2 mm', 'Number of Relative Motions > 0.1 mm']
+        figs = [fig_mean, fig_max, fig_gt_100um, fig_gt_200um]
+        names = ['Average FD KDE', 'Max FD KDE',
+                 'Number of FD > 0.1 mm KDE', 'Number of FD > 0.2 mm KDE']
         ylab = ['Density', 'Density', 'Density', 'Density']
-        xlab = ['Average Motion (mm)', 'Average Motion (mm)',
+        xlab = ['Average FD (mm)', 'Average Motion (mm)',
                 'Number of Volumes', 'Number of Volumes']
         traces = [fig_to_trace(fig) for fig in figs]
 

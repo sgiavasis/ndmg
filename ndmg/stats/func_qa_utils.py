@@ -490,6 +490,8 @@ def plot_signals(signals, labels, title=None, xlabel=None,
             - the scale for the x axis.
         - lab_incl:
             - whether to include the labels on the plot.
+        - lwidth:
+            - the line width.
     """
     fig_sig = plt.figure()
     ax_sig = fig_sig.add_subplot(111)
@@ -497,9 +499,9 @@ def plot_signals(signals, labels, title=None, xlabel=None,
     legs = []
     for (signal, label) in zip(signals, labels):
         if xax is not None:
-            lines.append(ax_sig.plot(xax, signal)[0])
+            lines.append(ax_sig.plot(xax, signal, linewidth=lwidth)[0])
         else:
-            lines.append(ax_sig.plot(signal)[0])
+            lines.append(ax_sig.plot(signal, linewidth=lwidth)[0])
         legs.append(label)
     if lab_incl:
         ax_sig.legend(lines, legs, loc='lower right')

@@ -60,6 +60,7 @@ class timeseries(object):
 
         # load the MRI data
         funcdata = mgu.get_braindata(func_file)
+        # load all the voxel timeseries that are within the atlas mask
         voxel_ts = funcdata[maskbool, :]
         if voxel_file is not None:
             np.savez(voxel_file, voxel=voxel_ts)
@@ -83,12 +84,14 @@ class timeseries(object):
                 None, don't save and just return the roi_timeseries.
         """
         labeldata = mgu.get_braindata(label_file)
+        # rois are all the nonzero unique values the parcellation can take
         rois = np.sort(np.unique(labeldata[labeldata > 0]))
         funcdata = mgu.get_braindata(func_file)
 
         # initialize time series to [numrois]x[numtimepoints]
         roi_ts = np.zeros((len(rois), funcdata.shape[3]))
-
+        # iterate over the unique possible rois. note that the rois
+        # could have nonstandard values, so assign indices w enumerate
         for idx, roi in enumerate(rois):
             roibool = labeldata == roi  # get a bool where our voxels in roi
             roibool
