@@ -353,9 +353,12 @@ class epi_register(register):
         t1w_skull = "{}/{}_temp-aligned_skull.nii.gz"
         self.taligned_t1w_skull = t1w_skull.format(self.outdir['sreg_a'],
                                                    self.t1w_name)
-        # trategies for qa later
+        # strategies for qa later
         self.sreg_strat = None
         self.treg_strat = None
+
+        # if we do bbr, then we will need a wm mask, so store for qa
+        self.wm_mask = None
 
         if sum(nb.load(t1w).header.get_zooms()) <= 6:
             self.simple = False
@@ -413,6 +416,7 @@ class epi_register(register):
             maps = mgnu.segment_t1w(self.t1w_brain, map_path)
             wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_f'],
                                                 self.t1w_name)
+            self.wm_mask = wm_mask
             # use the probability maps to extract white matter mask
             mgnu.probmap2mask(maps['wm_prob'], wm_mask, 0.5)
             # perform flirt with boundary-based registration, using the

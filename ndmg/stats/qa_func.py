@@ -29,8 +29,6 @@ from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals, \
 from ndmg.stats.qa_reg import reg_mri_pngs, plot_brain, plot_overlays
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import plotly as py
-import plotly.offline as offline
 import pickle
 
 
@@ -85,7 +83,7 @@ class qa_func(object):
         print "Performing QA for Functional Preprocessing..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
-        func_name = mgu.get_filename(prep.motion_func)
+        func_name = mgu.get_filename(prep.preproc_func)
 
         raw_im = nb.load(prep.func)
         raw_dat = raw_im.get_data()
@@ -95,14 +93,14 @@ class qa_func(object):
         # since the brain will be moving in time
         rawfig = plot_brain(raw_dat.mean(axis=3), minthr=10)
 
-        mc_im = nb.load(prep.motion_func)
-        mc_dat = mc_im.get_data()
+        prep_im = nb.load(prep.preproc_func)
+        prep_dat = prep_im.get_data()
 
         # plot the preprocessed brain. this brain should
         # look less blurred since the brain will be fixed in time
         # due to motion correction
-        mcfig = plot_brain(prep_dat.mean(axis=3), minthr=10)
-        nvols = mc_dat.shape[3]
+        prepfig = plot_brain(prep_dat.mean(axis=3), minthr=10)
+        nvols = prep_dat.shape[3]
 
         # get the functional preprocessing motion parameters
         mc_params = np.genfromtxt(prep.mc_params)
@@ -115,11 +113,11 @@ class qa_func(object):
         # of the brain
         mc_params[:, 0:3] = 50*np.pi*mc_params[:, 0:3]/180
 
-        fd_pars = np.zeros(mc_params.shape)
+        vd_pars = np.zeros(mc_params.shape)
 
         # our array of the displacements in x, y, z translations and rotations
         # volume wise displacement parameters for each x, y, z trans/rotation
-        vd_pars[1:None, :] = np.diff(mc_params[1:None, :], mc_params[0:-1, :])
+        vd_pars[1:None, :] = mc_params[1:None, :] - mc_params[0:-1, :]
 
         # using the displacements, compute the euclidian distance of the
         # movement from volume to volume, given no displacement at the start
@@ -145,15 +143,15 @@ class qa_func(object):
         xlab = 'Timepoint'
         ylab = 'Displacement'
         # iterate over tuples of the lists we store our plot variables in
-        for (param_type, name, title, legs) in zip(mc_pars, mc_names,
-                                                   glm_titles, linelegs):
+        for (param_type, name, title, legs) in zip(mc_pars, mp_names,
+                                                   mp_titles, linelegs):
             params = []
             labels = []
             # iterate over the parameters while iterating over the legend
             # labels for each param
-            params = [param for param in param_types]
+            params = [param for param in param_type]
             labels = [' {} displacement'.format(leg) for leg in legs]
-            fig = plot_signals(regs, labels, title=title,
+            fig = plot_signals(params, labels, title=title,
                                xlabel=xlab, ylabel=ylab)
 
             fname_reg = "{}/{}_{}_parameters.png".format(qcdir,
@@ -161,8 +159,6 @@ class qa_func(object):
                                                          name)
             fig.savefig(fname_reg, format='png')
             plt.close(fig)
-        self.fd_params
-        mc_file = "{}/{}_stats.txt".format(qcdir, func_name)
 
         # framewise-displacement statistics
         prep.max_fd = np.max(fd_pars)
@@ -172,7 +168,6 @@ class qa_func(object):
         prep.num_fd_gt_200um = np.sum(fd_pars > .2)
         # number of framewise displacements greater than .5 mm
         prep.num_fd_gt_500um = np.sum(fd_pars > .5)
-        fstat.close()
         pass
 
     def anat_preproc_qa(self, prep, qa_dir):
@@ -461,7 +456,7 @@ class qa_func(object):
                 ylabel='Intensity')
             fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(
                 fftdir,
-                anat_nam
+                anat_name
             )
             fig_fft_sig.savefig(fname_fft_sig, format='png')
             plt.close(fig_fft_sig)

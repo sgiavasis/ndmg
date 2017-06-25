@@ -22,18 +22,12 @@ from scipy.stats import gaussian_kde
 from ndmg.utils import utils as mgu
 import numpy as np
 import nibabel as nb
-import sys
-import re
-import random as ran
-import scipy.stats.mstats as scim
-import os.path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from ndmg.stats.qa_reg import plot_overlays
 import plotly as py
 import plotly.offline as offline
-from ndmg.stats.qa_reg import plot_overlays
-
 
 def dice_coefficient(a, b):
     """
@@ -188,7 +182,8 @@ def registration_score(aligned_func, reference, edge=False):
 
 
 def plot_signals(signals, labels, title=None, xlabel=None,
-                 ylabel=None, xax=None, lab_incl=True):
+                 ylabel=None, xax=None, lab_incl=True,
+                 lwidth=3.0):
     """
     A utility to plot and return a figure for
     multiple signals.
