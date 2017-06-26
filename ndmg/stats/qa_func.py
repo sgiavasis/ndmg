@@ -248,7 +248,7 @@ class qa_func(object):
             mask_dat = nb.load(freg.wm_mask).get_data()
             t1w_dat = nb.load(freg.t1w_brain).get_data()
             f_mask = plot_overlays(t1w_dat, mask_dat, minthr=0, maxthr=100)
-            fname_mask = "{}/{}_{}.png".format(sreg_a_final, anat_name,
+            fname_mask = "{}/{}_{}.png".format(sreg_a_final, t1w_name,
                                                "_wm_mask")
             f_mask.savefig(fname_mask, format='png')
             plt.close(f_mask)
