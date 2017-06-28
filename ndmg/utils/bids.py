@@ -28,36 +28,57 @@ from glob import glob
 import re
 
 
-def match_anatomical(inDir, subj, anat_opt, modal):
+def match_t1w(epi, t1ws, modality):
     """
-    A function to match from a list of anatomical scans to a corresponding
-    modality specific scan.
+    A function to match an epi scan to a t1w scan, given a list of t1w scans
+    for a particular subject.
 
     **Positional Arguments:**
-        - inDir:
-            - the base directory for inputs.
-        - subj:
-            - the current subject.
-        - anat_opt:
-            - a list of possible anatomical scans. Note that the list
-              is expected to have at least 1 element.
-        - modal:
-            - a modality specific scan that we want to find a corresponding
-              anatomical match for.
-    """
-    match_ses = op.join(inDir, "sub-{}/(ses-[\s\S].*?)".format(subj))
-    # see if we have a session-level modality file
-    session_match = re.search(match_ses, modal)
-    if session_match is not None:
-        # try to find an associated anatomical scan from that same session
-        match = [s for s in anat_opt if session_match.group(0) in s]
-        if len(match) > 0:
-            # return the anatomical scan from this particular session
-            return match[0]
-    # if we do not meet any more detailed matches, just return the most basic
-    # subject-level match
-    return anat_opt[0]
 
+        - epi:
+            - the epi scan to match a t1w to.
+        - t1ws:
+            - a list of all the t1w scans for a particular subject to choose
+              from.
+        - modality:
+            - the modality identifier for the epi scan. Can be 'func' or 'dwi'.
+    """
+    # look for a session label
+    print epi
+    print t1ws
+    ses = re.search('(?<=ses-)(.*)(?=/{})'.format(modality), epi)
+    # if we have a session label, look for a T1w that uses this label
+    # the directory structure for this situation would be:
+    # sub-##/
+    #    + ses-###/
+    #        + anat/
+    #        + func/
+    #        + dwi/
+    #    + ses-####/
+    #    ...
+    # ...
+    if ses is not None:
+        ses = ses.group(0)
+        # if our t1w contains this session's label, then it is a match
+        matches = [t1w for t1w in t1ws if 'ses-{}'.format(ses) in t1w]
+        # if we have multiple t1ws for a given session, just use the first
+        # one
+        if len(matches) > 0:
+            return matches[0]
+
+    # if we do not have a session label, then just return the first
+    # t1w we have, since our collection of t1ws are all the t1ws for a subject
+    # the directory structure for this would be:
+    # sub-##/
+    #    + anat/
+    #    + func/
+    #    + dwi/
+    # ...
+    if len(t1ws) > 0:
+        return t1ws[0]
+    else:
+        sys.exit('Error: No t1w scan associated with subject: '
+                 + epi + '. Please review BIDs spec (bids.neurodata.io).')
 
 def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
     """
@@ -68,9 +89,8 @@ def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
         subj_dirs = glob(op.join(inDir, "sub-*"))
         subjs = [subj_dir.split("-")[-1] for subj_dir in subj_dirs]
 
-    mod = []
-    anat = []
-
+    epis = []
+    t1ws = []
     if dwi:
         modality='dwi'
         modal_str = "dwi"
@@ -79,39 +99,26 @@ def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
         modal_str = "bold"
 
     for subj in subjs:
-        if sesh is not None:
-            mod_t = glob(op.join(inDir, "sub-{}/ses-{}".format(subj, sesh),
-                                 modality, "*{}.nii*".format(modal_str)))
-            anat_opt = glob(op.join(inDir, "sub-{}/ses-{}".format(subj, sesh),
-                                    "anat", "*_T1w.nii*"))
-        else:
-            mod_t = glob(op.join(inDir, "sub-{}".format(subj), modality,
-                                 "*_{}.nii*".format(modal_str))) +\
-                    glob(op.join(inDir, "sub-{}".format(subj), "ses-*",
-                                 modality, "*_{}.nii*".format(modal_str)))
-            # options for anatomical scans
-            anat_opt = glob(op.join(inDir, "sub-{}".format(subj), "anat",
-                                    "*_T1w.nii*")) +\
-                       glob(op.join(inDir, "sub-{}".format(subj), "ses-*",
-                                    "anat", "*_T1w.nii*"))
-        # if we are missing anatomical or modality-specific scans, we cannot
-        # analyze this subject.
-        if len(anat_opt) > 0 and len(mod_t) > 0:
-            anat_t = []
-            for modal in mod_t:
-                anat_match = match_anatomical(inDir, subj, anat_opt, modal)
-                anat_t.append(anat_match)
-            mod = mod + mod_t
-            anat = anat + anat_t
+        # collect all the epis for a given subject
+        epis_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
+                                '**', '*{}.nii*'.format(modal_str)))
+        # collect all the t1ws for a given subject
+        print op.join(inDir, 'sub-{}'.format(subj), '*T1w.nii*')
+        t1ws_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
+                                '**/*T1w.nii*'))
+        # for each epi, find the best-match anatomical scan
+        t1w_match = [match_t1w(epi, t1ws_sub, modality) for epi in epis_sub]
+        epis = epis + epis_sub
+        t1ws = t1ws + t1w_match
 
     if modality == "func":
-        return(anat, mod)
+        return(t1ws, epis)
     bval = []
     bvec = []
     bvec_t = []
     bval_t = []
     # Look for bval, bvec files for each DWI file
-    for scan in mod:
+    for scan in epis:
         step = op.dirname(scan)
         while not bval_t or not bvec_t:
             bval_t = glob(op.join(step, "*dwi.bval"))
@@ -124,7 +131,7 @@ def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
         bval.append(bval_t[0])
         bvec_t = []
         bval_t = []
-    return (anat, mod, bval, bvec)
+    return (t1ws, epis, bval, bvec)
 
 
 def s3_get_data(bucket, remote, local, public=True):

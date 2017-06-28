@@ -134,6 +134,9 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
         anats, funcs = result
         assert(len(anats) == len(funcs))
 
+    print anats[0:20]
+    print funcs[0:20]
+
     # put the arguments for each iteration as lists forming
     # the elements of a tuple of jobs in args
     # store the function we will be calling in f
