@@ -26,7 +26,7 @@ import sys
 import boto3
 from glob import glob
 import re
-
+import fnmatch
 
 def match_t1w(epi, t1ws, modality):
     """
@@ -78,6 +78,34 @@ def match_t1w(epi, t1ws, modality):
         sys.exit('Error: No t1w scan associated with subject: '
                  + epi + '. Please review BIDs spec (bids.neurodata.io).')
 
+
+def get_files(inDir, subj, modality):
+    """
+    A function that uses os.walk to find all of the nifti images
+    associated with a particular subject, given a particular modality
+    identifier according to BIDs spec.
+
+    **Positional Arguments:**
+        - inDir:
+            - the BIDs directory to check for files.
+        - subj:
+            - the subject identifier.
+        - modality:
+            - the modality identifier. Can be T1w, bold, or dwi.
+    """
+    matches_epi = []
+    matches_t1w = []
+    subdir = op.join(inDir, 'sub-{}'.format(subj))
+    for root, dirnames, filenames in os.walk(subdir):
+        fstr = '*{}.nii*'.format(modality)
+        for filename in fnmatch.filter(filenames, fstr):
+            matches_epi.append(os.path.join(root, filename))
+        ft1w = '*T1w.nii*'
+        for filename in fnmatch.filter(filenames, ft1w):
+            matches_t1w.append(os.path.join(root, filename))
+    return matches_epi, matches_t1w
+
+
 def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
     """
     Given a BIDS directory and optionally list of sessions and subjects,
@@ -98,11 +126,8 @@ def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
 
     for subj in subjs:
         # collect all the epis for a given subject
-        epis_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
-                                '**', '*{}.nii*'.format(modal_str)))
-        # collect all the t1ws for a given subject
-        t1ws_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
-                                '**/*T1w.nii*'))
+        # collect the epis and t1ws for a given subject
+        (epis_sub, t1ws_sub) = get_files(inDir, subj, modal_str)
         # for each epi, find the best-match anatomical scan
         t1w_match = [match_t1w(epi, t1ws_sub, modality) for epi in epis_sub]
         epis = epis + epis_sub
