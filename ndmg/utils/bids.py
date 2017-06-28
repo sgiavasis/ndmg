@@ -44,8 +44,6 @@ def match_t1w(epi, t1ws, modality):
             - the modality identifier for the epi scan. Can be 'func' or 'dwi'.
     """
     # look for a session label
-    print epi
-    print t1ws
     ses = re.search('(?<=ses-)(.*)(?=/{})'.format(modality), epi)
     # if we have a session label, look for a T1w that uses this label
     # the directory structure for this situation would be:
@@ -103,7 +101,6 @@ def crawl_bids_directory(inDir, subjs, sesh, dwi=True):
         epis_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
                                 '**', '*{}.nii*'.format(modal_str)))
         # collect all the t1ws for a given subject
-        print op.join(inDir, 'sub-{}'.format(subj), '*T1w.nii*')
         t1ws_sub = glob(op.join(inDir, 'sub-{}'.format(subj),
                                 '**/*T1w.nii*'))
         # for each epi, find the best-match anatomical scan
