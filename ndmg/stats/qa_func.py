@@ -192,10 +192,8 @@ class qa_func(object):
         figs = {}
         # produce plots for the raw anatomical image
         figs['raw_anat'] = plot_brain(prep.anat)
-        # produce the preprocessed anatomical image plot
-        figs['preproc'] = plot_brain(prep.anat_preproc)
         # produce the preprocessed skullstripped anatomical image plot
-        figs['preproc_brain'] = plot_overlays(prep.anat_preproc,
+        figs['preproc_brain'] = plot_overlays(prep.anat,
                                               prep.anat_preproc_brain)
         # save iterator
         for plotname, fig in figs.iteritems():

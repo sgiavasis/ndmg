@@ -351,7 +351,7 @@ class epi_register(register):
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
         t1w_skull = "{}/{}_temp-aligned_skull.nii.gz"
-        self.taligned_t1w_skull = t1w_skull.format(self.outdir['sreg_a'],
+        self.taligned_t1w_skull = t1w_skull.format(self.outdir['treg_a'],
                                                    self.t1w_name)
         # strategies for qa later
         self.sreg_strat = None
@@ -411,10 +411,10 @@ class epi_register(register):
                        init=xfm_init2, bins=None, dof=6, cost=None,
                        searchrad=None, sch=None)
             # segment the t1w brain into probability maps
-            map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_f'],
+            map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_a'],
                                               self.t1w_name)
             maps = mgnu.segment_t1w(self.t1w_brain, map_path)
-            wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_f'],
+            wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_a'],
                                                 self.t1w_name)
             self.wm_mask = wm_mask
             # use the probability maps to extract white matter mask
@@ -452,14 +452,31 @@ class epi_register(register):
         registration instead.
         NOTE: for this to work, must first have called self-align.
         """
+        xfm_t1w2temp_init = "{}/{}_xfm_t1w2temp_init.mat".format(
+            self.outdir['treg_a'],
+            self.t1w_name
+        )
         xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_a'],
-                                                       self.epi_name)
+                                                       self.t1w_name)
+
+        # linear registration initializer with local optimisation in
+        # case our brain extraction is poor to give our 12 dof flirt
+        # a better starting point
+        # if brain extraction fails, a 12 dof registration will perform
+        # horribly since the brain will be an odd shape, leading to total
+        # failure. The idea is that local optimisation looks to essentially
+        # align "regions" of the brain, and as such, will not add unnecessary
+        # stretching if the brain is not the correct shape, potentially
+        # leading the 12 dof registration to not totally distort the image
+        self.align(self.t1w_brain, self.atlas_brain, xfm=xfm_t1w2temp_init,
+                   init=None, bins=None, dof=None, cost=None, searchrad=None,
+                   out=None, sch="${FSLDIR}/etc/flirtsch/simple3D.sch") 
 
         # linear registration from t1 space to atlas space with a 12 dof
         # linear registration to serve as our initializer
         self.align(self.t1w_brain, self.atlas_brain, xfm=xfm_t1w2temp,
                    out=None, dof=12, searchrad=True, bins=256, interp="spline",
-                   wmseg=None, init=None)
+                   wmseg=None, init=xfm_t1w2temp_init)
 
         self.epi_aligned_skull = "{}/{}_temp-aligned_skull.nii.gz".format(
             self.outdir['treg_f'],

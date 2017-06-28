@@ -26,7 +26,7 @@ import nibabel as nb
 
 class preproc_anat():
 
-    def __init__(self, anat, anat_preproc, anat_preproc_brain, outdir):
+    def __init__(self, anat, anat_preproc_brain, outdir):
         """
         Enables preprocessing of anatomical images, using AFNI.
 
@@ -43,8 +43,6 @@ class preproc_anat():
         """
         self.anat = anat
         self.anat_name = mgu.get_filename(anat)
-        self.anat_intens = "{}/{}_intens.nii.gz".format(outdir, self.anat_name)
-        self.anat_preproc = anat_preproc
         self.anat_preproc_brain = anat_preproc_brain
         self.outdir = outdir
 
@@ -57,7 +55,6 @@ class preproc_anat():
             - res:
                 - the resampling resolution to use if the input is high res.
         """
-        mgru.normalize_t1w(self.anat, self.anat_preproc)
-        mgru.extract_t1w_brain(self.anat_preproc, self.anat_preproc_brain,
+        mgru.extract_t1w_brain(self.anat, self.anat_preproc_brain,
                                self.outdir)
         pass

@@ -124,7 +124,6 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
 
     # Create derivative output file names
     preproc_func = "{}/{}_preproc.nii.gz".format(tmp_dirs['f_prep'], func_name)
-    preproc_t1w = "{}/{}_preproc.nii.gz".format(tmp_dirs['a_prep'], t1w_name)
     preproc_t1w_brain = "{}/{}_preproc_brain.nii.gz".format(tmp_dirs['a_prep'],
                                                             t1w_name)
     aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
@@ -158,13 +157,13 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     f_prep.preprocess(stc=stc)
     qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
 
-    a_prep = mgap(t1w, preproc_t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
+    a_prep = mgap(t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
     a_prep.preprocess()
     qc_func.anat_preproc_qa(a_prep, qa_dirs['a_prep'])
 
     # ------- Alignment Steps -------------------------------------- #
     print "Aligning volumes..."
-    func_reg = mgreg(preproc_func, preproc_t1w, preproc_t1w_brain,
+    func_reg = mgreg(preproc_func, t1w, preproc_t1w_brain,
                      atlas, atlas_brain, atlas_mask, aligned_func,
                      aligned_t1w, tmp_dirs)
     func_reg.self_align()
