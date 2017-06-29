@@ -141,7 +141,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
     if dwi:
         args = [[dw, bval, bvec, anat, atlas, atlas_mask,
                  labels, outDir] for (dw, bval, bvec, anat)
-                in zip(dwis, bvals, bvecs, nats)]
+                in zip(dwis, bvals, bvecs, anats)]
         f = ndmg_dwi_pipeline  # the function of choice
     else:
         args = [[func, anat, atlas, atlas_brain, atlas_mask,
