@@ -199,7 +199,7 @@ class register(object):
         cmd = "eddy_correct {} {} {}".format(dwi, corrected_dwi, idx)
         status = mgu.execute_cmd(cmd, verb=True)
 
-    def simplele(self, base, ingested, template):
+    def resample(self, base, ingested, template):
         """
         Resamples the image such that images which have already been aligned
         in real coordinates also overlap in the image/voxel space.
@@ -216,7 +216,7 @@ class register(object):
         template_im = nb.load(template)
         base_im = nb.load(base)
         # Aligns images
-        target_im = nl.simplele_img(base_im,
+        target_im = nl.resample_img(base_im,
                                     target_affine=template_im.get_affine(),
                                     target_shape=template_im.get_data().shape,
                                     interpolation="nearest")
@@ -296,7 +296,7 @@ class register(object):
 
         # Applies combined transform to dwi image volume
         self.applyxfm(temp_aligned, atlas, xfm, temp_aligned2)
-        self.simple(temp_aligned2, aligned_dwi, atlas)
+        self.resample(temp_aligned2, aligned_dwi, atlas)
 
         if clean:
             cmd = "rm -f {} {} {} {} {}*".format(dwi2, temp_aligned, b0,
