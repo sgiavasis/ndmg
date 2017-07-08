@@ -246,6 +246,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         return 
     return
 
+
 def main():
     parser = ArgumentParser(description="This is an end-to-end connectome"
                             " estimation pipeline from sMRI and DTI images")
