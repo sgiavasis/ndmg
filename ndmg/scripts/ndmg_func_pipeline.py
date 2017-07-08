@@ -155,7 +155,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print "Preprocessing volumes..."
     f_prep = mgfp(func, preproc_func, motion_func, tmp_dirs['f_prep'])
     f_prep.preprocess(stc=stc)
-    qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'], trim=4)
+    qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
 
     a_prep = mgap(t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
     a_prep.preprocess()

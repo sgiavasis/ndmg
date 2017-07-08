@@ -65,7 +65,7 @@ class preproc_func():
             cmd = cmd.format(mri, corrected_mri, idx)
         mgu.execute_cmd(cmd, verb=True)
 
-    def slice_time_correct(self, func, corrected_func, stc=None):
+    def slice_time_correct(self, func, corrected_func, tr, stc=None):
         """
         Performs slice timing correction of a stack of 3D images.
 
@@ -96,23 +96,34 @@ class preproc_func():
                 cmd += ''  # default of slicetimer
             elif op.isfile(stc):
                 cmd += " --tcustom {}".format(stc)
-            zooms = nb.load(func).header.get_zooms()
-            cmd += " -r {}".format(zooms[3])
+            cmd += " -r {}".format(tr)
             mgu.execute_cmd(cmd, verb=True)
         else:
             print "Skipping slice timing correction."
 
-    def preprocess(self, stc=None):
+    def preprocess(self, stc=None, trim=15):
         """
         A function to preprocess a stack of 3D images.
         """
         func_name = mgu.get_filename(self.func)
 
-        s0 = "{}/{}_0slice.nii.gz".format(self.outdir, func_name)
+        trim_func = "{}/{}_trim.nii.gz".format(self.outdir, func_name)
         stc_func = "{}/{}_stc.nii.gz".format(self.outdir, func_name)
+
+        # trim the first 15 seconds of data while tissue reaches steady state
+        # of radiofrequency excitation
+        func_im = nb.load(self.func)
+        tr = func_im.header.get_zooms()[3]
+        nvol_trim = np.floor(15/float(tr))
+        # remove the first nvol_trim timesteps
+        trimmed_dat = func_im.get_data()[:,:,:, nvol_trim:]
+        trimmed_im = nb.Nifti1Image(dataobj=trimmed_dat, header=func_im.header,
+                                    affine=func_im.affine)
+        nb.save(img=trimmed_im, filename=trim_func)
+
         # use slicetimer if user passes slicetiming information
         if (stc is not None):
-            self.slice_time_correct(self.func, stc_func, stc)
+            self.slice_time_correct(trim_func, stc_func, tr, stc)
         else:
             stc_func = self.func
         # motion correct using the mean volume (FSL default)
