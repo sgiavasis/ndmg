@@ -394,12 +394,13 @@ class qa_func(object):
                 plt.close(f_mask)
 
         # GLM regressors we could have
-        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg, nuisobj.friston_reg]
-        glm_names = ["csf", "wm", "friston"]
+        glm_regs = [nuisobj.csf_reg, nuisobj.wm_reg, nuisobj.friston_reg,
+                   nuisobj.cc_reg]
+        glm_names = ["csf", "wm", "friston", "compcor"]
         glm_titles = ["CSF Regressors", "White-Matter Regressors",
-                      "Friston Motion Regressors"]
+                      "Friston Motion Regressors", "aCompCor Regressors"]
         # whether we should include legend labels
-        label_include = [True, True, False]
+        label_include = [True, True, False, True]
         # iterate over tuples of our plotting variables
         for (reg, name, title, lab) in zip(glm_regs, glm_names, glm_titles,
                                            label_include):

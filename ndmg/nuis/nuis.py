@@ -83,6 +83,7 @@ class nuis(object):
         # regressors so that we can use them for line plots
         self.csf_reg = None
         self.wm_reg = None
+        self.cc_reg = None
         self.quad_reg = None
         self.fft_reg = None
         self.fft_bef = None
@@ -292,21 +293,21 @@ class nuis(object):
 
         # highpass filter voxel timeseries appropriately
 
-        if csf_ts is not None:
-            print "Adding csf mean signal to GLM..."
-            csf_reg = csf_ts.mean(axis=1, keepdims=True)
-            self.csf_reg = csf_reg  # save for qa later
-            # add coefficients to our regression
-            R = np.column_stack((R, csf_reg))
+        #if csf_ts is not None:
+        #    print "Adding csf mean signal to GLM..."
+        #    csf_reg = csf_ts.mean(axis=1, keepdims=True)
+        #    self.csf_reg = csf_reg  # save for qa later
+        #    # add coefficients to our regression
+        #    R = np.column_stack((R, csf_reg))
 
-        if n is not None and wm_ts is not None:
+        if n is not None and wm_ts is not None and csf_ts is not None:
             print "Adding {} wm compcor regressors to GLM...".format(n)
-            self.wm_reg = self.compcor(wm_ts, n=n)[0]
-            R = np.column_stack((R, self.wm_reg))
-        elif wm_ts is not None:
-            print "Adding wm mean signal to GLM..."
-            self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
-            R = np.column_stack((R, self.wm_reg))
+            self.cc_reg = self.compcor(np.vstack(csf_ts, wm_ts), n=n)[0]
+            R = np.column_stack((R, self.cc_reg))
+        #elif wm_ts is not None:
+        #    print "Adding wm mean signal to GLM..."
+        #    self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
+        #    R = np.column_stack((R, self.wm_reg))
 
         if mc_params is not None:
             print "Adding friston 24 parameters to GLM..."
@@ -321,7 +322,7 @@ class nuis(object):
         # our regressors, and then we transpose back
         return (voxel - WR)
 
-    def nuis_correct(self, highpass=0.01, lowpass=None, trim=0, n=None,
+    def nuis_correct(self, highpass=0.008, lowpass=None, n=None,
                      mc_params_file=None):
         """
         Removes Nuisance Signals from brain images, using a combination
@@ -398,9 +399,9 @@ class nuis(object):
         self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
-        voxel = self.freq_filter(voxel, tr, highpass=highpass,
-                                 lowpass=lowpass)
-        self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        #voxel = self.freq_filter(voxel, tr, highpass=highpass,
+        #                         lowpass=lowpass)
+        #self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # normalize the signal to account for anatomical
         # intensity differences
@@ -411,7 +412,6 @@ class nuis(object):
 
         # free for memory purposes
         voxel = None
-        fmri_dat = fmri_dat[:, :, :, trim:]
         img = nb.Nifti1Image(fmri_dat,
                              header=fmri_im.header,
                              affine=fmri_im.affine)

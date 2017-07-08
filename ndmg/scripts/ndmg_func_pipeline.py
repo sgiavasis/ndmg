@@ -155,7 +155,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print "Preprocessing volumes..."
     f_prep = mgfp(func, preproc_func, motion_func, tmp_dirs['f_prep'])
     f_prep.preprocess(stc=stc)
-    qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
+    qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'], trim=4)
 
     a_prep = mgap(t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
     a_prep.preprocess()
@@ -175,7 +175,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
                lv_mask=lv_mask, mc_params=f_prep.mc_params)
-    nuis.nuis_correct(trim=2, n=5)
+    nuis.nuis_correct(n=5)
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
 

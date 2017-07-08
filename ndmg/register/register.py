@@ -521,9 +521,10 @@ class epi_register(register):
             self.apply_warp(self.t1w, self.atlas, self.taligned_t1w_skull,
                             xfm=xfm_t1w2temp)
             self.treg_strat = 'flirt'  # strategy
-        # use AFNI to extract brain from our epi volume
-        mgru.extract_epi_brain(self.epi_aligned_skull, self.taligned_epi,
-                               self.outdir['treg_f'])
+        # use BET to extract brain from our epi volume
+        mgu.extract_brain(self.epi_aligned_skull, self.taligned_epi,
+                          opts='-F -R')
+        
         # use AFNI to extract brain from our t1w volume
         mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
                                self.outdir['treg_a'])
