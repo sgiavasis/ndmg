@@ -470,7 +470,7 @@ class epi_register(register):
         # leading the 12 dof registration to not totally distort the image
         self.align(self.t1w_brain, self.atlas_brain, xfm=xfm_t1w2temp_init,
                    init=None, bins=None, dof=None, cost=None, searchrad=None,
-                   out=None, sch="${FSLDIR}/etc/flirtsch/sch_3Dtrans_3dof") 
+                   out=None, sch="${FSLDIR}/etc/flirtsch/sch3Dtrans_3dof") 
 
         # linear registration from t1 space to atlas space with a 12 dof
         # linear registration to serve as our initializer
