@@ -523,7 +523,7 @@ class epi_register(register):
             self.treg_strat = 'flirt'  # strategy
         # use BET to extract brain from our epi volume
         mgu.extract_brain(self.epi_aligned_skull, self.taligned_epi,
-                          opts='-F -R')
+                          opts='-F')
         
         # use AFNI to extract brain from our t1w volume
         mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
