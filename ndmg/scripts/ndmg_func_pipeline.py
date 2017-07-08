@@ -247,7 +247,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
             str(e),
             mgu.get_filename(func)),
             fname,
-            exec_tb.lineno
+            exec_tb.tb_lineno
         )
         stop()
             
