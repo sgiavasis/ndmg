@@ -241,8 +241,16 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
                          labels, outdir, clean=clean, stc=stc, fmt=fmt)
     except Exception, e:
-        print "Error: {} for scan {}".format(str(e),
-                                             mgu.get_filename(func))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print "Error: {} for scan {} in file {} on line {}".format(
+            str(e),
+            mgu.get_filename(func)),
+            fname,
+            exec_tb.lineno
+        )
+        stop()
+            
 
 
 def main():
