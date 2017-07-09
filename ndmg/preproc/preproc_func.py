@@ -114,12 +114,17 @@ class preproc_func():
         # of radiofrequency excitation
         func_im = nb.load(self.func)
         tr = func_im.header.get_zooms()[3]
+        if tr == 0:
+            raise ZeroDivisionError('Failed to determine number of frames to
+                                    trim due to tr=0.')
         nvol_trim = int(np.floor(15/float(tr)))
         # remove the first nvol_trim timesteps
         trimmed_dat = func_im.get_data()[:,:,:, nvol_trim:]
-        trimmed_im = nb.Nifti1Image(dataobj=trimmed_dat, header=func_im.header,
+        trimmed_im = nb.Nifti1Image(dataobj=trimmed_dat,
+                                    header=func_im.header,
                                     affine=func_im.affine)
         nb.save(img=trimmed_im, filename=trim_func)
+
 
         # use slicetimer if user passes slicetiming information
         if (stc is not None):
