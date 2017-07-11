@@ -27,8 +27,8 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 
 class nuis(object):
 
-    def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask=None,
-                 mc_params=None):
+    def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask,
+                 mc_params):
         """
         A class for nuisance correction of fMRI.
 
@@ -41,7 +41,7 @@ class nuis(object):
             - nuis_mri:
                 - the file path of a nuisance corrected mri
             - lv_mask:
-                - lateral-ventricles mask (optional).
+                - lateral-ventricles mask.
             - mc_params:
                 - the path to a motion parameters file. Should have
                   6 parameters for x/y/z tranlations/rotations per
@@ -87,7 +87,7 @@ class nuis(object):
         self.quad_reg = None
         self.fft_reg = None
         self.fft_bef = None
-        self.friston_reg = None
+        self.mot_reg = None
 
         # signal that is removed at given steps
         self.fft_sig = None
@@ -251,8 +251,8 @@ class nuis(object):
         friston[:, 3*m:4*m] = np.square(friston[:, 2*m:3*m])
         return friston
 
-    def linear_reg(self, voxel, csf_ts=None, wm_ts=None, n=None,
-                   mc_params=None):
+    def linear_reg(self, voxel, mc_params, wm_ts=None, csf_ts=None, cc=5,
+                   wm_mean=False, csf_mean=False, mot=24, trend='quad'):
         """
         A function to perform quadratic detrending of fMRI data.
 
@@ -261,23 +261,20 @@ class nuis(object):
             voxel:
                 - an ndarray containing a voxel timeseries.
                   dimensions should be [timesteps, voxels]
-            csf_ts:
-                - a timeseries for csf mean regression. If not
-                  provided, csf regression will not be performed.
             wm_ts:
-                - a timeseries for white matter regression.
-                  If only wm_ts is provided, wm mean regression
-                  will be performed. If n and wm_ts are provided,
-                  compcor with n components will be performed. If
-                  neither are provided, no wm regression will be
-                  performed.
-            n:
-                - the number of components for wm regression.
-            mc_params:
-                - the motion parameters, as a matrix, for txm
-                  dimensions. If provided, performs friston 24
-                  parameter estimation. If not, skips incorporating
-                  motion regressors into GLM.
+                - a timeseries for white matter regression. 
+            csf_ts:
+                - a timeseries for csf mean regression.
+            cc:
+                - the number of components for compcor regression.
+            wm_mean:
+                - whether to perform white-matter mean signal removal.
+            csf_mean:
+                - whether to remove csf mean signal.
+            mot:
+                - the number of motion parameters to use.
+            trend:
+                - the detrend method to use.
         """
         # time dimension is now the 0th dim
         time = voxel.shape[0]
@@ -288,33 +285,41 @@ class nuis(object):
 
         # use GLM model given regressors to approximate the weight we want
         # to regress out
-        print "Adding quadratic trendline to GLM..."
-        R = np.column_stack((np.ones(time), lin_reg, quad_reg))
+        R = np.column_stack((np.ones(time))).T
+        if trend is not None:
+            print "Adding linear trendline to GLM..."
+            R = np.column_stack((R, lin_reg))
+        if trend == 'quad':
+            print "Adding quadratic trendline to GLM..."
+            R = np.column_stack((R, quad_reg))
 
-        # highpass filter voxel timeseries appropriately
 
-        #if csf_ts is not None:
-        #    print "Adding csf mean signal to GLM..."
-        #    csf_reg = csf_ts.mean(axis=1, keepdims=True)
-        #    self.csf_reg = csf_reg  # save for qa later
-        #    # add coefficients to our regression
-        #    R = np.column_stack((R, csf_reg))
+        if csf_mean is not False:
+            print "Adding csf mean signal to GLM..."
+            csf_reg = csf_ts.mean(axis=1, keepdims=True)
+            self.csf_reg = csf_reg  # save for qa later
+            # add coefficients to our regression
+            R = np.column_stack((R, csf_reg))
 
-        if n is not None and wm_ts is not None and csf_ts is not None:
-            print "Adding {} wm compcor regressors to GLM...".format(n)
+        if wm_mean is not False:
+            print "Adding wm mean signal to GLM..."
+            self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
+            R = np.column_stack((R, self.wm_reg))
+
+        if cc is not None and wm_ts is not None and csf_ts is not None:
+            print "Adding {} acompcor regressors to GLM...".format(cc)
             self.cc_reg = self.compcor(np.column_stack((csf_ts, wm_ts)),
-                                       n=n)[0]
+                                       n=cc)[0]
             R = np.column_stack((R, self.cc_reg))
-        #elif wm_ts is not None:
-        #    print "Adding wm mean signal to GLM..."
-        #    self.wm_reg = wm_ts.mean(axis=1, keepdims=True)
-        #    R = np.column_stack((R, self.wm_reg))
 
-        if mc_params is not None:
-            print "Adding friston 24 parameters to GLM..."
-            # friston 24 parameter model
-            self.friston_reg = self.friston_model(mc_params)
-            R = np.column_stack((R, self.friston_reg))
+        if mot == 6:
+            print "Adding 6 motion parameters to GLM..."
+            self.mot_Reg = mc_params
+            R = np.column_stack((R, mc_params))
+        elif mot == 24:
+            print "Adding 24 Friston parameters to GLM..."
+            self.mot_reg = self.friston_model(mc_params)
+            R = np.column_stack((R, self.mot_reg))
 
         WR = self.regress_signal(voxel, R)
         self.glm_sig = WR[:, self.voxel_gm_mask].mean(axis=1)
@@ -323,8 +328,9 @@ class nuis(object):
         # our regressors, and then we transpose back
         return (voxel - WR)
 
-    def nuis_correct(self, highpass=0.008, lowpass=None, n=None,
-                     mc_params_file=None):
+    def nuis_correct(self, highpass=None, lowpass=None, cc=5,
+                     csf_mean=False, wm_mean=False, mot=24,
+                     trend='quad'):
         """
         Removes Nuisance Signals from brain images, using a combination
         of Frequency filtering, and mean csf/quadratic regression.
@@ -335,18 +341,25 @@ class nuis(object):
                 - the highpass cutoff for FFT.
             lowpass:
                 - the lowpass cutoff for FFT. NOT recommended.
-            trim:
-                - trim the timeseries by a number of slices. Corrects
-                  for T1 effects; that is, in some datasets, the first few
-                  timesteps may have a non-saturated T1 contrast and as such
-                  will show non-standard intensities.
-            n:
-                - the number of components for wm regression. If set to None,
-                  does not perform wm regression.
+            cc:
+                - the number of components for compcor. If set to None,
+                  does not perform compcor.
+            csf_mean:
+                - whether to use the mean csf signal in the nuisance
+                  model.
+            wm_mean:
+                - whether to use the mean white-matter signal in the nuisance
+                  model.
+            mot:
+                - the number of motion parameters to use for the GLM.
             mc_params_file:
                 - the path to a motion parameters space-delimited values file
                   indicating the motion parameters. the .par file associated
-                  with mcflirt.
+                  with mcflirt. If motion regression is specified, this file
+                  must be passed.
+            trend:
+                - whether to remove a linear or quadratic trend from the data.
+                  options are 'quad' or 'lin', or None.
         """
         fmri_name = mgu.get_filename(self.fmri)
         fmri_im = nb.load(self.fmri)
@@ -365,27 +378,38 @@ class nuis(object):
         # zooms are x, y, z, t
         tr = fmri_im.header.get_zooms()[3]
 
-        if self.lv_mask is not None:
-            # csf regressor is the mean of all voxels in the csf
-            # mask at each time point
+        if cc is not None or csf_mean is not None:
+            # load the lateral-ventricles mask which is 0 for excluded,
+            # 1 for included
             lvm = nb.load(self.lv_mask).get_data()
+            # create t x n array for the n voxels included in the lv mask
             lv_ts = fmri_dat[lvm != 0, :].T
         else:
             lv_ts = None
 
-        # if n is provided, perform compcor
-        if n is not None:
+        # if we are doing something with the white-matter ts,
+        # we need to erode our wm mask by 2 voxels to avoid potential
+        # signal intensity distortions from adjaceny tissue
+        if cc is not None or wm_mean is not False:
             self.er_wm_mask = '{}_{}.nii.gz'.format(self.map_path,
                                                     "wm_mask_eroded")
+            # extract the mask where prob map for wm has at least p>.99
+            # and erode by 2 voxels
             mgnu.probmap2mask(self.wm_prob, self.er_wm_mask,
                               .99, erode=2)
+            # load whitematter mask as binary array of 0 for exclude,
+            # 1 for include
             wmm = nb.load(self.er_wm_mask).get_data()
+            # wherever the whitematter mask is nonzero, extract the voxels
+            # to create t x n array of n voxels in wm mask
             wm_ts = fmri_dat[wmm != 0, :].T
         else:
             wm_ts = None
 
         # if we have motion parameters, perform motion param regression
-        if self.mc_params_file is not None:
+        if mot is not None:
+            # generate an array that is t x 6 from the mcflirt parameters
+            # file by reading column-by-column
             mc_params = np.genfromtxt(self.mc_params_file)
         else:
             mc_params = None
@@ -394,15 +418,20 @@ class nuis(object):
         self.voxel_gm_mask = gm_mask_dat[basic_mask] > 0
         gm_mask_dat = None  # free for memory
         self.cent_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+
         # GLM for nuisance correction
-        voxel = self.linear_reg(voxel, csf_ts=lv_ts,
-                                wm_ts=wm_ts, n=n, mc_params=mc_params)
-        self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        if (cc is not None or csf_mean is not False or wm_mean is not False
+            or mot is not None or trend is not None):
+            voxel = self.linear_reg(voxel, mc_params, wm_ts=wm_ts, csf_ts=lv_ts,
+                                    csf_mean=csf_mean, wm_mean=wm_mean,
+                                    mot=mot, trend=trend)
+            self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction
-        #voxel = self.freq_filter(voxel, tr, highpass=highpass,
-        #                         lowpass=lowpass)
-        #self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
+        if highpass is not None or lowpass is not None:
+            voxel = self.freq_filter(voxel, tr, highpass=highpass,
+                                     lowpass=lowpass)
+            self.fft_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # normalize the signal to account for anatomical
         # intensity differences

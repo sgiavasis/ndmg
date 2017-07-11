@@ -176,7 +176,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
                lv_mask=lv_mask, mc_params=f_prep.mc_params)
-    nuis.nuis_correct(n=5)
+    nuis.nuis_correct()
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
 
