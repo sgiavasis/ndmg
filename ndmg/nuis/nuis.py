@@ -28,7 +28,7 @@ from scipy.fftpack import rfft, irfft, rfftfreq
 class nuis(object):
 
     def __init__(self, fmri, smri, nuis_mri, outdir, lv_mask,
-                 mc_params):
+                 mc_params=None):
         """
         A class for nuisance correction of fMRI.
 
@@ -283,8 +283,6 @@ class nuis(object):
         # quadratic drift regressor
         quad_reg = np.array(range(0, time))**2
 
-        print mot
-
         # use GLM model given regressors to approximate the weight we want
         # to regress out
         R = np.column_stack((np.ones(time))).T
@@ -314,11 +312,11 @@ class nuis(object):
                                        n=cc)[0]
             R = np.column_stack((R, self.cc_reg))
 
-        if mot == 6:
+        if mot == 6 and mc_params is not None:
             print "Adding 6 motion parameters to GLM..."
             self.mot_Reg = mc_params
             R = np.column_stack((R, mc_params))
-        elif mot == 24:
+        elif mot == 24 and mc_params is not None:
             print "Adding 24 Friston parameters to GLM..."
             self.mot_reg = self.friston_model(mc_params)
             R = np.column_stack((R, self.mot_reg))
@@ -426,7 +424,7 @@ class nuis(object):
             or mot is not None or trend is not None):
             voxel = self.linear_reg(voxel, mc_params, wm_ts=wm_ts, csf_ts=lv_ts,
                                     csf_mean=csf_mean, wm_mean=wm_mean,
-                                    mot=mot, trend=trend)
+                                    mot=mot, trend=trend, cc=cc)
             self.glm_nuis = voxel[:, self.voxel_gm_mask].mean(axis=1)
 
         # Frequency Filtering for Nuisance Correction

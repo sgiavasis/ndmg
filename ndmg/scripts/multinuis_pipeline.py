@@ -37,8 +37,9 @@ from ndmg.stats.qa_reg import *
 import traceback
 
 
-def multinuis_pipeline(func, t1w, mc_params, lv_mask, labels, outdir, clean=False,
-                       fmt='gpickle'):
+def multinuis_pipeline(func, t1w, lv_mask, labels, outdir, clean=False, fmt='gpickle',
+                       mc_params=None, highpass=.01, lowpass=None, cc=5, csf_mean=False,
+                       wm_mean=False, mot=24, trend='quad'):
     """
     analyzes fmri images and produces subject-specific derivatives.
 
@@ -129,7 +130,9 @@ def multinuis_pipeline(func, t1w, mc_params, lv_mask, labels, outdir, clean=Fals
     print "Correcting Nuisance Variables..."
     nuis = mgn(func, t1w, nuis_func, tmp_dirs['nuis'],
                lv_mask, mc_params)
-    nuis.nuis_correct()
+    nuis.nuis_correct(highpass=highpass, lowpass=lowpass, cc=cc,
+                      csf_mean=csf_mean, wm_mean=wm_mean, mot=mot,
+                      trend=trend)
 
     qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
 
@@ -158,15 +161,32 @@ def main():
                             " estimation pipeline from sMRI and DTI images")
     parser.add_argument("func", action="store", help="Nifti fMRI 4d EPI.")
     parser.add_argument("t1w", action="store", help="Nifti aMRI T1w image.")
-    parser.add_argument('mc_params', action='store', help='motion parameters file.')
     parser.add_argument("lv_mask", action="store", help="Nifti binary mask of"
                         " lateral ventricles in atlas space.")
     parser.add_argument("outdir", action="store", help="Path to which"
                         " derivatives will be stored")
     parser.add_argument("labels", action="store", nargs="*", help="Nifti"
                         " labels of regions of interest in atlas space")
-    parser.add_argument("-s", "--stc_file", action="store",
-                        help="File for STC.")
+    parser.add_argument('--mc_params', action='store', help='motion parameters file.',
+                        type=str, default=None)
+    parser.add_argument("--highpass", action="store", help="the cutoff for highpass"
+                        " filtering. None if not desired", default=0.01, type=float)
+    parser.add_argument("--lowpass", action="store", help="the cutoff for lowpass"
+                        " filtering. None if not desired.", default=None, type=float)
+    parser.add_argument("--cc", action="store", help="the number of components for"
+                        " aCompCor. None if not desired.", default=5, type=int)
+    parser.add_argument("--csf_mean", action="store_true", help="whether to use csf mean"
+                        " signal as a regressor.", default=False)
+    parser.add_argument("--wm_mean", action="store_true", help="whether to use wm mean"
+                        " signal as a regressor.", default=False)
+    parser.add_argument("--mot", action="store", help="the number of regressors"
+                        " to use from motion statistics. Uses the 6 x, y, z trans/rot"
+                        " regressors if 6, uses friston 24 param model if 24, and does"
+                        " not use motion regressors if none.", type=int, default=24,
+                        choices=[None, 6, 24])
+    parser.add_argument("--trend", action="store", help="the type of trendline to"
+                        " use to remove scanner drifting.", default='quad',
+                        choices=[None, 'lin', 'quad'])
     parser.add_argument("-c", "--clean", action="store_true", default=False,
                         help="Whether or not to delete intemediates")
     parser.add_argument("-f", "--fmt", action="store", default='gpickle',
@@ -178,8 +198,11 @@ def main():
     print "Creating output temp directory: {}/tmp".format(result.outdir)
     mgu.execute_cmd("mkdir -p {} {}/tmp".format(result.outdir, result.outdir))
 
-    multinuis_pipeline(result.func, result.t1w, result.mc_params, result.lv_mask,
-                       result.labels, result.outdir, result.clean, result.fmt)
+    multinuis_pipeline(result.func, result.t1w, result.lv_mask, result.labels, result.outdir, 
+                       clean=result.clean, fmt=result.fmt, mc_params=result.mc_params,
+                       highpass=result.highpass, lowpass=result.lowpass,
+                       cc=result.cc, csf_mean=result.csf_mean, wm_mean=result.wm_mean,
+                       mot=result.mot, trend=result.trend)
 
 if __name__ == "__main__":
     main()
