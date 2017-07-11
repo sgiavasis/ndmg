@@ -218,7 +218,7 @@ class nuis(object):
                 - a numpy ndarray of regressors to
                   regress to.
         """
-        print "GLM with ign Matrix of Dimensions " + str(R.shape) + "..."
+        print "GLM with Design Matrix of Dimensions " + str(R.shape) + "..."
         # OLS solution for GLM B = (X^TX)^(-1)X^TY
         coefs = np.linalg.inv(R.T.dot(R)).dot(R.T).dot(data)
         return R.dot(coefs)
@@ -283,6 +283,8 @@ class nuis(object):
         # quadratic drift regressor
         quad_reg = np.array(range(0, time))**2
 
+        print mot
+
         # use GLM model given regressors to approximate the weight we want
         # to regress out
         R = np.column_stack((np.ones(time))).T
@@ -328,7 +330,7 @@ class nuis(object):
         # our regressors, and then we transpose back
         return (voxel - WR)
 
-    def nuis_correct(self, highpass=None, lowpass=None, cc=5,
+    def nuis_correct(self, highpass=.01, lowpass=None, cc=5,
                      csf_mean=False, wm_mean=False, mot=24,
                      trend='quad'):
         """
