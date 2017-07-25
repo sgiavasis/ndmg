@@ -111,7 +111,6 @@ class register(object):
         transform between them.
 
         **Positional Arguments:**
->>>>>>> origin/eric-dev-gkiar-fmri
 
             inp:
                 - the input image.
@@ -530,4 +529,3 @@ class epi_register(register):
         mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
                                self.outdir['treg_a'])
         pass
->>>>>>> origin/eric-dev-gkiar-fmri

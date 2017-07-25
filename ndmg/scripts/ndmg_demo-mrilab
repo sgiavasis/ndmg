@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 from multiprocessing import Pool
 from functools import partial
-from ndmg.scripts.ndmg_pipeline import ndmg_pipeline
+from ndmg.scripts.ndmg_dwi_pipeline import ndmg_dwi_pipeline
 from ndmg.utils.bids import *
 from ndmg.scripts.ndmg_bids import worker_wrapper
 import ndmg.utils as mgu
@@ -28,7 +28,7 @@ def run_tests(nthreads):
 
     args = [[dw, bval, bvec, anat, atlas, atlas_mask, label, outdir] for (dw, bval, bvec, anat)
             in zip(dwis, bvals, bvecs, anats)]
-    f = ndmg_pipeline
+    f = ndmg_dwi_pipeline
     arg_list = [(f, arg, {'bg': True}) for arg in args]
     p = Pool(nthreads)
     mgu.execute_cmd("mkdir -p " + outdir)

@@ -39,8 +39,8 @@ from ndmg.graph import biggraph as ndbg
 import traceback
 
 
-def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                clean=False, fmt='gpickle', bg=False):
+def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
+                    clean=False, fmt='gpickle', bg=False):
     """
     Creates a brain graph from MRI data
     """
@@ -87,9 +87,9 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
     # Align DWI volumes to Atlas
     print("Aligning volumes...")
-    mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
+    mgr().dwi2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
     b0loc = np.where(gtab.b0s_mask)[0][0]
-    reg_dti_pngs(aligned_dwi, b0loc, atlas, outdir+"/qa/reg_dwi/")
+    reg_mri_pngs(aligned_dwi, atlas, outdir+"/qa/reg_dwi/", loc=b0loc)
 
     print("Beginning tractography...")
     # Compute tensors and track fiber streamlines
@@ -141,14 +141,14 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     print("Complete!")
 
 
-def ndmg_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                  clean=False, fmt='gpickle', bg=False):
+def ndmg_dwi_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
+                      clean=False, fmt='gpickle', bg=False):
     """
     A wrapper for the worker to make our pipeline more robust to errors.
     """
     try:
-        ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                    clean, fmt, bg)
+        ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
+                        clean, fmt, bg)
     except Exception, e:
         print(traceback.format_exc())
         return 
@@ -184,9 +184,9 @@ def main():
     p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     p.communicate()
 
-    ndmg_pipeline(result.dwi, result.bval, result.bvec, result.mprage,
-                  result.atlas, result.mask, result.labels, result.outdir,
-                  result.clean, result.fmt, result.bg)
+    ndmg_dwi_pipeline(result.dwi, result.bval, result.bvec, result.mprage,
+                      result.atlas, result.mask, result.labels, result.outdir,
+                      result.clean, result.fmt, result.bg)
     pass
 
 if __name__ == "__main__":
