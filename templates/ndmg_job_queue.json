@@ -1,0 +1,11 @@
+{
+    "jobQueueName": "ndmg-fmri-queue",
+    "state": "ENABLED",
+    "priority": 1,
+    "computeEnvironmentOrder": [
+        {
+            "order": 1,
+            "computeEnvironment": "ndmg-fmri-env"
+        }
+    ]
+}

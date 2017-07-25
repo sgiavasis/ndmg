@@ -1,0 +1,19 @@
+{
+    "computeEnvironmentName": "ndmg-fmri-env",
+    "type": "MANAGED",
+    "state": "ENABLED",
+    "computeResources": {
+        "type": "EC2",
+        "minvCpus": 0,
+        "maxvCpus": 256,
+        "desiredvCpus": 8,
+        "instanceTypes": [
+            "r4.large"
+        ],
+        "imageId": "ami-275ffe31",
+        "subnets": [],
+        "securityGroupIds": [],
+        "instanceRole": "arn:aws:iam::967305970717:instance-profile/ecsInstanceRole"
+    },
+    "serviceRole": "arn:aws:iam::967305970717:role/service-role/AWSBatchServiceRole"
+}

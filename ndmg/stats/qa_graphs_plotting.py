@@ -28,7 +28,7 @@ import os
 
 
 def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
-                    log=True, hemispheres=True):
+                    log=True, hemispheres=True, mode='dwi'):
     fnames = [name for name in os.listdir(basepath)
               if os.path.splitext(name)[1] == '.pkl']
     fnames = sorted(fnames)
@@ -44,7 +44,9 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
         dat = pickle.load(f)[keys[idx]]
         f.close()
         if keys[idx] == 'number_non_zeros':
-            fig = pp.plot_rugdensity(dat.values())
+            data = dat.values()
+            data = data + .01*np.random.rand(len(data))
+            fig = pp.plot_rugdensity(data)
         elif keys[idx] == 'edge_weight':
             edges = np.max([len(dat[i]) for i in dat.keys()])
             fig = pp.plot_series(dat.values(), sort=True)

@@ -24,12 +24,12 @@ from argparse import ArgumentParser
 from subprocess import Popen, PIPE
 from os.path import expanduser
 from ndmg.scripts.ndmg_setup import get_files
-from ndmg.scripts.ndmg_pipeline import ndmg_pipeline
+from ndmg.scripts.ndmg_dwi_pipeline import ndmg_dwi_pipeline
 from ndmg.utils.bids import *
 from ndmg.stats.qa_graphs import *
 from ndmg.stats.qa_graphs_plotting import *
-# from ndmg.stats.group_func import group_func
-# from ndmg.scripts.ndmg_func_pipeline import ndmg_func_pipeline
+from ndmg.stats.group_func import group_func
+from ndmg.scripts.ndmg_func_pipeline import ndmg_func_pipeline
 from glob import glob
 import ndmg.utils as mgu
 import ndmg
@@ -77,7 +77,7 @@ def get_atlas(atlas_dir, dwi=True):
                   'labels/DS16784.nii.gz', 'labels/DS72784.nii.gz']
         labels = [op.join(atlas_dir, l) for l in labels]
         fils = labels + [atlas, atlas_mask]
-    '''else:
+    else:
         atlas_func = op.join(atlas_dir, 'func_atlases')
         atlas = op.join(atlas_func, 'atlas/MNI152_T1-2mm.nii.gz')
         atlas_brain = op.join(atlas_func, 'atlas/MNI152_T1-2mm_brain.nii.gz')
@@ -89,7 +89,7 @@ def get_atlas(atlas_dir, dwi=True):
                   'label/desikan-2mm.nii.gz', 'label/pp264-2mm.nii.gz']
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
-    '''
+
     ope = op.exists
     if any(not ope(f) for f in fils):
         print("Cannot find atlas information; downloading...")
@@ -130,10 +130,10 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
         assert(len(anats) == len(dwis))
         assert(len(bvecs) == len(dwis))
         assert(len(bvals) == len(dwis))
-    '''else:
+    else:
         anats, funcs = result
         assert(len(anats) == len(funcs))
-    '''
+
     # put the arguments for each iteration as lists forming
     # the elements of a tuple of jobs in args
     # store the function we will be calling in f
@@ -142,15 +142,14 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
         args = [[dw, bval, bvec, anat, atlas, atlas_mask,
                  labels, outDir] for (dw, bval, bvec, anat)
                 in zip(dwis, bvals, bvecs, anats)]
-        f = ndmg_pipeline  # the function of choice
-        kwargs['bg'] = bg
-    '''else:
+        f = ndmg_dwi_pipeline  # the function of choice
+    else:
         args = [[func, anat, atlas, atlas_brain, atlas_mask,
                  lv_mask, labels, outDir] for (func, anat) in
                 zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
-    '''
+    kwargs['bg'] = bg
 
     # optional args stored in kwargs
     # use worker wrapper to call function f with args arg
@@ -166,6 +165,9 @@ def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
     Crawls the output directory from ndmg and computes qc metrics on the
     derivatives produced
     """
+    if not dwi:
+        fgr = group_func(inDir, outDir, atlas=atlas, dataset=dataset)
+        return
     outDir += "/graphs"
     mgu.execute_cmd("mkdir -p {}".format(outDir))
 
@@ -307,16 +309,16 @@ def main():
             if atlas is not None:
                 tpath = '{}/graphs/{}'.format(remo, atlas)
                 tindir = '{}/{}'.format(inDir, atlas)
-                #if not dwi:
-                #    tpath = '{}/connectomes/{}'.format(remo, atlas)
-                #    tindir = '{}/connectomes/{}'.format(inDir, atlas)
+                if not dwi:
+                    tpath = '{}/connectomes/{}'.format(remo, atlas)
+                    tindir = '{}/connectomes/{}'.format(inDir, atlas)
             else:
                 tpath = '{}/graphs'.format(remo)
                 tindir = inDir
-            #if not dwi:
-            #    qadir_rem = '{}/qa'.format(remo)
-            #    qadir_local = '{}/qa'.format(inDir)
-            #    s3_get_data(buck, qadir_rem, qadir_local, public=creds)
+            if not dwi:
+                qadir_rem = '{}/qa'.format(remo)
+                qadir_local = '{}/qa'.format(inDir)
+                s3_get_data(buck, qadir_rem, qadir_local, public=creds)
             s3_get_data(buck, tpath, tindir, public=creds)
         modif = 'qa'
         group_level(inDir, outDir, dataset, atlas, minimal, log, hemi, dwi)

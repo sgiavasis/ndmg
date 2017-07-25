@@ -24,7 +24,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from datetime import datetime
 from subprocess import Popen, PIPE
-from ndmg.stats.qa_regdti import *
+from ndmg.stats.qa_reg import *
 from ndmg.stats.qa_tensor import *
 from ndmg.stats.qa_fibers import *
 import ndmg.utils as mgu
@@ -37,8 +37,6 @@ import nibabel as nb
 import os
 from ndmg.graph import biggraph as ndbg
 import traceback
-
-os.environ["MPLCONFIGDIR"] = "/tmp/"
 
 
 def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
@@ -87,7 +85,7 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     mgp.rescale_bvec(bvecs, bvecs1)
     gtab = mgu.load_bval_bvec_dwi(bvals, bvecs1, dwi, dwi1)
 
-    # Align DTI volumes to Atlas
+    # Align DWI volumes to Atlas
     print("Aligning volumes...")
     mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
     b0loc = np.where(gtab.b0s_mask)[0][0]
@@ -102,7 +100,8 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     # As we've only tested VTK plotting on MNI152 aligned data...
     if nb.load(mask).get_data().shape == (182, 218, 182):
         try:
-            visualize_fibs(tracks, fibers, mask, outdir+"/qa/fibers/", 0.02)
+            visualize_fibs(tracks, fibers, mask,
+                           "{}/qa/fibers/".format(outdir), 0.02)
         except:
             print("Fiber QA failed - VTK for Python not configured properly.")
 
@@ -122,7 +121,7 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
     # Generate graphs from streamlines for each parcellation
     for idx, label in enumerate(label_name):
-        print("Generating graph for " + label + " parcellation...")
+        print("Generating graph for {} parcellation...".format(label))
 
         labels_im = nb.load(labels[idx])
         g1 = mgg(len(np.unique(labels_im.get_data()))-1, labels[idx])
@@ -130,7 +129,7 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
         g1.summary()
         g1.save_graph(graphs[idx], fmt=fmt)
 
-    print("Execution took: " + str(datetime.now() - startTime))
+    print("Execution took: {}".format(datetime.now() - startTime))
 
     # Clean temp files
     if clean:
@@ -140,7 +139,6 @@ def ndmg_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
         mgu.execute_cmd(cmd)
 
     print("Complete!")
-    pass
 
 
 def ndmg_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
@@ -180,16 +178,16 @@ def main():
     result = parser.parse_args()
 
     # Create output directory
-    cmd = "mkdir -p " + result.outdir + " " + result.outdir + "/tmp"
-    print("Creating output directory: " + result.outdir)
-    print("Creating output temp directory: " + result.outdir + "/tmp")
+    cmd = "mkdir -p {} {}/tmp".format(result.outdir, result.outdir)
+    print("Creating output directory: {}".format(result.outdir))
+    print("Creating output temp directory: {}/tmp".format(result.outdir))
     p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     p.communicate()
 
     ndmg_pipeline(result.dwi, result.bval, result.bvec, result.mprage,
                   result.atlas, result.mask, result.labels, result.outdir,
                   result.clean, result.fmt, result.bg)
-
+    pass
 
 if __name__ == "__main__":
     main()
