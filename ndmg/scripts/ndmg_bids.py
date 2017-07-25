@@ -143,13 +143,13 @@ def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
                  labels, outDir] for (dw, bval, bvec, anat)
                 in zip(dwis, bvals, bvecs, anats)]
         f = ndmg_dwi_pipeline  # the function of choice
+        kwargs['bg'] = bg
     else:
         args = [[func, anat, atlas, atlas_brain, atlas_mask,
                  lv_mask, labels, outDir] for (func, anat) in
                 zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
-    kwargs['bg'] = bg
 
     # optional args stored in kwargs
     # use worker wrapper to call function f with args arg

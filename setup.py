@@ -27,7 +27,7 @@ setup(
     scripts = [
         'ndmg/scripts/ndmg_demo-dwi',
         'ndmg/scripts/ndmg_demo-qa',
-        'ndmg/scripts/ndmg_demo-mrilab'
+        'ndmg/scripts/ndmg_demo-mrilab',
         'ndmg/scripts/ndmg_demo-func'
     ],
     entry_points = {
