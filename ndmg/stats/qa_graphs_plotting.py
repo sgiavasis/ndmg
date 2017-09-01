@@ -44,10 +44,10 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
         dat = pickle.load(f)[keys[idx]]
         f.close()
         if keys[idx] == 'number_non_zeros':
-            fig = pp.plot_rugdensity(dat.values())
+            fig = pp.plot_rugdensity(np.nan_to_num(dat.values()))
         elif keys[idx] == 'edge_weight':
             edges = np.max([len(dat[i]) for i in dat.keys()])
-            fig = pp.plot_series(dat.values(), sort=True)
+            fig = pp.plot_series(np.nan_to_num(dat.values()), sort=True)
         elif keys[idx] == 'degree_distribution':
             fig = pp.plot_degrees(dat, hemi=hemispheres)
             if hemispheres:
@@ -72,8 +72,8 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
                 dat = np.log10(dat+1)
             fig = pp.plot_heatmap(dat, name=labs[idx])
         else:
-            dims = len(dat.values()[0])
-            fig = pp.plot_series(dat.values())
+            dims = len(np.nan_to_num(dat.values()[0]))
+            fig = pp.plot_series(np.nan_to_num(dat.values()))
         traces += [pp.fig_to_trace(fig)]
 
     multi = pp.traces_to_panels(traces)

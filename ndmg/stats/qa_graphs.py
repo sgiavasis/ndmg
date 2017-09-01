@@ -138,7 +138,7 @@ def compute_metrics(fs, outdir, atlas, verb=False, modality='dwi'):
     # Betweenness Centrality
     print("Computing: Betweenness Centrality Sequence")
     nxbc = nx.algorithms.betweenness_centrality  # For PEP8 line length...
-    temp_bc = OrderedDict((subj, nxbc(graphs[subj]).values())
+    temp_bc = OrderedDict((subj, nxbc(graphs[subj], **wt_args).values())
                           for subj in graphs)
     centrality = temp_bc
     write(outdir, 'betweenness_centrality', centrality, atlas)
@@ -176,7 +176,7 @@ def binGraphs(graphs, thr=0.7):
             if d['weight'] > thr:
                 bin_graph.add_edge(u, v, weight=1)
         binGraphs[subj] = bin_graph
-    return graphs
+    return binGraphs
 
 
 def rankGraphs(graphs):
