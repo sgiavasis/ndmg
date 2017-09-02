@@ -49,7 +49,7 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
             edges = np.max([len(dat[i]) for i in dat.keys()])
             fig = pp.plot_series(np.nan_to_num(dat.values()), sort=True)
         elif keys[idx] == 'degree_distribution':
-            fig = pp.plot_degrees(np.nan_to_num(dat), hemi=hemispheres)
+            fig = pp.plot_degrees(dat, hemi=hemispheres)
             if hemispheres:
                 anno = [dict(x=dims/3,
                              y=4*dims/7,
