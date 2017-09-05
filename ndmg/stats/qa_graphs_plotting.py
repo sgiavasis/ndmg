@@ -70,7 +70,7 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
         elif keys[idx] == 'study_mean_connectome':
             if log:
                 dat = np.log10(dat+1)
-            fig = pp.plot_heatmap(dat, name=labs[idx])
+            fig = pp.plot_heatmap(np.nan_to_num(dat), name=labs[idx])
         else:
             dims = len(np.nan_to_num(dat.values()[0]))
             fig = pp.plot_series(np.nan_to_num(dat.values()))
