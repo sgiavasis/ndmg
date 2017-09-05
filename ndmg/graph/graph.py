@@ -118,10 +118,9 @@ class graph(object):
         """
         print("Estimating correlation matrix for {} ROIs...".format(self.N))
         cor = np.abs(np.corrcoef(timeseries))  # calculate pearson correlation
+        cor = np.nan_to_num(cor)
 
-        roilist = np.unique(self.rois)
-        roilist = roilist[roilist != 0]
-        roilist = np.sort(roilist)
+        roilist = self.g.nodes()
 
         for (idx_out, roi_out) in enumerate(roilist):
             for (idx_in, roi_in) in enumerate(roilist):
