@@ -98,15 +98,15 @@ def compute_metrics(fs, outdir, atlas, verb=False, modality='dwi'):
         N = len(g.nodes())
         LLnodes = g.nodes()[0:N/2]  # TODO GK: don't assume hemispheres
         LL = g.subgraph(LLnodes)
-        LLdegs = [LL.degree()[n] for n in LLnodes]
+        LLdegs = [LL.degree(**wt_args)[n] for n in LLnodes]
 
         RRnodes = g.nodes()[N/2:N]  # TODO GK: don't assume hemispheres
         RR = g.subgraph(RRnodes)
-        RRdegs = [RR.degree()[n] for n in RRnodes]
+        RRdegs = [RR.degree(**wt_args)[n] for n in RRnodes]
 
         LRnodes = g.nodes()
         ipso_list = LLdegs + RRdegs
-        degs = [g.degree()[n] for n in LRnodes]
+        degs = [g.degree(**wt_args)[n] for n in LRnodes]
         contra_deg[subj] = [a_i - b_i for a_i, b_i in zip(degs, ipso_list)]
         ipso_deg[subj] = ipso_list
         # import pdb; pdb.set_trace()
