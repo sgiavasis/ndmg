@@ -129,20 +129,20 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
     # Align DTI volumes to Atlas
     print("Aligning volumes...")
-    mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, tmp_dirs)
+    mgr().dwi2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, tmp_dirs)
     b0loc = np.where(gtab.b0s_mask)[0][0]
-    reg_dti_pngs(aligned_dwi, b0loc, atlas, outdir+"/qa/reg_dwi/")
+    reg_dti_pngs(aligned_dwi, b0loc, atlas, qa_dirs['treg_d'])
 
     print("Beginning tractography...")
     # Compute tensors and track fiber streamlines
     tens, tracks = mgt().eudx_basic(aligned_dwi, mask, gtab, stop_val=0.2)
-    tensor2fa(tens, tensors, aligned_dwi, outdir+"/tensors/",
-              outdir+"/qa/tensors/")
+    tensor2fa(tens, tensors, aligned_dwi, final_dirs['tensors'],
+              qa_dirs['tensors'])
 
     # As we've only tested VTK plotting on MNI152 aligned data...
     if nb.load(mask).get_data().shape == (182, 218, 182):
         try:
-            visualize_fibs(tracks, fibers, mask, outdir+"/qa/fibers/", 0.02)
+            visualize_fibs(tracks, fibers, mask, qa_dirs['fibers'], 0.02)
         except:
             print("Fiber QA failed - VTK for Python not configured properly.")
 

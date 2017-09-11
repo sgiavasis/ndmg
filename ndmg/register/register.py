@@ -264,13 +264,13 @@ class register(object):
         t1w_name = mgu.get_filename(t1w)
         atlas_name = mgu.get_filename(atlas)
 
-        dwi2 = mgu.name_tmps(outdir, dwi_name, "_t2.nii.gz")
-        temp_aligned = mgu.name_tmps(outdir['sreg_d'], dwi_name, "_ta.nii.gz")
-        temp_aligned2 = mgu.name_tmp(outdir['treg_d'], dwi_name, "_ta2.nii.gz")
-        b0 = mgu.name_tmps(['sreg_d'], dwi_name, "_b0.nii.gz")
-        t1w_brain = mgu.name_tmps(outdir['sreg_a'], t1w_name, "_ss.nii.gz")
-        xfm = mgu.name_tmps(outdir['treg_d'], t1w_name,
-                            "_" + atlas_name + "_xfm.mat")
+        dwi2 = "{}/{}_{}".format(outdir['preproc'], dwi_name, "_t2.nii.gz")
+        temp_aligned = "{}/{}_{}".format(outdir['sreg_d'], dwi_name, "_ta.nii.gz")
+        temp_aligned2 = "{}/{}_{}".format(outdir['treg_d'], dwi_name, "_ta2.nii.gz")
+        b0 = "{}/{}_{}".format(outdir['sreg_d'], dwi_name, "_b0.nii.gz")
+        t1w_brain = "{}/{}_{}".format(outdir['sreg_a'], t1w_name, "_ss.nii.gz")
+        xfm = "{}/{}_{}".format(outdir['treg_d'], t1w_name,
+                                "_" + atlas_name + "_xfm.mat")
 
         # Align DTI volumes to each other
         self.align_slices(dwi, dwi2, np.where(gtab.b0s_mask)[0][0])
