@@ -24,10 +24,10 @@ import re
 from itertools import product
 import boto3
 from ndmg.utils import utils as mgu
-import os.path.join as oj
+import os.path as op
 
 
-def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='dwi'):
+def sweep_directory(bdir, subj=None, sesh=None, modality='dwi'):
     """
     Given a BIDs formatted directory, crawls the BIDs dir and prepares the
     necessary inputs for the NDMG pipeline. Uses regexes to check matches for
@@ -56,9 +56,9 @@ def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='d
         for ses in seshs:
             # the attributes for our modality img
             mod_attributes = [sub, ses]
-            oname = sub
+            oname = "sub-{}".format(sub)
             if ses is not None:
-                oname = oj(oname, ses)
+                oname = op.join(oname, "ses-{}".format(ses))
             # the keys for our modality img
             mod_keys = ['subject', 'session']
             # our query we will use for each modality img
@@ -85,16 +85,20 @@ def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='d
             anat = layout.get(**anat_query)
             mod_files = layout.get(**merge_dicts(mod_query,
                                                  {'extensions': 'nii.gz|nii'}))
-            if anat and mods:
+            if anat and mod_files:
                 for mod in mod_files:
                     if mod.filename not in mods:
-                        mods.append(mod.filename)
-                        anats.append(anat[0].filename)
                         if modality == 'dwi':
                             bval = layout.get_bval(mod.filename)
                             bvec = layout.get_bvec(mod.filename)
-                            bvals.append(bval.filename)
-                            bvecs.append(bvec.filename)
+                            if bval and bvec:
+                                bvals.append(bval)
+                                bvecs.append(bvec)
+                                mods.append(mod.filename)
+                                anats.append(anat[0].filename)
+                        else:
+                            mods.append(mod.filename)
+                            anats.append(anat[0].filename)
                         outputs.append(oname)
     if modality == 'dwi':
         return (mods, bvals, bvecs, anats, outputs)

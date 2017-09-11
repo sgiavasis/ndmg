@@ -87,7 +87,6 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     finals = {'ts_roi': paths['ts_roi'],
               'conn': "connectomes"}
 
-    outdir = "{}/{}".format(outdir, func_name)
     tmpdir = '{}/tmp'.format(outdir)
     qadir = "{}/qa".format(outdir)
 
@@ -137,9 +136,10 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         mgu.execute_cmd(cmd)
 
     # Create derivative output file names
-    preproc_func = "{}/{}_preproc.nii.gz".format(final_dirs['f_prep'], func_name)
-    preproc_t1w_brain = "{}/{}_preproc_brain.nii.gz".format(final_dirs['a_prep'],
-                                                            t1w_name)
+    preproc_func = "{}/{}_preproc.nii.gz".format(final_dirs['f_prep'],
+                                                 func_name)
+    preproc_t1w = "{}/{}_preproc_brain.nii.gz".format(final_dirs['a_prep'],
+                                                      t1w_name)
     aligned_func = "{}/{}_aligned.nii.gz".format(final_dirs['treg_f'], func_name)
     aligned_t1w = "{}/{}_aligned.nii.gz".format(final_dirs['treg_a'], t1w_name)
     motion_func = "{}/{}_mc.nii.gz".format(final_dirs['f_prep'], func_name)
@@ -215,6 +215,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
 
     print("Execution took: {}".format(datetime.now() - startTime))
     if clean:
+        print("Removing tmp/ directory...")
         cmd = "rm -rf {}".format(tmpdir)
         mgu.execute_cmd(cmd)
     print("Complete!")
