@@ -197,6 +197,7 @@ def rankGraphs(graphs):
         rankGraphs[subj] = rgraph
     return rankGraphs
 
+
 def scan_statistic(mygs, i):
     """
     Computes scan statistic-i on a set of graphs
