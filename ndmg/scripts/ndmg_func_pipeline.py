@@ -75,21 +75,21 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     t1w_name = mgu.get_filename(t1w)
     atlas_name = mgu.get_filename(atlas)
 
-    paths = {'f_prep': "reg/func/preproc",
-             'a_prep': "reg/t1w/preproc",
-             'sreg_f': "reg/func/align/self",
-             'sreg_a': "reg/t1w/align/self",
-             'treg_f': "reg/func/align/template",
-             'treg_a': "reg/t1w/align/template",
-             'nuis': "nuis",
+    paths = {'f_prep': "func/preproc",
+             'a_prep': "t1w/preproc",
+             'sreg_f': "func/reg/self",
+             'sreg_a': "t1w/reg/self",
+             'treg_f': "func/reg/template",
+             'treg_a': "t1w/reg/template",
+             'nuis': "func/nuis",
              'ts_voxel': "timeseries/voxel",
              'ts_roi': "timeseries/roi"}
     finals = {'ts_roi': paths['ts_roi'],
-              'ts_voxel': paths['ts_voxel'],
               'conn': "connectomes"}
 
-    tmpdir = '{}/tmp/{}'.format(outdir, func_name)
-    qadir = "{}/qa/{}".format(outdir, func_name)
+    outdir = "{}/{}".format(outdir, func_name)
+    tmpdir = '{}/tmp'.format(outdir)
+    qadir = "{}/qa".format(outdir)
 
     tmp_dirs = {}
     qa_dirs = {}
@@ -99,6 +99,19 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     qc_stats = "{}/{}_stats.pkl".format(qadir, func_name)
 
     final_dirs = {}
+
+    # iterate over the items that we might want to clean out
+    # if we need to clean them, just put the tmp directory into
+    # their output since that directory is automatically deleted
+    # otherwise, put the file in the standard output spec
+    # and it will be preserved
+    if not clean:
+        finalpath = outdir
+    else:
+        finalpath = tmpdir
+
+    for (key, value) in paths.iteritems():
+        final_dirs[key] = "{}/{}".format(finalpath, paths[key])
     for (key, value) in finals.iteritems():
         final_dirs[key] = "{}/{}".format(outdir, finals[key])
 
@@ -124,14 +137,14 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         mgu.execute_cmd(cmd)
 
     # Create derivative output file names
-    preproc_func = "{}/{}_preproc.nii.gz".format(tmp_dirs['f_prep'], func_name)
-    preproc_t1w_brain = "{}/{}_preproc_brain.nii.gz".format(tmp_dirs['a_prep'],
+    preproc_func = "{}/{}_preproc.nii.gz".format(final_dirs['f_prep'], func_name)
+    preproc_t1w_brain = "{}/{}_preproc_brain.nii.gz".format(final_dirs['a_prep'],
                                                             t1w_name)
-    aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
-    aligned_t1w = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_a'], t1w_name)
-    motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['f_prep'], func_name)
-    nuis_func = "{}/{}_nuis.nii.gz".format(tmp_dirs['nuis'], func_name)
-    voxel_ts = "{}/timeseries/voxel/{}_voxel.npz".format(outdir, func_name)
+    aligned_func = "{}/{}_aligned.nii.gz".format(final_dirs['treg_f'], func_name)
+    aligned_t1w = "{}/{}_aligned.nii.gz".format(final_dirs['treg_a'], t1w_name)
+    motion_func = "{}/{}_mc.nii.gz".format(final_dirs['f_prep'], func_name)
+    nuis_func = "{}/{}_nuis.nii.gz".format(final_dirs['nuis'], func_name)
+    voxel_ts = "{}/{}_voxel.npz".format(final_dirs['ts_voxel'], func_name)
 
     print("This pipeline will produce the following derivatives...")
     print("fMRI volumes preprocessed: {}".format(preproc_func))
@@ -140,8 +153,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print("Voxel timecourse in atlas space: {}".format(voxel_ts))
 
     # Again, connectomes are different
-    connectomes = ["{}/connectomes/{}/{}_{}.{}".format(outdir, x, func_name,
-                                                       x, fmt)
+    connectomes = ["{}/{}/{}_{}.{}".format(final_dirs['conn'], x, func_name,
+                                           x, fmt)
                    for x in label_name]
     roi_ts = ["{}/{}/{}_{}.npz".format(final_dirs['ts_roi'], x, func_name, x)
               for x in label_name]

@@ -24,6 +24,7 @@ import re
 from itertools import product
 import boto3
 from ndmg.utils import utils as mgu
+import os.path.join as oj
 
 
 def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='dwi'):
@@ -32,13 +33,12 @@ def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='d
     necessary inputs for the NDMG pipeline. Uses regexes to check matches for
     BIDs compliance.
     """
+    mods = []  # modality specific images
     if modality == 'dwi':
-        dwis = []
-        bvals = []
-        bvecs = []
-    elif modality == 'func':
-        funcs = []
-    anats = []
+        bvals = []  # bvalues
+        bvecs = []  # bvectors
+    anats = []  # anatomical t1w images
+    outputs = []  # the directories for our output images
     layout = BIDSLayout(bdir)  # initialize BIDs tree on bdir
     # get all files matching the specific modality we are using
     if subj is None:
@@ -52,24 +52,15 @@ def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='d
         else:
             seshs = as_list(sesh)  # make a list so we can iterate
 
-        if not task:
-            tasks = layout.get_tasks(subject=sub)
-            tasks += [None]
-        else:
-            tasks = as_list(task)
-
-        if not run:
-            runs = layout.get_runs(subject=sub)
-            runs += [None]
-        else:
-            runs = as_list(run)
-
-        # all the combinations of sessions and tasks that are possible
-        for (ses, tas, ru) in product(seshs, tasks, runs):
+        # iterate over sessions
+        for ses in seshs:
             # the attributes for our modality img
-            mod_attributes = [sub, ses, tas, ru]
+            mod_attributes = [sub, ses]
+            oname = sub
+            if ses is not None:
+                oname = oj(oname, ses)
             # the keys for our modality img
-            mod_keys = ['subject', 'session', 'task', 'run']
+            mod_keys = ['subject', 'session']
             # our query we will use for each modality img
             mod_query = {'modality': modality}
             if modality == 'dwi':
@@ -92,35 +83,23 @@ def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='d
                     anat_query[key] = attr
             # make a query to fine the desired files from the BIDSLayout
             anat = layout.get(**anat_query)
-            if modality == 'dwi':
-                dwi = layout.get(**merge_dicts(mod_query,
-                                               {'extensions': 'nii.gz|nii'}))
-                bval = layout.get(**merge_dicts(mod_query,
-                                                {'extensions': 'bval'}))
-                bvec = layout.get(**merge_dicts(mod_query,
-                                                {'extensions': 'bvec'}))
-                if (anat and dwi and bval and bvec):
-                    for (dw, bva, bve) in zip(dwi, bval, bvec):
-                        if dw.filename not in dwis:
-
-                            # if all the required files exist, append by the first
-                            # match (0 index)
-                            anats.append(anat[0].filename)
-                            dwis.append(dw.filename)
-                            bvals.append(bva.filename)
-                            bvecs.append(bve.filename)
-            elif modality == 'func':
-                func = layout.get(**merge_dicts(mod_query,
-                                                {'extensions': 'nii.gz|nii'}))
-                if func and anat:
-                    for fun in func:
-                        if fun.filename not in funcs:
-                            funcs.append(fun.filename)
-                            anats.append(anat[0].filename)
+            mod_files = layout.get(**merge_dicts(mod_query,
+                                                 {'extensions': 'nii.gz|nii'}))
+            if anat and mods:
+                for mod in mod_files:
+                    if mod.filename not in mods:
+                        mods.append(mod.filename)
+                        anats.append(anat[0].filename)
+                        if modality == 'dwi':
+                            bval = layout.get_bval(mod.filename)
+                            bvec = layout.get_bvec(mod.filename)
+                            bvals.append(bval.filename)
+                            bvecs.append(bvec.filename)
+                        outputs.append(oname)
     if modality == 'dwi':
-        return (dwis, bvals, bvecs, anats)
+        return (mods, bvals, bvecs, anats, outputs)
     elif modality == 'func':
-        return (funcs, anats)
+        return (mods, anats, outputs)
     else:
         raise ValueError('Incorrect modality passed.\
                          Choices are \'func\' and \'dwi\'.')

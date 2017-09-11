@@ -62,43 +62,42 @@ def get_atlas(atlas_dir, modality='dwi'):
     we have all the atlases and parcellations.
     """
     if modality == 'dwi':
-        atlas = op.join(atlas_dir, 'atlas/MNI152_T1_1mm.nii.gz')
+        atlas = op.join(atlas_dir, 'atlas/MNI152_T1_res-1x1x1.nii.gz')
         atlas_mask = op.join(atlas_dir,
-                             'atlas/MNI152_T1_1mm_brain_mask.nii.gz')
-        labels = ['labels/AAL.nii.gz', 'labels/desikan.nii.gz',
-                  'labels/HarvardOxford.nii.gz', 'labels/CPAC200.nii.gz',
-                  'labels/Talairach.nii.gz', 'labels/JHU.nii.gz',
-                  'labels/slab907.nii.gz', 'labels/slab1068.nii.gz',
-                  'labels/DS00071.nii.gz', 'labels/DS00096.nii.gz',
-                  'labels/DS00108.nii.gz', 'labels/DS00140.nii.gz',
-                  'labels/DS00195.nii.gz', 'labels/DS00278.nii.gz',
-                  'labels/DS00350.nii.gz', 'labels/DS00446.nii.gz',
-                  'labels/DS00583.nii.gz', 'labels/DS00833.nii.gz',
-                  'labels/DS01216.nii.gz', 'labels/DS01876.nii.gz',
-                  'labels/DS03231.nii.gz', 'labels/DS06481.nii.gz',
-                  'labels/DS16784.nii.gz', 'labels/DS72784.nii.gz']
+                             'atlas/MNI152_t1w_res-1x1x1_brain_mask.nii.gz')
+        labels = ['label/AAL_res-1x1x1.nii.gz', 'label/desikan_res-1x1x1.nii.gz',
+                  'label/HarvardOxford_res-1x1x1.nii.gz', 'label/CPAC200_res-1x1x1.nii.gz',
+                  'label/Talairach_res-1x1x1.nii.gz', 'label/JHU_res-1x1x1.nii.gz',
+                  'label/slab907_res-1x1x1.nii.gz', 'label/slab1068_res-1x1x1.nii.gz',
+                  'label/DS00071_res-1x1x1.nii.gz', 'label/DS00096_res-1x1x1.nii.gz',
+                  'label/DS00108_res-1x1x1.nii.gz', 'label/DS00140_res-1x1x1.nii.gz',
+                  'label/DS00195_res-1x1x1.nii.gz', 'label/DS00278_res-1x1x1.nii.gz',
+                  'label/DS00350_res-1x1x1.nii.gz', 'label/DS00446_res-1x1x1.nii.gz',
+                  'label/DS00583_res-1x1x1.nii.gz', 'label/DS00833_res-1x1x1.nii.gz',
+                  'label/DS01216_res-1x1x1.nii.gz', 'label/DS01876_res-1x1x1.nii.gz',
+                  'label/DS03231_res-1x1x1.nii.gz', 'label/DS06481_res-1x1x1.nii.gz',
+                  'label/DS16784_res-1x1x1.nii.gz', 'label/DS72784_res-1x1x1.nii.gz']
         labels = [op.join(atlas_dir, l) for l in labels]
         fils = labels + [atlas, atlas_mask]
     if modality == 'func':
-        atlas_func = op.join(atlas_dir, 'func_atlases')
-        atlas = op.join(atlas_func, 'atlas/MNI152_T1-2mm.nii.gz')
-        atlas_brain = op.join(atlas_func, 'atlas/MNI152_T1-2mm_brain.nii.gz')
-        atlas_mask = op.join(atlas_func,
-                             'mask/MNI152_T1-2mm_brain_mask.nii.gz')
-        lv_mask = op.join(atlas_func, 'mask/HarvOx_lv_thr25-2mm.nii.gz')
-        labels= ['label/HarvardOxford-cort-maxprob-thr25-2mm.nii.gz',
-                  'label/aal-2mm.nii.gz', 'label/brodmann-2mm.nii.gz',
-                  'label/desikan-2mm.nii.gz', 'label/pp264-2mm.nii.gz',
-                  'label/CPAC200-2mm.nii.gz',
-                  'label/DS00071-2mm.nii.gz', 'label/DS00096-2mm.nii.gz',
-                  'label/DS00108-2mm.nii.gz', 'label/DS00140-2mm.nii.gz',
-                  'label/DS00195-2mm.nii.gz', 'label/DS00278-2mm.nii.gz',
-                  'label/DS00350-2mm.nii.gz', 'label/DS00446-2mm.nii.gz',
-                  'label/DS00583-2mm.nii.gz', 'label/DS00833-2mm.nii.gz',
-                  'label/DS01216-2mm.nii.gz', 'label/DS01876-2mm.nii.gz',
-                  'label/glasser-2mm.nii.gz']
+        atlas = op.join(atlas_dir, 'atlas/MNI152_T1_res-2x2x2.nii.gz')
+        atlas_brain = op.join(atlas_dir, 'atlas/MNI152_T1_res-2x2x2_brain.nii.gz')
+        atlas_mask = op.join(atlas_dir,
+                             'mask/MNI152_T1_res-2x2x2_brain_mask.nii.gz')
+        lv_mask = op.join(atlas_dir, 'mask/HarvOx_lv_thr25_res-2x2x2.nii.gz')
+        labels= ['label/HarvardOxford-cort-maxprob-thr25_res-2x2x2.nii.gz',
+                  'label/aal_res-2x2x2.nii.gz', 'label/brodmann_res-2x2x2.nii.gz',
+                  'label/desikan_res-2x2x2.nii.gz', 'label/pp264_res-2x2x2.nii.gz',
+                  'label/CPAC200_res-2x2x2.nii.gz',
+                  'label/DS00071_res-2x2x2.nii.gz', 'label/DS00096_res-2x2x2.nii.gz',
+                  'label/DS00108_res-2x2x2.nii.gz', 'label/DS00140_res-2x2x2.nii.gz',
+                  'label/DS00195_res-2x2x2.nii.gz', 'label/DS00278_res-2x2x2.nii.gz',
+                  'label/DS00350_res-2x2x2.nii.gz', 'label/DS00446_res-2x2x2.nii.gz',
+                  'label/DS00583_res-2x2x2.nii.gz', 'label/DS00833_res-2x2x2.nii.gz',
+                  'label/DS01216_res-2x2x2.nii.gz', 'label/DS01876_res-2x2x2.nii.gz',
+                  'label/glasser_res-2x2x2.nii.gz']
  
-        labels = [op.join(atlas_func, l) for l in labels]
+        labels = [op.join(atlas_dir, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
 
     ope = op.exists
@@ -123,9 +122,8 @@ def worker_wrapper((f, args, kwargs)):
     return f(*args, **kwargs)
 
 
-def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
-                      debug=False, modality='dwi', nthreads=1, bg=False,
-                      stc=None):
+def participant_level(inDir, outDir, subjs, sesh=None, debug=False,
+                      modality='dwi', nthreads=1, bg=False, stc=None):
     """
     Crawls the given BIDS organized directory for data pertaining to the given
     subject and session, and passes necessary files to ndmg_dwi_pipeline for
@@ -135,25 +133,26 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
                                                                 modality)
     mgu.execute_cmd("mkdir -p {} {}/tmp".format(outDir, outDir))
 
-    result = sweep_directory(inDir, subjs, sesh, task, run, modality=modality)
+    result = sweep_directory(inDir, subjs, sesh, modality=modality)
 
     kwargs = {'clean': (not debug)}  # our keyword arguments
     if modality == 'dwi':
-        anats, dwis, bvals, bvecs = result
+        anats, dwis, bvals, bvecs, outputs = result
         assert(len(anats) == len(dwis))
         assert(len(bvecs) == len(dwis))
         assert(len(bvals) == len(dwis))
         args = [[dw, bval, bvec, anat, atlas, atlas_mask,
-                 labels, outDir] for (dw, bval, bvec, anat)
-                in zip(dwis, bvals, bvecs, anats)]
+                 labels, op.join(outDir, oput)]
+                for (dw, bval, bvec, anat, oput)
+                in zip(dwis, bvals, bvecs, anats, outputs)]
         f = ndmg_dwi_pipeline  # the function of choice
         kwargs['bg'] = bg
     else:
-        funcs, anats = result
+        funcs, anats, outputs = result
         assert(len(anats) == len(funcs))
         args = [[func, anat, atlas, atlas_brain, atlas_mask,
-                 lv_mask, labels, outDir] for (func, anat) in
-                zip(funcs, anats)]
+                 lv_mask, labels, op.join(outDir, oput)]
+                for (func, anat, oput) in zip(funcs, anats, outputs)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
 
@@ -235,18 +234,6 @@ def main():
                         'parameter is not provided all sessions should be '
                         'analyzed. Multiple sessions can be specified '
                         'with a space separated list.', nargs="+")
-    parser.add_argument('--task_label', help='The label(s) of the task '
-                        'that should be analyzed. The label corresponds to '
-                        'task-<task_label> from the BIDS spec (so it does not '
-                        'include "task-"). If this parameter is not provided '
-                        'all tasks should be analyzed. Multiple tasks can be '
-                        'specified with a space separated list.', nargs="+")
-    parser.add_argument('--run_label', help='The label(s) of the run '
-                        'that should be analyzed. The label corresponds to '
-                        'run-<run_label> from the BIDS spec (so it does not '
-                        'include "task-"). If this parameter is not provided '
-                        'all runs should be analyzed. Multiple runs can be '
-                        'specified with a space separated list.', nargs="+") 
     parser.add_argument('--bucket', action='store', help='The name of '
                         'an S3 bucket which holds BIDS organized data. You '
                         'must have built your bucket with credentials to the '
@@ -289,8 +276,6 @@ def main():
     outDir = result.output_dir
     subj = result.participant_label
     sesh = result.session_label
-    task = result.task_label
-    run = result.run_label
     buck = result.bucket
     remo = result.remote_path
     push = result.push_data
@@ -318,7 +303,7 @@ def main():
             else:
                 s3_get_data(buck, remo, inDir, public=creds)
         modif = 'ndmg_{}'.format(ndmg.version.replace('.', '-'))
-        participant_level(inDir, outDir, subj, sesh, task, run, debug,
+        participant_level(inDir, outDir, subj, sesh, debug,
                           modality, nthreads, bg, stc)
 
     elif level == 'group':
