@@ -72,7 +72,7 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
                 dat = np.log10(dat+1)
             fig = pp.plot_heatmap(np.nan_to_num(dat), name=labs[idx])
         else:
-            dims = len(np.nan_to_num(dat.values()[0]))
+            dims = len(dat.values()[0])
             fig = pp.plot_series(np.nan_to_num(dat.values()))
         traces += [pp.fig_to_trace(fig)]
 
