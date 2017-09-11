@@ -171,7 +171,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     f_prep.preprocess(stc=stc)
     qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
 
-    a_prep = mgap(t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
+    a_prep = mgap(t1w, preproc_t1w, tmp_dirs['a_prep'])
     a_prep.preprocess()
     qc_func.anat_preproc_qa(a_prep, qa_dirs['a_prep'])
 

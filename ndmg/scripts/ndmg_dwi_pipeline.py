@@ -50,46 +50,86 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
     # Create derivative output directories
     dwi_name = mgu.get_filename(dwi)
-    cmd = "".join(["mkdir -p ", outdir, "/reg_dwi ", outdir, "/tensors ",
-                   outdir, "/fibers ", outdir, "/graphs ", outdir,
-                   "/qa/tensors ", outdir, "/qa/fibers ", outdir,
-                   "/qa/reg_dwi ", outdir, "/tmp/", dwi_name])
+    
+    paths = {'preproc': 'dwi/preproc',
+             'treg_d': 'dwi/reg/template',
+             'sreg_d': 'dwi/reg/self',
+             'sreg_a': 'dwi/reg/self',
+             'treg_a': 't1w/reg/template',
+             'tensors': 'dwi/tensors',
+             'fibers': 'fibers'}
+    finals = {'conn': 'connectomes'}
+
+    tmpdir = '{}/tmp'.format(outdir)
+    qadir = "{}/qa".format(outdir)
+
+    tmp_dirs = {}
+    qa_dirs = {}
+    for (key, value) in (paths).iteritems():
+        tmp_dirs[key] = "{}/{}".format(tmpdir, paths[key])
+        qa_dirs[key] = "{}/{}".format(qadir, paths[key])
+
+    final_dirs = {}
+
+    # iterate over the items that we might want to clean out
+    # if we need to clean them, just put the tmp directory into
+    # their output since that directory is automatically deleted
+    # otherwise, put the file in the standard output spec
+    # and it will be preserved
+    if not clean:
+        finalpath = outdir
+    else:
+        finalpath = tmpdir
+
+    for (key, value) in paths.iteritems():
+        final_dirs[key] = "{}/{}".format(finalpath, paths[key])
+    for (key, value) in finals.iteritems():
+        final_dirs[key] = "{}/{}".format(outdir, finals[key])
+
+    cmd = "mkdir -p {} {} {}".format(" ".join(tmp_dirs.values()),
+                                     " ".join(qa_dirs.values()),
+                                     " ".join(final_dirs.values()))
     mgu.execute_cmd(cmd)
 
-    # Graphs are different because of multiple atlases
+    # Graphs are different because of multiple parcellations
     if isinstance(labels, list):
         label_name = [mgu.get_filename(x) for x in labels]
         for label in label_name:
-            mgu.execute_cmd("mkdir -p " + outdir + "/graphs/" + label)
+            cmd = "mkdir -p {}/{}".format(final_dirs['conn'], label)
+            mgu.execute_cmd(cmd)
     else:
         label_name = mgu.get_filename(labels)
-        mgu.execute_cmd("mkdir -p " + outdir + "/graphs/" + label_name)
+        label = label_name
+        cmd = "mkdir -p {}/{}".format(final_dirs['conn'], label)
+        mgu.execute_cmd(cmd)
 
     # Create derivative output file names
-    aligned_dwi = "".join([outdir, "/reg_dwi/", dwi_name, "_aligned.nii.gz"])
-    tensors = "".join([outdir, "/tensors/", dwi_name, "_tensors.npz"])
-    fibers = "".join([outdir, "/fibers/", dwi_name, "_fibers.npz"])
+    aligned_dwi = "{}/{}_{}".format(final_dirs['treg_d'], dwi_name,
+                                    "_aligned.nii.gz")
+    tensors = "{}/{}_{}".format(final_dirs['tensors'], dwi_name,
+                                "_tensors.npz")
+    fibers = "{}/{}_{}".format(final_dirs['fibers'], dwi_name, "_fibers.npz")
     print("This pipeline will produce the following derivatives...")
     print("DTI volume registered to atlas: " + aligned_dwi)
     print("Diffusion tensors in atlas space: " + tensors)
     print("Fiber streamlines in atlas space: " + fibers)
 
     # Again, graphs are different
-    graphs = ["".join([outdir, "/graphs/", x, '/', dwi_name, "_", x, '.', fmt])
+    graphs = ["{}/{}/{}_{}.{}".format(final_dirs['conn'], x, dwi_name, x, fmt)
               for x in label_name]
     print("Graphs of streamlines downsampled to given labels: " +
           ", ".join([x for x in graphs]))
 
     # Creates gradient table from bvalues and bvectors
     print("Generating gradient table...")
-    dwi1 = "".join([outdir, "/tmp/", dwi_name, "_t1.nii.gz"])
-    bvecs1 = "".join([outdir, "/tmp/", dwi_name, "_1.bvec"])
+    dwi1 = "{}/{}_{}".format(tmp_dirs['preproc'], dwi_name, "t1.nii.gz")
+    bvecs1 = "{}/{}_{}".format(tmp_dirs['preproc'], dwi_name, "1.bvec")
     mgp.rescale_bvec(bvecs, bvecs1)
     gtab = mgu.load_bval_bvec_dwi(bvals, bvecs1, dwi, dwi1)
 
     # Align DTI volumes to Atlas
     print("Aligning volumes...")
-    mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
+    mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, tmp_dirs)
     b0loc = np.where(gtab.b0s_mask)[0][0]
     reg_dti_pngs(aligned_dwi, b0loc, atlas, outdir+"/qa/reg_dwi/")
 
@@ -135,8 +175,7 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     # Clean temp files
     if clean:
         print("Cleaning up intermediate files... ")
-        cmd = "".join(['rm -f ', tensors, ' ', outdir, '/tmp/', dwi_name, '*',
-                       ' ', aligned_dwi, ' ', fibers])
+        cmd = "rm -rf {}".format(tmpdir)
         mgu.execute_cmd(cmd)
 
     print("Complete!")
