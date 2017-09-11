@@ -159,7 +159,7 @@ def show_means(data):
     print("Subject Means: " + ", ".join(["%.2f" % np.mean(data[key])
                                          for key in data.keys()]))
 
-def binGraphs(graphs, thr=0.7):
+def binGraphs(graphs, thr=0.1):
     """
     Binarizes a set of graphs given a threshold.
 
@@ -168,6 +168,7 @@ def binGraphs(graphs, thr=0.7):
             - a list of graphs.
         thr:
             - the threshold below which edges will be assumed disconnected.
+              .1 is chosen as default according to discriminability results.
     """
     binGraphs = {}
     for subj, graph in graphs.iteritems():
