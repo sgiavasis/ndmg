@@ -23,7 +23,7 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from subprocess import Popen
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, rankdata
 from ndmg.utils import loadGraphs
 
 import numpy as np
@@ -72,7 +72,7 @@ def compute_metrics(fs, outdir, atlas, verb=False, modality='dwi'):
     show_means(temp_ss1)
 
     if modality == 'func':
-        graphs = gr
+        graphs = rankGraphs(gr)
         wt_args = {'weight': 'weight'}
     else:
         wt_args = {}
@@ -146,8 +146,9 @@ def compute_metrics(fs, outdir, atlas, verb=False, modality='dwi'):
 
     # Mean connectome
     print("Computing: Mean Connectome")
-    adj = OrderedDict((subj, nx.adj_matrix(graphs[subj]).todense())
-                      for subj in graphs)
+    nxnp = nx.to_numpy_matrix
+    adj = OrderedDict((subj, nxnp(graph, nodelist=sorted(graph.nodes())))
+                      for subj, graph in graphs.iteritems())
     mat = np.zeros(adj.values()[0].shape)
     for subj in adj:
         mat += adj[subj]
@@ -191,8 +192,8 @@ def rankGraphs(graphs):
     rankGraphs = {}
     for subj, graph in graphs.iteritems():
         rgraph = nx.Graph()
-        edge_ar = np.asarray([x[2] for x in graph.edges(data=True)])
-        rank_edge = np.argsort(edge_ar)  # rank the edges
+        edge_ar = np.asarray([x[2]['weight'] for x in graph.edges(data=True)])
+        rank_edge = rankdata(edge_ar)  # rank the edges
         for ((u, v, d), rank) in zip(graph.edges(data=True), rank_edge):
             rgraph.add_edge(u, v, weight=rank)
         rankGraphs[subj] = rgraph
