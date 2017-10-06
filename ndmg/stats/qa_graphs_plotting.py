@@ -28,15 +28,21 @@ import os
 
 
 def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
-                    log=True, hemispheres=True):
+                    log=True, hemispheres=True, modality='dwi'):
     fnames = [name for name in os.listdir(basepath)
               if os.path.splitext(name)[1] == '.pkl']
     fnames = sorted(fnames)
     paths = [os.path.join(basepath, item) for item in fnames]
     keys = ["_".join(n.split('.')[0].split('_')[1:]) for n in fnames]
-    labs = ['Betweenness Centrality', 'Clustering Coefficient', 'Degree',
-            'Edge Weight', 'Eigenvalue', 'Locality Statistic-1',
-            'Number of Non-zeros', 'Mean Connectome']
+    print(keys)
+    if modality == 'dwi':
+        labs = ['Betweenness Centrality', 'Clustering Coefficient', 'Degree',
+                'Edge Weight', 'Eigenvalue', 'Locality Statistic-1',
+                'Number of Non-zeros', 'Mean Connectome']
+    else:
+        labs = ['Betweenness Centrality', 'Clustering Coefficient', 'Degree',
+                'Eigenvalue', 'Locality Statistic-1', 'Number of Non-zeros',
+                'Average Path Length', 'Mean Connectome']
 
     traces = list(())
     for idx, curr in enumerate(paths):
@@ -51,8 +57,11 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
         elif keys[idx] == 'degree_distribution':
             fig = pp.plot_degrees(dat, hemi=hemispheres)
             if hemispheres:
+                maxdat = np.max([np.max(dat[key][k])
+                                 for key in dat.keys()
+                                 for k in dat[key]])
                 anno = [dict(x=dims/3,
-                             y=4*dims/7,
+                             y=4*float(maxdat/7),
                              xref='x3',
                              yref='y3',
                              text='ipsilateral',
@@ -60,7 +69,7 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
                              font=dict(color='rgba(0.0,0.0,0.0,0.6)',
                                        size=14)),
                         dict(x=dims/3,
-                             y=3.7*dims/7,
+                             y=3.7*float(maxdat/7),
                              xref='x3',
                              yref='y3',
                              text='contralateral',
@@ -83,11 +92,11 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
         multi.layout['x'+key]['domain'] = [d[0], d[1]-0.0125]
         multi.layout['x'+key]['zeroline'] = False
         multi.layout['y'+key]['zeroline'] = False
-        multi.layout['y'+key]['title'] = labs[idx]
+        multi.layout['y'+key]['title'] = ''
         multi.layout['x'+key]['title'] = 'Node'
         multi.layout['x'+key]['nticks'] = 3
         multi.layout['y'+key]['nticks'] = 3
-        if idx in [0, 1, 2, 3, 5]:
+        if (idx in [0, 1, 2, 3, 4, 6] and modality == 'func') or (idx in [0, 1, 2, 3, 5] and modality == 'dwi'):
             multi.layout['x'+key]['range'] = [1, dims]
             multi.layout['x'+key]['tickvals'] = [1, dims/2, dims]
             if idx in [2]:
@@ -95,16 +104,17 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
                     multi.layout['annotations'] = anno
             elif log:
                 multi.layout['y'+key]['type'] = 'log'
-                multi.layout['y'+key]['title'] += ' (log scale)'
-        if idx in [3]:
+                multi.layout['y'+key]['title'] += 'log'
+        if idx in [3] and modality == 'dwi':
             multi.layout['x'+key]['range'] = [1, edges]
             multi.layout['x'+key]['tickvals'] = [1, edges/2, edges]
             multi.layout['x'+key]['title'] = 'Edge'
-        if idx in [4]:
+        if (idx in [4] and modality == 'dwi') or (idx in [3] and modality == 'func'):
             multi.layout['x'+key]['range'] = [1, dims]
             multi.layout['x'+key]['tickvals'] = [1, dims/2, dims]
             multi.layout['x'+key]['title'] = 'Dimension'
-        if idx in [6]:
+        multi.layout['y'+key]['title'] += labs[idx]
+        if (idx in [6] and modality == 'dwi') or (idx in [5] and modality == 'func'):
             multi.layout['y'+key]['title'] = 'Relative Probability'
             multi.layout['x'+key]['title'] = labs[idx]
         if idx in [7]:
@@ -117,7 +127,6 @@ def make_panel_plot(basepath, outf, dataset=None, atlas=None, minimal=True,
             multi.layout['y'+key]['ticktext'] = [1, dims/2, dims]
             if log:
                 multi.layout['x'+key]['title'] += ' (log10)'
-
     if dataset is not None and atlas is not None:
         if atlas == 'desikan':
             atlas = atlas.capitalize()

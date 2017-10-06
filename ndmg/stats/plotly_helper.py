@@ -32,7 +32,7 @@ def plot_heatmap(dats, name=None, ylab=None, xlab=None):
                     z=dats,
                     name=name,
                     showscale=False,
-                    colorscale='Viridis'
+                    colorscale='Reds'
                    )
            ]
     layout = std_layout(name, ylab, xlab)

@@ -197,7 +197,8 @@ def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
             compute_metrics(fs, tmp_out, label, modality=modality)
             outf = op.join(tmp_out, 'plot')
             make_panel_plot(tmp_out, outf, dataset=dataset, atlas=label,
-                            minimal=minimal, log=log, hemispheres=hemispheres)
+                            minimal=minimal, log=log, hemispheres=hemispheres,
+                            modality=modality)
         except Exception, e:
             print(traceback.format_exc())
             print("Failed group analysis for {} parcellation.".format(label))

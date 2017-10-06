@@ -118,12 +118,25 @@ def compute_metrics(fs, outdir, atlas, verb=False, modality='dwi'):
     show_means(total_deg)
 
     #  Edge Weights
-    print("Computing: Edge Weight Sequence")
-    temp_ew = OrderedDict((s, [graphs[s].get_edge_data(e[0], e[1])['weight']
-                           for e in graphs[s].edges()]) for s in graphs)
-    ew = temp_ew
-    write(outdir, 'edge_weight', ew, atlas)
-    show_means(temp_ew)
+    if modality == 'dwi':
+        print("Computing: Edge Weight Sequence")
+        temp_ew = OrderedDict((s, [graphs[s].get_edge_data(e[0], e[1])['weight']
+                               for e in graphs[s].edges()]) for s in graphs)
+        ew = temp_ew
+        write(outdir, 'edge_weight', ew, atlas)
+        show_means(temp_ew)
+    else:
+        temp_pl = OrderedDict()
+        print("Computing: Path Length Sequence")
+        nxappl = nx.all_pairs_dijkstra_path_length
+        for s in graphs:
+            apd = nxappl(graphs[s])
+            # iterate over the nodes to find the average distance to each node
+            avg_path = [np.nanmean(v.values()) for k, v in apd.iteritems()]
+            temp_pl[s] = np.array(avg_path)
+        pl = temp_pl
+        write(outdir, 'path_length', pl, atlas)
+        show_means(pl)
 
     # Eigen Values
     print("Computing: Eigen Value Sequence")
