@@ -24,7 +24,129 @@ import re
 from itertools import product
 import boto3
 from ndmg.utils import utils as mgu
+import os
 
+
+class name_resource:
+    """
+    A class for naming derivatives under the BIDs spec.
+    """
+    def __init__(self, modf, t1wf, tempf, opath):
+        self.__subi__ = os.path.basename(modf).split('.')[0]
+        self.__anati__ = os.path.basename(t1wf).split('.')[0]
+        self.__sub__ = re.search(r'(sub-)(?!.*sub-).*?(?=[_])', modf).group()
+        self.__ses__ = re.search(r'(ses-)(?!.*ses-).*?(?=[_])', modf)
+        if self.__ses__:
+            self.__ses__ = self.__ses__.group()
+        self.__run__ = re.search(r'(run-)(?!.*run-).*?(?=[_])', modf)
+        if self.__run__:
+            self.__run__ = self.__run__.group()
+        self.__temp__ = os.path.basename(tempf).split('.')[0]
+        self.__space__ = re.split(r'[._]', self.__temp__)[0]
+        self.__res__ = re.search(r'(res-)(?!.*res-).*?(?=[_])', tempf)
+        if self.__res__:
+            self.__res__ = self.__res__.group()
+        self.__basepath__ = opath
+        self.__outdir__ = self._get_outdir()
+        return
+
+    def add_dirs(self, paths, labels, label_dirs):
+        """
+        creates tmp and permanent directories for the desired suffixes.
+
+        **Positional Arguments:
+            - paths:
+                - a dictionary of keys to suffix directories desired.
+        """
+        self.dirs = {}
+        if not isinstance(labels, list):
+            labels = [labels]
+        dirtypes = ['output', 'tmp', 'qa']
+        for dirt in dirtypes:
+            self.dirs[dirt] = {}
+            if dirt == 'output':
+                addstr = ''
+            else:
+                addstr = dirt
+            self.dirs[dirt]['base'] = os.path.join(self.get_outdir(), addstr)
+            for kwd, path in paths.iteritems():
+                newdir = os.path.join(*[self.get_outdir(), addstr, path])
+                if kwd in label_dirs:  # levels with label granularity
+                    self.dirs[dirt][kwd] = {}
+                    for label in labels:
+                        labname = self.get_label(label)
+                        self.dirs[dirt][kwd][labname] = os.path.join(newdir,
+                           labname)
+                else:
+                    self.dirs[dirt][kwd] = newdir
+        newdirs = flatten(self.dirs, [])
+        cmd = "mkdir -p {}".format(" ".join(newdirs))
+        mgu.execute_cmd(cmd)  # make the directories
+        return
+
+    def _get_outdir(self):
+        """
+        Called by constructor to initialize the output directory.
+        """
+        olist = [self.__basepath__]
+        olist.append(self.__sub__)
+        if self.__ses__:
+            olist.append(self.__ses__)
+        return os.path.join(*olist)
+
+    def get_outdir(self):
+        """
+        Returns the base  output directory for a particular subject
+        (+ appropriate granularity).
+        """
+        return self.__outdir__
+
+    def get_label(self, label):
+        """
+        returns the formatted label information a parcellation.
+        """
+        return "label-{}".format(re.split(r'[._]',
+                                 os.path.basename(label))[0])
+
+    def get_template_space(self):
+        """
+        returns the formatted spatial information associated with a template.-
+        """
+        return "space-{}_res-{}".format(self.__space__, self.__res__)
+
+    def name_derivative(self, folder, derivative):
+        """
+        names a particular derivative by the following spec:
+
+        self.__opath__/mod/type/[specific/]derivative
+
+        ***Positional Arguments:**
+
+            derivative:
+                - the name of the file to be produced.
+            mod:
+                - the modality. Should be a BIDs-compliant name (bold, t1w,
+                anat).
+            type:
+                - the inner directory to place the file.
+            specific:
+                - an additional, optional layer of granularity.
+        """
+        return os.path.join(*[folder, derivative])
+
+    def get_mod_source(self):
+        return self.__subi__
+
+    def get_anat_source(self):
+        return self.__anati__
+
+def flatten(current, result=[]):
+    if isinstance(current, dict):
+        for key in current:
+            flatten(current[key], result)
+    else:
+        result.append(current)
+    return result
 
 def sweep_directory(bdir, subj=None, sesh=None, task=None, run=None, modality='dwi'):
     """

@@ -35,6 +35,7 @@ from ndmg.preproc import preproc_anat as mgap
 from ndmg.nuis import nuis as mgn
 from ndmg.stats.qa_reg import *
 import traceback
+from ndmg.utils.bids_utils import name_resource
 
 
 def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
@@ -70,140 +71,132 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     """
     startTime = datetime.now()
 
-    # Create derivative output directories
-    func_name = mgu.get_filename(func)
-    t1w_name = mgu.get_filename(t1w)
-    atlas_name = mgu.get_filename(atlas)
+    namer = name_resource(func, t1w, atlas, outdir)
 
-    paths = {'f_prep': "reg/func/preproc",
-             'a_prep': "reg/t1w/preproc",
-             'sreg_f': "reg/func/align/self",
-             'sreg_a': "reg/t1w/align/self",
-             'treg_f': "reg/func/align/template",
-             'treg_a': "reg/t1w/align/template",
-             'nuis': "nuis",
-             'ts_voxel': "timeseries/voxel",
-             'ts_roi': "timeseries/roi"}
-    finals = {'ts_roi': paths['ts_roi'],
-              'ts_voxel': paths['ts_voxel'],
-              'conn': "connectomes"}
+    paths = {'prep_f': "func/preproc",
+             'prep_a': "anat/preproc",
+             'reg_f': "func/registered",
+             'reg_a': "anat/registered",
+             'nuis_f': "func/clean",
+             'nuis_a': "func/clean",
+             'ts_voxel': "func/voxel-timeseries",
+             'ts_roi': "func/roi-timeseries",
+             'conn': "func/connectomes"}
 
-    tmpdir = '{}/tmp/{}'.format(outdir, func_name)
-    qadir = "{}/qa/{}".format(outdir, func_name)
+    opt_dirs = ['prep_f', 'prep_a', 'reg_f', 'reg_a', 'nuis_f']
+    clean_dirs = ['nuis_a']
+    label_dirs = ['ts_roi', 'conn']  # create label level granularity
 
-    tmp_dirs = {}
-    qa_dirs = {}
-    for (key, value) in (paths).iteritems():
-        tmp_dirs[key] = "{}/{}".format(tmpdir, paths[key])
-        qa_dirs[key] = "{}/{}".format(qadir, paths[key])
-    qc_stats = "{}/{}_stats.pkl".format(qadir, func_name)
-
-    final_dirs = {}
-    for (key, value) in finals.iteritems():
-        final_dirs[key] = "{}/{}".format(outdir, finals[key])
-
-    cmd = "mkdir -p {} {} {}".format(" ".join(tmp_dirs.values()),
-                                     " ".join(qa_dirs.values()),
-                                     " ".join(final_dirs.values()))
-    mgu.execute_cmd(cmd)
-
-    # Graphs are different because of multiple parcellations
-    if isinstance(labels, list):
-        label_name = [mgu.get_filename(x) for x in labels]
-        for label in label_name:
-            cmd = "mkdir -p {}/{} {}/{} {}/{}"
-            cmd = cmd.format(final_dirs['ts_roi'], label, final_dirs['conn'],
-                             label, qa_dirs['ts_roi'], label)
-            mgu.execute_cmd(cmd)
-    else:
-        label_name = mgu.get_filename(labels)
-        label = label_name
-        cmd = "mkdir -p {}/{} {}/{} {}/{}"
-        cmd = cmd.format(final_dirs['ts_roi'], label, final_dirs['conn'],
-                         label, qa_dirs['ts_roi'], label)
-        mgu.execute_cmd(cmd)
+    namer.add_dirs(paths, labels, label_dirs)
+    qc_stats = "{}/{}_stats.pkl".format(namer.dirs['qa']['base'],
+        namer.get_mod_source())
 
     # Create derivative output file names
-    preproc_func = "{}/{}_preproc.nii.gz".format(tmp_dirs['f_prep'], func_name)
-    preproc_t1w_brain = "{}/{}_preproc_brain.nii.gz".format(tmp_dirs['a_prep'],
-                                                            t1w_name)
-    aligned_func = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_f'], func_name)
-    aligned_t1w = "{}/{}_aligned.nii.gz".format(tmp_dirs['treg_a'], t1w_name)
-    motion_func = "{}/{}_mc.nii.gz".format(tmp_dirs['f_prep'], func_name)
-    nuis_func = "{}/{}_nuis.nii.gz".format(tmp_dirs['nuis'], func_name)
-    voxel_ts = "{}/timeseries/voxel/{}_voxel.npz".format(outdir, func_name)
+    reg_fname = "{}_{}".format(namer.get_mod_source(),
+        namer.get_template_space())
+    reg_aname = "{}_{}".format(namer.get_anat_source(),
+        namer.get_template_space())
+    
+    preproc_func = namer.name_derivative(namer.dirs['output']['prep_f'],
+        "{}_preproc.nii.gz".format(namer.get_mod_source()))
+    motion_func = namer.name_derivative(namer.dirs['tmp']['prep_f'],
+        "{}_variant-mc_preproc.nii.gz".format(namer.get_mod_source()))
+    preproc_t1w_brain = namer.name_derivative(namer.dirs['output']['prep_a'],
+        "{}_preproc_variant-brain.nii.gz".format(namer.get_anat_source()))
+
+    aligned_func = namer.name_derivative(namer.dirs['output']['reg_f'],
+        "{}_registered.nii.gz".format(reg_fname))
+    aligned_t1w = namer.name_derivative(namer.dirs['output']['reg_a'],
+        "{}_registered.nii.gz".format(reg_aname))
+    
+    nuis_func = namer.name_derivative(namer.dirs['output']['nuis_f'],
+        "{}_clean.nii.gz".format(reg_fname))
+    voxel_ts = namer.name_derivative(namer.dirs['output']['ts_voxel'],
+        "{}_timeseries.nii.gz".format(reg_fname))
 
     print("This pipeline will produce the following derivatives...")
-    print("fMRI volumes preprocessed: {}".format(preproc_func))
-    print("fMRI volumes motion corrected: {}".format(motion_func))
-    print("fMRI volume registered to atlas: {}".format(aligned_func))
+    if not clean:
+        print("fMRI volumes preprocessed: {}".format(preproc_func))
+        print("T1w volume preprocessed: {}".format(preproc_t1w_brain))
+        print("fMRI volume registered to atlas: {}".format(aligned_func))
+        print("fMRI volumes preprocessed: {}".format(preproc_func))
     print("Voxel timecourse in atlas space: {}".format(voxel_ts))
 
     # Again, connectomes are different
-    connectomes = ["{}/connectomes/{}/{}_{}.{}".format(outdir, x, func_name,
-                                                       x, fmt)
-                   for x in label_name]
-    roi_ts = ["{}/{}/{}_{}.npz".format(final_dirs['ts_roi'], x, func_name, x)
-              for x in label_name]
-    print("ROI timeseries downsampled to given labels: " +
-          ", ".join([x for x in roi_ts]))
-    print("Connectomes downsampled to given labels: " +
-          ", ".join([x for x in connectomes]))
+    if not isinstance(labels, list):
+        labels = [labels]
+    connectomes = [namer.name_derivative(
+        namer.dirs['output']['conn'][namer.get_label(lab)],
+        "{}_{}_measure-correlation.{}".format(namer.get_mod_source(),
+            namer.get_label(lab), fmt)) for lab in labels]
 
-    qc_func = qa_func()  # for quality control
+    roi_ts = [namer.name_derivative(
+        namer.dirs['output']['ts_roi'][namer.get_label(lab)],
+        "{}_{}_variant-mean_timeseries.npz".format(namer.get_mod_source(),
+                                                   namer.get_label(lab)))
+        for lab in labels]
+
+    print("ROI timeseries downsampled to given labels: " +
+          ", ".join(roi_ts))
+    print("Connectomes downsampled to given labels: " +
+          ", ".join(connectomes))
+
+    qc_func = qa_func(namer)  # for quality control
     # Align fMRI volumes to Atlas
     # -------- Preprocessing Steps --------------------------------- #
     print "Preprocessing volumes..."
-    f_prep = mgfp(func, preproc_func, motion_func, tmp_dirs['f_prep'])
+    f_prep = mgfp(func, preproc_func, motion_func, namer.dirs['tmp']['prep_f'])
     f_prep.preprocess(stc=stc)
-    qc_func.func_preproc_qa(f_prep, qa_dirs['f_prep'])
+    qc_func.func_preproc_qa(f_prep)
 
-    a_prep = mgap(t1w, preproc_t1w_brain, tmp_dirs['a_prep'])
+    a_prep = mgap(t1w, preproc_t1w_brain, namer.dirs['tmp']['prep_a'])
     a_prep.preprocess()
-    qc_func.anat_preproc_qa(a_prep, qa_dirs['a_prep'])
+    qc_func.anat_preproc_qa(a_prep)
 
     # ------- Alignment Steps -------------------------------------- #
     print "Aligning volumes..."
     func_reg = mgreg(preproc_func, t1w, preproc_t1w_brain,
                      atlas, atlas_brain, atlas_mask, aligned_func,
-                     aligned_t1w, tmp_dirs)
+                     aligned_t1w, namer.dirs['tmp'])
     func_reg.self_align()
-    qc_func.self_reg_qa(func_reg, qa_dirs)
+    qc_func.self_reg_qa(func_reg)
     func_reg.template_align()
-    qc_func.temp_reg_qa(func_reg, qa_dirs)
+    qc_func.temp_reg_qa(func_reg)
 
     # ------- Nuisance Correction Steps ---------------------------- #
     print "Correcting Nuisance Variables..."
-    nuis = mgn(aligned_func, aligned_t1w, nuis_func, tmp_dirs['nuis'],
+    nuis = mgn(aligned_func, aligned_t1w, nuis_func, namer.dirs['tmp'],
                lv_mask=lv_mask, mc_params=f_prep.mc_params)
     nuis.nuis_correct()
 
-    qc_func.nuisance_qa(nuis, qa_dirs['nuis'])
+    qc_func.nuisance_qa(nuis)
 
     # ------ Voxelwise Timeseries Steps ---------------------------- #
     print "Extracting Voxelwise Timeseries..."
     voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
-    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask,
-                        qcdir=qa_dirs['ts_voxel'])
+    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask)
 
     # ------ ROI Timeseries Steps ---------------------------------- #
     for idx, label in enumerate(label_name):
         print "Extracting ROI timeseries for " + label + " parcellation..."
         ts = mgts().roi_timeseries(nuis_func, labels[idx], roi_ts[idx])
-        labeldir = "{}/{}".format(qa_dirs['ts_roi'], label)
         connectome = mgg(ts.shape[0], labels[idx], sens="func")
-        connectome.cor_graph(ts)
+        conn = connectome.cor_graph(ts)
         connectome.summary()
         connectome.save_graph(connectomes[idx], fmt=fmt)
-        qc_func.roi_ts_qa(roi_ts[idx], aligned_func, aligned_t1w,
-                          labels[idx], labeldir)
+        qc_func.roi_ts_qa(ts, conn, aligned_func,
+                          aligned_t1w, labels[idx])
     # save our statistics so that we can do group level
     qc_func.save(qc_stats)
 
     print("Execution took: {}".format(datetime.now() - startTime))
+    cmd = "rm -rf {}".format(namer['tmp']['base'])
     if clean:
-        cmd = "rm -rf {}".format(tmpdir)
-        mgu.execute_cmd(cmd)
+        deldirs = " ".join([namer['output'][dirn]
+                            for dirn in opt_dirs + clean_dirs])
+        cmd = "{} {}".format(cmd, deldirs)
+    mgu.execute_cmd(cmd)
+
     print("Complete!")
 
 

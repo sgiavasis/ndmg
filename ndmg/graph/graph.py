@@ -128,7 +128,7 @@ class graph(object):
 
         edge_list = [(k[0], k[1], v) for k, v in self.edge_dict.items()]
         self.g.add_weighted_edges_from(edge_list)
-        pass
+        return cor
 
     def get_graph(self):
         """

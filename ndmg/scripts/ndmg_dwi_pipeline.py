@@ -37,6 +37,8 @@ import nibabel as nb
 import os
 from ndmg.graph import biggraph as ndbg
 import traceback
+from ndmg.utils.bids_utils import name_resource
+
 
 os.environ["MPLCONFIGDIR"] = "/tmp/"
 

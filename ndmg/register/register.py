@@ -351,7 +351,7 @@ class epi_register(register):
         self.taligned_t1w = aligned_t1w
         self.outdir = outdir
         t1w_skull = "{}/{}_temp-aligned_skull.nii.gz"
-        self.taligned_t1w_skull = t1w_skull.format(self.outdir['treg_a'],
+        self.taligned_t1w_skull = t1w_skull.format(self.outdir['reg_a'],
                                                    self.t1w_name)
         # strategies for qa later
         self.sreg_strat = None
@@ -366,7 +366,7 @@ class epi_register(register):
             self.simple = True  # if the input is poor
         # name intermediates for self-alignment
         self.saligned_xfm = "{}/{}_self-aligned.mat".format(
-            self.outdir['sreg_f'],
+            self.outdir['reg_f'],
             self.epi_name)
         pass
 
@@ -376,11 +376,11 @@ class epi_register(register):
         cost function to get the two images close, and then uses bbr
         to obtain a good alignment of brain boundaries.
         """
-        xfm_init1 = "{}/{}_xfm_epi2t1w_init1.mat".format(self.outdir['sreg_f'],
+        xfm_init1 = "{}/{}_xfm_epi2t1w_init1.mat".format(self.outdir['reg_f'],
                                                          self.epi_name)
-        xfm_init2 = "{}/{}_xfm_epi2t1w_init2.mat".format(self.outdir['sreg_f'],
+        xfm_init2 = "{}/{}_xfm_epi2t1w_init2.mat".format(self.outdir['reg_f'],
                                                          self.epi_name)
-        epi_init = "{}/{}_local.nii.gz".format(self.outdir['sreg_f'],
+        epi_init = "{}/{}_local.nii.gz".format(self.outdir['reg_f'],
                                                self.epi_name)
 
         # perform an initial alignment with a gentle translational guess
@@ -400,21 +400,21 @@ class epi_register(register):
         # if we have a quality T1w image (resolution < 2x2x2) we will get
         # a decent segmentation, and then we can use bbr from flirt
         if not self.simple:
-            xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['sreg_f'],
+            xfm_init3 = "{}/{}_xfm_epi2t1w.mat".format(self.outdir['reg_f'],
                                                        self.epi_name)
-            xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['sreg_f'],
+            xfm_bbr = "{}/{}_xfm_bbr.mat".format(self.outdir['reg_f'],
                                                  self.epi_name)
-            epi_bbr = "{}/{}_bbr.nii.gz".format(self.outdir['sreg_f'],
+            epi_bbr = "{}/{}_bbr.nii.gz".format(self.outdir['reg_f'],
                                                 self.epi_name)
             # use a 6 dof registration with near-local initializer
             self.align(self.epi, self.t1w_brain, xfm=xfm_init3,
                        init=xfm_init2, bins=None, dof=6, cost=None,
                        searchrad=None, sch=None)
             # segment the t1w brain into probability maps
-            map_path = "{}/{}_t1w_seg".format(self.outdir['sreg_a'],
+            map_path = "{}/{}_t1w_seg".format(self.outdir['reg_a'],
                                               self.t1w_name)
             maps = mgnu.segment_t1w(self.t1w_brain, map_path)
-            wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['sreg_a'],
+            wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir['reg_a'],
                                                 self.t1w_name)
             self.wm_mask = wm_mask
             # use the probability maps to extract white matter mask
@@ -453,10 +453,10 @@ class epi_register(register):
         NOTE: for this to work, must first have called self-align.
         """
         xfm_t1w2temp_init = "{}/{}_xfm_t1w2temp_init.mat".format(
-            self.outdir['treg_a'],
+            self.outdir['reg_a'],
             self.t1w_name
         )
-        xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['treg_a'],
+        xfm_t1w2temp = "{}/{}_xfm_t1w2temp.mat".format(self.outdir['reg_a'],
                                                        self.t1w_name)
 
         # linear registration initializer with local optimisation in
@@ -479,14 +479,14 @@ class epi_register(register):
                    wmseg=None, init=xfm_t1w2temp_init)
 
         self.epi_aligned_skull = "{}/{}_temp-aligned_skull.nii.gz".format(
-            self.outdir['treg_f'],
+            self.outdir['reg_f'],
             self.epi_name
         )  # template-aligned with skull
         # if the atlas is MNI 2mm, then we have a config file for it
         if (nb.load(self.atlas).get_data().shape in [(91, 109, 91)] and
                 (self.simple is False)):
             warp_t1w2temp = "{}/{}_warp_t1w2temp.nii.gz".format(
-                self.outdir['treg_a'],
+                self.outdir['reg_a'],
                 self.epi_name
             )  # to store the template warp
             # use FNIRT to nonlinearly align from the t1w to the
@@ -507,7 +507,7 @@ class epi_register(register):
             print "Using linear template registration."
 
             xfm_epi2temp = "{}/{}_xfm_epi2temp.mat".format(
-                self.outdir['treg_f'],
+                self.outdir['reg_f'],
                 self.epi_name
             )
             # just combine our 12 dof linear transform from t1w to template
@@ -527,5 +527,5 @@ class epi_register(register):
         
         # use AFNI to extract brain from our t1w volume
         mgru.extract_t1w_brain(self.taligned_t1w_skull, self.taligned_t1w,
-                               self.outdir['treg_a'])
+                               self.outdir['reg_a'])
         pass

@@ -25,7 +25,7 @@ import matplotlib
 import numpy as np
 from ndmg.utils import utils as mgu
 from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals, \
-    registration_score
+    registration_score, plot_connectome
 from ndmg.stats.qa_reg import reg_mri_pngs, plot_brain, plot_overlays
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -33,7 +33,8 @@ import pickle
 
 
 class qa_func(object):
-    def __init__(self):
+    def __init__(self, name):
+        self.namer = name
         pass
 
     @staticmethod
@@ -65,7 +66,7 @@ class qa_func(object):
         f.close()
         pass
 
-    def func_preproc_qa(self, prep, qcdir):
+    def func_preproc_qa(self, prep):
         """
         A function for performing quality control given motion
         correction information. Produces plots of the motion correction
@@ -77,12 +78,8 @@ class qa_func(object):
                 - the module used for preprocessing.
             scan_id:
                 - the id of the subject.
-            qcdir:
-                - the quality control directory.
         """
         print "Performing QA for Functional Preprocessing..."
-        cmd = "mkdir -p {}".format(qcdir)
-        mgu.execute_cmd(cmd)
         func_name = mgu.get_filename(prep.preproc_func)
 
         raw_im = nb.load(prep.func)
@@ -93,7 +90,8 @@ class qa_func(object):
         # since the brain will be moving in time
         rawfig = plot_brain(raw_dat.mean(axis=3), minthr=10)
         rawfig.savefig(
-            "{}/{}_raw.png".format(qcdir, func_name)
+            "{}/{}_raw.png".format(self.namer.dirs['qa']['prep_f'],
+                func_name)
         )
 
         prep_im = nb.load(prep.preproc_func)
@@ -105,7 +103,8 @@ class qa_func(object):
         prepfig = plot_brain(prep_dat.mean(axis=3), minthr=10)
         nvols = prep_dat.shape[3]
         prepfig.savefig(
-            "{}/{}_preproc.png".format(qcdir, func_name)
+            "{}/{}_preproc.png".format(self.namer.dirs['qa']['prep_f'],
+                func_name)
         )
 
         # get the functional preprocessing motion parameters
@@ -160,9 +159,9 @@ class qa_func(object):
             fig = plot_signals(params, labels, title=title,
                                xlabel=xlab, ylabel=ylab)
 
-            fname_reg = "{}/{}_{}_parameters.png".format(qcdir,
-                                                         func_name,
-                                                         name)
+            fname_reg = "{}/{}_{}_parameters.png".format(
+                self.namer.dirs['qa']['prep_f'], func_name, name
+                )
             fig.savefig(fname_reg, format='png')
             plt.close(fig)
 
@@ -176,7 +175,7 @@ class qa_func(object):
         prep.num_fd_gt_500um = np.sum(fd_pars > .5)
         pass
 
-    def anat_preproc_qa(self, prep, qa_dir):
+    def anat_preproc_qa(self, prep):
         """
         A function that produces anatomical preprocessing quality assurance
         figures.
@@ -197,13 +196,14 @@ class qa_func(object):
                                               prep.anat_preproc_brain)
         # save iterator
         for plotname, fig in figs.iteritems():
-            fname = "{}/{}_{}.png".format(qa_dir, prep.anat_name, plotname)
+            fname = "{}/{}_{}.png".format(self.namer.dirs['qa']['prep_a'],
+                prep.anat_name, plotname)
             fig.tight_layout()
             fig.savefig(fname)
             plt.close(fig)
         pass
 
-    def self_reg_qa(self, freg, qa_dirs):
+    def self_reg_qa(self, freg):
         """
         A function that produces self-registration quality control figures.
 
@@ -211,8 +211,6 @@ class qa_func(object):
 
             freg:
                 - the func_register object from registration.
-            sreg_func_dir:
-                - the directory to place functional qc images.
         """
         print "Performing QA for Self-Registration..."
         # overlap statistic for the functional and anatomical
@@ -224,37 +222,51 @@ class qa_func(object):
         self.self_reg_sc = sreg_sc
         # use the jaccard score in the filepath to easily
         # identify failed subjects
-        sreg_f_final = "{}/{}_jaccard_{:.0f}".format(
-            qa_dirs['sreg_f'],
+        sreg_f_final = "{}/space-T1w/{}_jaccard_{:.0f}".format(
+            self.namer.dirs['qa']['sreg_f'],
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
-        sreg_a_final = "{}/{}_jaccard_{:.0f}".format(
-            qa_dirs['sreg_a'],
+        sreg_a_final = "{}/space-T1w/{}_jaccard_{:.0f}".format(
+            self.namer.dirs['qa']['sreg_a'],
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
         cmd = "mkdir -p {} {}".format(sreg_f_final, sreg_a_final)
         mgu.execute_cmd(cmd)
-        func_name = mgu.get_filename(freg.sreg_brain)
-        t1w_name = mgu.get_filename(freg.t1w)
         sreg_fig.savefig(
-            "{}/{}_epi2t1w.png".format(sreg_f_final, func_name)
+            "{}/{}_bold_t1w_overlap.png".format(sreg_f_final,
+                self.namer.get_mod_source())
         )
         # produce plot of the white-matter mask used during bbr
         if freg.wm_mask is not None:
             mask_dat = nb.load(freg.wm_mask).get_data()
             t1w_dat = nb.load(freg.t1w_brain).get_data()
             f_mask = plot_overlays(t1w_dat, mask_dat, minthr=0, maxthr=100)
-            fname_mask = "{}/{}_{}.png".format(sreg_a_final, t1w_name,
-                                               "_wm_mask")
+            fname_mask = "{}/{}_{}.png".format(sreg_a_final,
+                                               self.namer.get_anat_source,
+                                               "wmm")
             f_mask.savefig(fname_mask, format='png')
             plt.close(f_mask)
 
         plt.close(sreg_fig)
         pass
 
-    def temp_reg_qa(self, freg, qa_dirs):
+    def aligned_func_name():
+        """
+        A util to return aligned func name.
+        """
+        return "{}_{}".format(self.namer.get_mod_source(),
+            self.namer.get_template_source())
+
+    def aligned_anat_name():
+        """
+        A util to return aligned func name.
+        """
+        return "{}_{}".format(self.namer.get_anat_source(),
+            self.namer.get_template_source())
+
+    def temp_reg_qa(self, freg):
         """
         A function that produces self-registration quality control figures.
 
@@ -262,8 +274,6 @@ class qa_func(object):
 
             freg:
                 - the functional registration object.
-            qa_dirs:
-                - a dictionary of the directories to place qa files.
         """
         print "Performing QA for Template-Registration..."
         # overlap statistic and plot btwn template-aligned fmri
@@ -276,24 +286,25 @@ class qa_func(object):
         # use the registration score in the filepath for easy
         # identification of failed subjects
         self.temp_reg_sc = treg_sc
-        treg_f_final = "{}/{}_jaccard_{:.0f}".format(
-            qa_dirs['treg_f'],
+        treg_f_final = "{}/template/{}_jaccard_{:.0f}".format(
+            self.namer.dirs['qa']['reg_f'],
             freg.treg_strat,
             self.temp_reg_sc*1000
         )
-        treg_a_final = "{}/{}_jaccard_{:.0f}".format(
-            qa_dirs['treg_a'],
+        treg_a_final = "{}/template/{}_jaccard_{:.0f}".format(
+            self.namer.dirs['qa']['reg_a'],
             freg.treg_strat,
             self.temp_reg_sc*1000
         )
         cmd = "mkdir -p {} {}".format(treg_f_final, treg_a_final)
         mgu.execute_cmd(cmd)
-        func_name = mgu.get_filename(freg.taligned_epi)
+        func_name = self.aligned_func_name()
         treg_fig.savefig(
-            "{}/{}_epi2temp.png".format(treg_f_final, func_name)
+            "{}/{}_{}_epi2temp_overlap.png".format(treg_f_final,
+                func_name, self.namer.get_template_space)
         )
         plt.close(treg_fig)
-        t1w_name = mgu.get_filename(freg.taligned_t1w)
+        t1w_name = self.aligned_anat_name()
         # overlap between the template-aligned t1w and the atlas brain
         # that we are aligning to
         t1w2temp_fig = plot_overlays(freg.taligned_t1w, freg.atlas_brain,
@@ -337,7 +348,7 @@ class qa_func(object):
         self.snr = mean_brain/std_nonbrain  # definition of snr
         self.cnr = std_brain/std_nonbrain  # definition of cnr
 
-        func_name = mgu.get_filename(func)
+        func_name = self.aligned_func_name()
 
         np.seterr(divide='ignore', invalid='ignore')
         mean_ts = fmri_dat.mean(axis=3)  # temporal mean
@@ -355,7 +366,7 @@ class qa_func(object):
             plt.close(plot)
         pass
 
-    def nuisance_qa(self, nuisobj, qcdir):
+    def nuisance_qa(self, nuisobj):
         """
         A function to assess the quality of nuisance correction.
 
@@ -363,10 +374,9 @@ class qa_func(object):
 
             nuisobj:
                 - the nuisance correction object.
-            qcdir:
-                - the directory to place quality control images.
         """
         print "Performing QA for Nuisance..."
+        qcdir = self.namer.dirs['qa']['nuis']
         maskdir = "{}/{}".format(qcdir, "masks")
         glmdir = "{}/{}".format(qcdir, "glm_correction")
         fftdir = "{}/{}".format(qcdir, "filtering")
@@ -374,7 +384,7 @@ class qa_func(object):
         cmd = "mkdir -p {} {} {}".format(qcdir, maskdir, glmdir)
         mgu.execute_cmd(cmd)
 
-        anat_name = mgu.get_filename(nuisobj.smri)
+        anat_name = self.aligned_anat_name()
         t1w_dat = nb.load(nuisobj.smri).get_data()
         # list of all possible masks
         masks = [nuisobj.lv_mask, nuisobj.wm_mask, nuisobj.gm_mask,
@@ -401,6 +411,7 @@ class qa_func(object):
                       "Motion Regressors", "aCompCor Regressors"]
         # whether we should include legend labels
         label_include = [True, True, False, True]
+        func_name = self.aligned_func_name()
         # iterate over tuples of our plotting variables
         for (reg, name, title, lab) in zip(glm_regs, glm_names, glm_titles,
                                            label_include):
@@ -419,7 +430,7 @@ class qa_func(object):
                                    xlabel='Timepoint', ylabel='Intensity',
                                    lab_incl=lab)
                 fname_reg = "{}/{}_{}_regressors.png".format(glmdir,
-                                                             anat_name,
+                                                             func_name,
                                                              name)
                 fig.savefig(fname_reg, format='png')
                 plt.close(fig)
@@ -432,7 +443,7 @@ class qa_func(object):
             xlabel='Timepoint',
             ylabel='Intensity'
         )
-        fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, anat_name)
+        fname_glm_sig = '{}/{}_glm_signal_cmp.png'.format(glmdir, func_name)
         fig_glm_sig.savefig(fname_glm_sig, format='png')
         plt.close(fig_glm_sig)
 
@@ -449,7 +460,7 @@ class qa_func(object):
                 xlabel='Frequency',
                 ylabel='Power',
                 xax=nuisobj.freq_ra)
-            fname_fft_pow = '{}/{}_fft_power.png'.format(fftdir, anat_name)
+            fname_fft_pow = '{}/{}_fft_power.png'.format(fftdir, func_name)
             fig_fft_pow.savefig(fname_fft_pow, format='png')
             plt.close(fig_fft_pow)
             # plot the signal vs the regressed signal vs signal after
@@ -461,13 +472,13 @@ class qa_func(object):
                 ylabel='Intensity')
             fname_fft_sig = '{}/{}_fft_signal_cmp.png'.format(
                 fftdir,
-                anat_name
+                func_name
             )
             fig_fft_sig.savefig(fname_fft_sig, format='png')
             plt.close(fig_fft_sig)
         pass
 
-    def roi_ts_qa(self, timeseries, func, anat, label, qcdir):
+    def roi_ts_qa(self, timeseries, connectome, func, anat, label):
         """
         A function to perform ROI timeseries quality control.
 
@@ -486,6 +497,7 @@ class qa_func(object):
             qcdir:
                 - the quality control directory to place outputs.
         """
+        qcdir = self.namer.dirs['qa']['ts_roi'][self.namer.get_label(label)]
         print "Performing QA for ROI Timeseries..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
@@ -495,10 +507,15 @@ class qa_func(object):
         # overlap between the temp-aligned fmri and the labelled parcellation
         reg_mri_pngs(func, label, qcdir, minthr=10, maxthr=95)
         # plot the timeseries for each ROI and the connectivity matrix
-        plot_timeseries(timeseries, qcdir=qcdir)
+        fname_ts = "{}/{}_timeseries.html".format(qcdir,
+            self.aligned_func_name())
+        fname_con = "{}/{}_measure-correlation.png".format(qcdir,
+            self.aligned_func_name())
+        plot_timeseries(timeseries, fname_ts)
+        plot_connectome(connectome, fname_con)
         pass
 
-    def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask, qcdir):
+    def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask):
         """
         A function to analyze the voxel timeseries extracted.
 
@@ -514,8 +531,7 @@ class qa_func(object):
                 - the directory to place qc in.
         """
         print "Performing QA for Voxel Timeseries..."
-        cmd = "mkdir -p {}".format(qcdir)
-        mgu.execute_cmd(cmd)
+        qcdir = self.namer.dirs['qa']['ts_voxel']
         # plot the voxelwise signal with respect to the atlas to
         # get an idea of how well the fmri is masked
         reg_mri_pngs(voxel_func, atlas_mask, qcdir,
