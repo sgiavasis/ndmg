@@ -102,7 +102,7 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     motion_func = namer.name_derivative(namer.dirs['tmp']['prep_f'],
         "{}_variant-mc_preproc.nii.gz".format(namer.get_mod_source()))
     preproc_t1w_brain = namer.name_derivative(namer.dirs['output']['prep_a'],
-        "{}_preproc_variant-brain.nii.gz".format(namer.get_anat_source()))
+        "{}_preproc_brain.nii.gz".format(namer.get_anat_source()))
 
     aligned_func = namer.name_derivative(namer.dirs['output']['reg_f'],
         "{}_registered.nii.gz".format(reg_fname))

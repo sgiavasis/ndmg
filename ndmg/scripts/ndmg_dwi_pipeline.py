@@ -91,7 +91,7 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
     # Align DTI volumes to Atlas
     print("Aligning volumes...")
-    mgr().dti2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
+    mgr().dwi2atlas(dwi1, gtab, mprage, atlas, aligned_dwi, outdir, clean)
     b0loc = np.where(gtab.b0s_mask)[0][0]
     reg_dti_pngs(aligned_dwi, b0loc, atlas, outdir+"/qa/reg_dwi/")
 

@@ -223,12 +223,12 @@ class qa_func(object):
         # use the jaccard score in the filepath to easily
         # identify failed subjects
         sreg_f_final = "{}/space-T1w/{}_jaccard_{:.0f}".format(
-            self.namer.dirs['qa']['sreg_f'],
+            self.namer.dirs['qa']['reg_f'],
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
         sreg_a_final = "{}/space-T1w/{}_jaccard_{:.0f}".format(
-            self.namer.dirs['qa']['sreg_a'],
+            self.namer.dirs['qa']['reg_a'],
             freg.sreg_strat,
             self.self_reg_sc*1000
         )
@@ -252,14 +252,14 @@ class qa_func(object):
         plt.close(sreg_fig)
         pass
 
-    def aligned_func_name():
+    def aligned_func_name(self):
         """
         A util to return aligned func name.
         """
         return "{}_{}".format(self.namer.get_mod_source(),
             self.namer.get_template_source())
 
-    def aligned_anat_name():
+    def aligned_anat_name(self):
         """
         A util to return aligned func name.
         """
