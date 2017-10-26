@@ -4,7 +4,7 @@ echo "Getting test data..."
 
 loc="$PWD"
 cd /tmp/
-aws s3 cp --no-sign-request s3://mrneurodata/resources/ndmg_demo.zip ./
+aws s3 cp --no-sign-request s3://mrneurodata/data/resources/ndmg_demo.zip ./
 unzip /tmp/ndmg_demo.zip
 
 ndmg_dwi_pipeline /tmp/ndmg_demo/sub-0025864/ses-1/dwi/sub-0025864_ses-1_dwi.nii.gz \
