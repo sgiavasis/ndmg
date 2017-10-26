@@ -11,7 +11,7 @@ ndmg_func_pipeline /tmp/ndmg_demo/sub-0025864/ses-1/func/sub-0025864_ses-1_bold.
                    /tmp/ndmg_demo/sub-0025864/ses-1/anat/sub-0025864_ses-1_T1w.nii.gz  \
 	 			   /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_T1w.nii.gz \
 	 			   /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_T1w_brain.nii.gz \
-	 			   /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_brainmask.nii.gz \
+	 			   /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_T1w_brainmask.nii.gz \
 	 			   /tmp/ndmg_demo/HarvardOxford_variant-thr25_res-4x4x4_lvmask.nii.gz \
 	 			   /tmp/ndmg_demo/outputs \
 				   interleaved \
