@@ -17,7 +17,8 @@
 
 # ndmg_bids.py
 # Created by Greg Kiar on 2016-07-25.
-# edited by Eric Bridgeford to incorporate fMRI.
+# edited by Eric Bridgeford to incorporate fMRI, multi-threading, and
+# big-graph generation.
 # Email: gkiar@jhu.edu
 
 from argparse import ArgumentParser
@@ -208,7 +209,7 @@ def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
 
 def main():
     parser = ArgumentParser(description="This is an end-to-end connectome \
-                            estimation pipeline from sMRI and DTI images")
+                            estimation pipeline from M3r Images.")
     parser.add_argument('bids_dir', help='The directory with the input dataset'
                         ' formatted according to the BIDS standard.')
     parser.add_argument('output_dir', help='The directory where the output '
