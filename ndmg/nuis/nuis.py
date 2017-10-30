@@ -57,17 +57,18 @@ class nuis(object):
         self.er_wm_mask = None  # eroded white-matter mask
 
         # places to place intermediates
-        self.outdir = outdir
+        self.foutdir = outdir['nuis_f']
+        self.aoutdir = outdir['nuis_a']
         self.anat_name = mgu.get_filename(smri)
         # store temporary path for segmentation step
         nuisname = "{}_nuis".format(self.anat_name)
         self.nuisname = nuisname
         # wm mask
-        self.wm_mask = "{}/{}_wmm.nii.gz".format(self.outdir, nuisname)
+        self.wm_mask = "{}/{}_wmm.nii.gz".format(self.aoutdir, nuisname)
         # csf mask not used due to inconsistencies in segmenting
         # gm mask
-        self.gm_mask = "{}/{}_gmm.nii.gz".format(self.outdir, nuisname)
-        self.map_path = "{}/{}_seg".format(self.outdir, nuisname)
+        self.gm_mask = "{}/{}_gmm.nii.gz".format(self.aoutdir, nuisname)
+        self.map_path = "{}/{}_seg".format(self.aoutdir, nuisname)
         # segment the brain for quality control purposes
         maps = mgnu.segment_t1w(self.smri, self.map_path, opts='-P')
         # extract the masks
