@@ -376,12 +376,13 @@ class qa_func(object):
                 - the nuisance correction object.
         """
         print "Performing QA for Nuisance..."
-        qcdir = self.namer.dirs['qa']['nuis']
-        maskdir = "{}/{}".format(qcdir, "masks")
-        glmdir = "{}/{}".format(qcdir, "glm_correction")
-        fftdir = "{}/{}".format(qcdir, "filtering")
+        qcadir = self.namer.dirs['qa']['nuis_a']
+        qcfdir = self.namer.dirs['qa']['nuis_f']
+        maskdir = "{}/{}".format(qcadir, "masks")
+        glmdir = "{}/{}".format(qcfdir, "glm_correction")
+        fftdir = "{}/{}".format(qcfdir, "filtering")
 
-        cmd = "mkdir -p {} {} {}".format(qcdir, maskdir, glmdir)
+        cmd = "mkdir -p {} {} {}".format(maskdir, glmdir, fftdir)
         mgu.execute_cmd(cmd)
 
         anat_name = self.aligned_anat_name()
