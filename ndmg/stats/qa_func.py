@@ -498,7 +498,8 @@ class qa_func(object):
             qcdir:
                 - the quality control directory to place outputs.
         """
-        qcdir = self.namer.dirs['qa']['ts_roi'][self.namer.get_label(label)]
+        label_name = self.namer.get_label(label)
+        qcdir = self.namer.dirs['qa']['ts_roi'][label_name]
         print "Performing QA for ROI Timeseries..."
         cmd = "mkdir -p {}".format(qcdir)
         mgu.execute_cmd(cmd)
@@ -507,14 +508,15 @@ class qa_func(object):
         reg_mri_pngs(anat, label, qcdir, minthr=10, maxthr=95)
         # overlap between the temp-aligned fmri and the labelled parcellation
         reg_mri_pngs(func, label, qcdir, minthr=10, maxthr=95)
-        label_name = self.namer.get_label_name(label)
         # plot the timeseries for each ROI and the connectivity matrix
         fname_ts = "{}/{}_{}_timeseries.html".format(qcdir,
             self.aligned_func_name(), label_name)
         fname_con = "{}/{}_{}_measure-correlation.png".format(qcdir,
             self.aligned_func_name(), label_name)
-        plot_timeseries(timeseries, fname_ts, label_name)
-        plot_connectome(connectome, fname_con, label_name)
+        plot_timeseries(timeseries, fname_ts, self.aligned_func_name(),
+                        label_name)
+        plot_connectome(connectome, fname_con, self.aligned_func_name(),
+                        label_name)
         pass
 
     def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask):

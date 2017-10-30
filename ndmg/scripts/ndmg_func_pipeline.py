@@ -190,9 +190,9 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     qc_func.save(qc_stats)
 
     print("Execution took: {}".format(datetime.now() - startTime))
-    cmd = "rm -rf {}".format(namer['tmp']['base'])
+    cmd = "rm -rf {}".format(namer.dirs['tmp']['base'])
     if clean:
-        deldirs = " ".join([namer['output'][dirn]
+        deldirs = " ".join([namer.dirs['output'][dirn]
                             for dirn in opt_dirs + clean_dirs])
         cmd = "{} {}".format(cmd, deldirs)
     mgu.execute_cmd(cmd)

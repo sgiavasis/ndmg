@@ -230,7 +230,7 @@ def plot_signals(signals, labels, title=None, xlabel=None,
     return fig_sig
 
 
-def plot_timeseries(timeseries, fname_ts):
+def plot_timeseries(timeseries, fname_ts, sub, label_name):
     """
     A function to generate a plot of the timeseries
     of the particular ROI. Makes sure nothing nonsensical is
@@ -252,33 +252,16 @@ def plot_timeseries(timeseries, fname_ts):
                         y=timeseries.T[:, d], mode='lines'))
     # use plotly so that users can select which rois to display
     # easily with a html
-    layout = dict(title=" ".join([scan, "ROI Timeseries"]),
+	layout = dict(title=" ".join([sub, label_name, "ROI Timeseries"]),
                   xaxis=dict(title='Time Point (TRs)',
                              range=[0, timeseries.T.shape[0]]),
                   yaxis=dict(title='Intensity'),
                   showlegend=False)  # height=405, width=720)
     fts = dict(data=fts_list, layout=layout)
     offline.plot(fts, filename=fname_ts, auto_open=False)
-
-    # plot correlation matrix as the absolute correlation
-    # of the timeseries for each roi
-    fcorr = plt.figure()
-    axcorr = fcorr.add_subplot(111)
-    cax = axcorr.imshow(np.abs(np.corrcoef(timeseries)),
-                        interpolation='nearest',
-                        cmap=plt.cm.jet)
-    fcorr.colorbar(cax, fraction=0.046, pad=0.04)
-    axcorr.set_title(" ".join([scan, "Corr"]))
-    axcorr.set_xlabel('ROI')
-    axcorr.set_ylabel('ROI')
-
-    fcorr.set_size_inches(10, 10)
-    fcorr.tight_layout()
-    fcorr.savefig(fname_corr)
-    plt.close(fcorr)
     pass
 
-def plot_connectome(connectome, fname_corr):
+def plot_connectome(connectome, fname_corr, sub, label_name):
     """
     A function to generate a plot of the timeseries
     of the particular ROI. Makes sure nothing nonsensical is
@@ -298,7 +281,7 @@ def plot_connectome(connectome, fname_corr):
                         interpolation='nearest',
                         cmap=plt.cm.jet)
     fcorr.colorbar(cax, fraction=0.046, pad=0.04)
-    axcorr.set_title(" ".join([scan, "Corr"]))
+    axcorr.set_title(" ".join([sub, label_name, "Correlation"]))
     axcorr.set_xlabel('ROI')
     axcorr.set_ylabel('ROI')
 
