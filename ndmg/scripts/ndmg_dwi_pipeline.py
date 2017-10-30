@@ -44,7 +44,7 @@ os.environ["MPLCONFIGDIR"] = "/tmp/"
 
 
 def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                    clean=False, fmt='gpickle', bg=False):
+                    clean=False, fmt='gpickle', big=False):
     """
     Creates a brain graph from MRI data
     """
@@ -146,13 +146,13 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
 
 
 def ndmg_dwi_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                      clean=False, fmt='gpickle', bg=False):
+                      clean=False, fmt='gpickle', big=False):
     """
     A wrapper for the worker to make our pipeline more robust to errors.
     """
     try:
         ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
-                        clean, fmt, bg)
+                        clean, fmt, big)
     except Exception, e:
         print(traceback.format_exc())
     return
@@ -176,7 +176,7 @@ def main():
                         help="Whether or not to delete intemediates")
     parser.add_argument("-f", "--fmt", action="store", default='gpickle',
                         help="Determines graph output format")
-    parser.add_argument("-b", "--bg", action="store_true", default=False,
+    parser.add_argument("-b", "--big", action="store_true", default=False,
                         help="whether or not to produce voxelwise big graph")
     result = parser.parse_args()
 
@@ -189,7 +189,7 @@ def main():
 
     ndmg_dwi_pipeline(result.dwi, result.bval, result.bvec, result.mprage,
                       result.atlas, result.mask, result.labels, result.outdir,
-                      result.clean, result.fmt, result.bg)
+                      result.clean, result.fmt, result.big)
 
 
 if __name__ == "__main__":

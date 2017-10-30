@@ -39,7 +39,8 @@ from ndmg.utils.bids_utils import name_resource
 
 
 def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
-                     labels, outdir, clean=False, stc=None, fmt='gpickle'):
+                     labels, outdir, clean=False, stc=None, fmt='gpickle',
+                     big=False):
     """
     analyzes fmri images and produces subject-specific derivatives.
 
@@ -68,6 +69,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         fmt:
             - the format for produced connectomes. supported options are
               gpickle and graphml.
+        big:
+            - whether to produce voxelwise timeseries.
     """
     startTime = datetime.now()
 
@@ -120,7 +123,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         print("T1w volume preprocessed: {}".format(preproc_t1w_brain))
         print("fMRI volume registered to atlas: {}".format(aligned_func))
         print("fMRI volumes preprocessed: {}".format(preproc_func))
-    print("Voxel timecourse in atlas space: {}".format(voxel_ts))
+    if big:
+        print("Voxel timecourse in atlas space: {}".format(voxel_ts))
 
     # Again, connectomes are different
     if not isinstance(labels, list):
@@ -172,9 +176,10 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     qc_func.nuisance_qa(nuis)
 
     # ------ Voxelwise Timeseries Steps ---------------------------- #
-    print "Extracting Voxelwise Timeseries..."
-    voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
-    qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask)
+    if big:
+        print "Extracting Voxelwise Timeseries..."
+        voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
+        qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask)
 
     # ------ ROI Timeseries Steps ---------------------------------- #
     for idx, label in enumerate(labels):
@@ -194,14 +199,21 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     if clean:
         deldirs = " ".join([namer.dirs['output'][dirn]
                             for dirn in opt_dirs + clean_dirs])
-        cmd = "{} {}".format(cmd, deldirs)
+        cmd += " {}".format(deldirs)
+
+    if not big:
+        cmd += " {} {} {}".format(namer.dirs['output']['ts_voxel'],
+                                  namer.dirs['tmp']['ts_voxel'],
+                                  namer.dirs['qa']['ts_voxel'])
+
     mgu.execute_cmd(cmd)
 
     print("Complete!")
 
 
 def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
-                       labels, outdir, clean=False, stc=None, fmt='gpickle'):
+                       labels, outdir, clean=False, stc=None, fmt='gpickle',
+                       big=False):
     """
     analyzes fmri images and produces subject-specific derivatives.
 
@@ -233,7 +245,8 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     """
     try:
         ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
-                         labels, outdir, clean=clean, stc=stc, fmt=fmt)
+                         labels, outdir, clean=clean, stc=stc, fmt=fmt,
+                         big=big)
     except Exception, e:
         print(traceback.format_exc())
         return 
@@ -266,6 +279,8 @@ def main():
                         help="Whether or not to delete intemediates")
     parser.add_argument("-f", "--fmt", action="store", default='gpickle',
                         help="Determines connectome output format")
+    parser.add_argument("-b", "--big", action="store_true", default=False,
+                        help="Whether to produce voxelwise timeseries.")
     result = parser.parse_args()
 
     result.stc = None if result.stc == "none" else result.stc
@@ -289,7 +304,7 @@ def main():
     ndmg_func_pipeline(result.func, result.t1w, result.atlas,
                        result.atlas_brain, result.atlas_mask,
                        result.lv_mask, result.labels, result.outdir,
-                       result.clean, result.stc, result.fmt)
+                       result.clean, result.stc, result.fmt, result.big)
 
 if __name__ == "__main__":
     main()

@@ -300,8 +300,8 @@ class qa_func(object):
         mgu.execute_cmd(cmd)
         func_name = self.aligned_func_name()
         treg_fig.savefig(
-            "{}/{}_{}_epi2temp_overlap.png".format(treg_f_final,
-                func_name, self.namer.get_template_space)
+            "{}/{}_epi2temp_overlap.png".format(treg_f_final,
+                func_name)
         )
         plt.close(treg_fig)
         t1w_name = self.aligned_anat_name()

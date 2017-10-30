@@ -82,22 +82,33 @@ def get_atlas(atlas_dir, modality='dwi'):
         fils = labels + [atlas, atlas_mask]
     if modality == 'func':
         atlas_func = op.join(atlas_dir, 'func_atlases')
-        atlas = op.join(atlas_func, 'atlas/MNI152_T1-2mm.nii.gz')
-        atlas_brain = op.join(atlas_func, 'atlas/MNI152_T1-2mm_brain.nii.gz')
+        atlas = op.join(atlas_func, 'atlas/MNI152NLin6_res-2x2x2_T1w.nii.gz')
+        atlas_brain = op.join(atlas_func, 'atlas/' +
+                              'MNI152NLin6_res-2x2x2_T1w_brain.nii.gz')
         atlas_mask = op.join(atlas_func,
-                             'mask/MNI152_T1-2mm_brain_mask.nii.gz')
-        lv_mask = op.join(atlas_func, 'mask/HarvOx_lv_thr25-2mm.nii.gz')
-        labels= ['label/HarvardOxford-cort-maxprob-thr25-2mm.nii.gz',
-                  'label/aal-2mm.nii.gz', 'label/brodmann-2mm.nii.gz',
-                  'label/desikan-2mm.nii.gz', 'label/pp264-2mm.nii.gz',
-                  'label/CPAC200-2mm.nii.gz',
-                  'label/DS00071-2mm.nii.gz', 'label/DS00096-2mm.nii.gz',
-                  'label/DS00108-2mm.nii.gz', 'label/DS00140-2mm.nii.gz',
-                  'label/DS00195-2mm.nii.gz', 'label/DS00278-2mm.nii.gz',
-                  'label/DS00350-2mm.nii.gz', 'label/DS00446-2mm.nii.gz',
-                  'label/DS00583-2mm.nii.gz', 'label/DS00833-2mm.nii.gz',
-                  'label/DS01216-2mm.nii.gz', 'label/DS01876-2mm.nii.gz',
-                  'label/glasser-2mm.nii.gz']
+                             'mask/MNI152NLin6_res-2x2x2_T1w_brainmask.nii.gz')
+        lv_mask = op.join(atlas_func, "mask/HarvardOxford_variant-" +
+                          "lateral-ventricles-thr25" +
+                          "_res-2x2x2_brainmask.nii.gz")
+        harvlab = 'HarvardOxford_variant-'
+        labels= ['label/' + harvlab + 'cort-maxprob-thr25_res-2x2x2.nii.gz',
+                 'label/' + harvlab + 'sub-maxprob-thr25_res-2x2x2.nii.gz',
+                  'label/aal_res-2x2x2.nii.gz',
+                  'label/brodmann_res-2x2x2.nii.gz',
+                  'label/desikan_res-2x2x2.nii.gz',
+                  'label/pp264_res-2x2x2.nii.gz',
+                  'label/CPAC200_res-2x2x2.nii.gz',
+                  'label/DS_variant-00071_res-2x2x2.nii.gz',
+                  'label/DS_variant-00096_res-2x2x2.nii.gz',
+                  'label/DS_variant-00108_res-2x2x2.nii.gz',
+                  'label/DS_variant-00140_res-2x2x2.nii.gz',
+                  'label/DS_variant-00195_res-2x2x2.nii.gz',
+                  'label/DS_variant-00278_res-2x2x2.nii.gz',
+                  'label/DS_variant-00350_res-2x2x2.nii.gz',
+                  'label/DS_variant-00446_res-2x2x2.nii.gz',
+                  'label/DS_variant-00583_res-2x2x2.nii.gz',
+                  'label/DS_variant-00833_res-2x2x2.nii.gz',
+                  'label/DS_variant-01216_res-2x2x2.nii.gz']
  
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
@@ -125,7 +136,7 @@ def worker_wrapper((f, args, kwargs)):
 
 
 def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
-                      debug=False, modality='dwi', nthreads=1, bg=False,
+                      debug=False, modality='dwi', nthreads=1, big=False,
                       stc=None):
     """
     Crawls the given BIDS organized directory for data pertaining to the given
@@ -148,7 +159,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
                  labels, outDir] for (dw, bval, bvec, anat)
                 in zip(dwis, bvals, bvecs, anats)]
         f = ndmg_dwi_pipeline  # the function of choice
-        kwargs['bg'] = bg
+        kwargs['big'] = big
     else:
         funcs, anats = result
         assert(len(anats) == len(funcs))
@@ -273,8 +284,9 @@ def main():
     parser.add_argument('--debug', action='store_true', help='flag to store '
                         'temp files along the path of processing.',
                         default=False)
-    parser.add_argument('--bg', action='store', help='Whether to produce '
-                        'big graphs.', default='False')
+    parser.add_argument('-b', action='store', help='Whether to produce '
+                        'big graphs for DWI, or voxelwise timeseries for fMRI.',
+                         default='False')
     parser.add_argument("--nthreads", action="store", help="The number of "
                         "threads you have available. Should be approximately "
                         "min(ncpu*hyperthreads/cpu, maxram/10).", default=1,
@@ -301,7 +313,7 @@ def main():
     debug = result.debug
     modality = result.modality
     nthreads = result.nthreads
-    bg = (result.bg == 'True')
+    big = (result.b == 'True')
 
     minimal = result.minimal
     log = result.log
@@ -321,7 +333,7 @@ def main():
                 s3_get_data(buck, remo, inDir, public=creds)
         modif = 'ndmg_{}'.format(ndmg.version.replace('.', '-'))
         participant_level(inDir, outDir, subj, sesh, task, run, debug,
-                          modality, nthreads, bg, stc)
+                          modality, nthreads, big, stc)
 
     elif level == 'group':
         if buck is not None and remo is not None:
