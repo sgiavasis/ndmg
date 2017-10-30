@@ -479,7 +479,8 @@ class qa_func(object):
             plt.close(fig_fft_sig)
         pass
 
-    def roi_ts_qa(self, timeseries, connectome, func, anat, label):
+    def roi_ts_qa(self, timeseries, connectome, func, anat, label,
+                  label_name):
         """
         A function to perform ROI timeseries quality control.
 
@@ -508,12 +509,12 @@ class qa_func(object):
         # overlap between the temp-aligned fmri and the labelled parcellation
         reg_mri_pngs(func, label, qcdir, minthr=10, maxthr=95)
         # plot the timeseries for each ROI and the connectivity matrix
-        fname_ts = "{}/{}_timeseries.html".format(qcdir,
-            self.aligned_func_name())
-        fname_con = "{}/{}_measure-correlation.png".format(qcdir,
-            self.aligned_func_name())
-        plot_timeseries(timeseries, fname_ts)
-        plot_connectome(connectome, fname_con)
+        fname_ts = "{}/{}_{}_timeseries.html".format(qcdir,
+            self.aligned_func_name(), label_name)
+        fname_con = "{}/{}_{}_measure-correlation.png".format(qcdir,
+            self.aligned_func_name(), label_name)
+        plot_timeseries(timeseries, fname_ts, label_name)
+        plot_connectome(connectome, fname_con, label_name)
         pass
 
     def voxel_ts_qa(self, timeseries, voxel_func, atlas_mask):

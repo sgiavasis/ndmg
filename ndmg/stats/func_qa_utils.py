@@ -242,10 +242,6 @@ def plot_timeseries(timeseries, fname_ts):
         - qcdir:
             - the directory to place quality control figures.
     """
-    scan = mgu.get_filename(timeseries)
-    path = "{}/{}".format(qcdir, scan)
-
-
     fts_list = []
 
     # iterate over the roi timeseries to plot a line for each
@@ -282,7 +278,7 @@ def plot_timeseries(timeseries, fname_ts):
     plt.close(fcorr)
     pass
 
-def plot_connectome(connectome, qcdir=None):
+def plot_connectome(connectome, fname_corr):
     """
     A function to generate a plot of the timeseries
     of the particular ROI. Makes sure nothing nonsensical is
@@ -294,36 +290,11 @@ def plot_connectome(connectome, qcdir=None):
         - qcdir:
             - the directory to place quality control figures.
     """
-    scan = mgu.get_filename(timeseries)
-    path = "{}/{}".format(qcdir, scan)
-    fname_ts = "{}_timeseries.html".format(path)
-    fname_corr = "{}_corr.png".format(path)
-
-    timeseries = mgu.load_timeseries(timeseries)
-
-    fts_list = []
-
-    # iterate over the roi timeseries to plot a line for each
-    # roi
-    for d in range(0, timeseries.T.shape[1]):
-        fts_list.append(py.graph_objs.Scatter(
-                        x=range(0, timeseries.T.shape[0]),
-                        y=timeseries.T[:, d], mode='lines'))
-    # use plotly so that users can select which rois to display
-    # easily with a html
-    layout = dict(title=" ".join([scan, "ROI Timeseries"]),
-                  xaxis=dict(title='Time Point (TRs)',
-                             range=[0, timeseries.T.shape[0]]),
-                  yaxis=dict(title='Intensity'),
-                  showlegend=False)  # height=405, width=720)
-    fts = dict(data=fts_list, layout=layout)
-    offline.plot(fts, filename=fname_ts, auto_open=False)
-
     # plot correlation matrix as the absolute correlation
     # of the timeseries for each roi
     fcorr = plt.figure()
     axcorr = fcorr.add_subplot(111)
-    cax = axcorr.imshow(np.abs(np.corrcoef(timeseries)),
+    cax = axcorr.imshow(connectome,
                         interpolation='nearest',
                         cmap=plt.cm.jet)
     fcorr.colorbar(cax, fraction=0.046, pad=0.04)

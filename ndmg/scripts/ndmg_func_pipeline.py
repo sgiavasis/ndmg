@@ -185,7 +185,8 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         connectome.summary()
         connectome.save_graph(connectomes[idx], fmt=fmt)
         qc_func.roi_ts_qa(ts, conn, aligned_func,
-                          aligned_t1w, labels[idx])
+                          aligned_t1w, labels[idx],
+                          mgu.get_filename(labels[idx])
     # save our statistics so that we can do group level
     qc_func.save(qc_stats)
 
