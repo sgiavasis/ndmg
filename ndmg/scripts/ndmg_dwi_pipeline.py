@@ -113,7 +113,7 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     np.savez(fibers, tracks)
 
     # Generate big graphs from streamlines
-    if bg:
+    if big:
         print("Making Big Graph...")
         fibergraph = "{}/biggraph/{}_bg.edgelist".format(outdir, dwi_name)
         cmd = "mkdir -p {}/biggraph".format(outdir)

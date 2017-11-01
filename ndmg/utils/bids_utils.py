@@ -89,9 +89,9 @@ class name_resource:
         Called by constructor to initialize the output directory.
         """
         olist = [self.__basepath__]
-        olist.append(self.__sub__)
-        if self.__ses__:
-            olist.append(self.__ses__)
+        #olist.append(self.__sub__)
+        #if self.__ses__:
+        #    olist.append(self.__ses__)
         return os.path.join(*olist)
 
     def get_outdir(self):
@@ -101,18 +101,19 @@ class name_resource:
         """
         return self.__outdir__
 
-    def get_label(self, label):
-        """
-        returns the formatted label information a parcellation.
-        """
-        return "label-{}".format(re.split(r'[._]',
-                                 os.path.basename(label))[0])
-
     def get_template_space(self):
         """
         returns the formatted spatial information associated with a template.-
         """
         return "space-{}_res-{}".format(self.__space__, self.__res__)
+
+    def get_label(self, label):
+        """
+        return the formatted label information for the parcellation.
+        """
+        return mgu.get_filename(label)
+        #return "label-{}".format(re.split(r'[._]',
+        #                         os.path.basename(label))[0])
 
     def name_derivative(self, folder, derivative):
         """

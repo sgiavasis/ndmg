@@ -14,6 +14,6 @@ ndmg_dwi_pipeline /tmp/ndmg_demo/sub-0025864/ses-1/dwi/sub-0025864_ses-1_dwi.nii
     			  /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_T1w.nii.gz \
 	 			  /tmp/ndmg_demo/MNI152NLin6_res-4x4x4_T1w_brainmask.nii.gz \
 	 			  /tmp/ndmg_demo/outputs \
-				  /tmp/ndmg_demo/desikan_res-4x4x4_roi.nii.gz
+				  /tmp/ndmg_demo/desikan-res-4x4x4.nii.gz
 
 cd "$loc"

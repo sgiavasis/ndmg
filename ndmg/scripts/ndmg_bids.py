@@ -87,28 +87,28 @@ def get_atlas(atlas_dir, modality='dwi'):
                               'MNI152NLin6_res-2x2x2_T1w_brain.nii.gz')
         atlas_mask = op.join(atlas_func,
                              'mask/MNI152NLin6_res-2x2x2_T1w_brainmask.nii.gz')
-        lv_mask = op.join(atlas_func, "mask/HarvardOxford_variant-" +
+        lv_mask = op.join(atlas_func, "mask/HarvardOxford" +
                           "lateral-ventricles-thr25" +
                           "_res-2x2x2_brainmask.nii.gz")
-        harvlab = 'HarvardOxford_variant-'
-        labels= ['label/' + harvlab + 'cort-maxprob-thr25_res-2x2x2.nii.gz',
-                 'label/' + harvlab + 'sub-maxprob-thr25_res-2x2x2.nii.gz',
-                  'label/aal_res-2x2x2.nii.gz',
-                  'label/brodmann_res-2x2x2.nii.gz',
-                  'label/desikan_res-2x2x2.nii.gz',
-                  'label/pp264_res-2x2x2.nii.gz',
-                  'label/CPAC200_res-2x2x2.nii.gz',
-                  'label/DS_variant-00071_res-2x2x2.nii.gz',
-                  'label/DS_variant-00096_res-2x2x2.nii.gz',
-                  'label/DS_variant-00108_res-2x2x2.nii.gz',
-                  'label/DS_variant-00140_res-2x2x2.nii.gz',
-                  'label/DS_variant-00195_res-2x2x2.nii.gz',
-                  'label/DS_variant-00278_res-2x2x2.nii.gz',
-                  'label/DS_variant-00350_res-2x2x2.nii.gz',
-                  'label/DS_variant-00446_res-2x2x2.nii.gz',
-                  'label/DS_variant-00583_res-2x2x2.nii.gz',
-                  'label/DS_variant-00833_res-2x2x2.nii.gz',
-                  'label/DS_variant-01216_res-2x2x2.nii.gz']
+        harvlab = 'HarvardOxford'
+        labels= ['label/' + harvlab + 'cort-maxprob-thr25-res-2x2x2.nii.gz',
+                 'label/' + harvlab + 'sub-maxprob-thr25-res-2x2x2.nii.gz',
+                  'label/aal-res-2x2x2.nii.gz',
+                  'label/brodmann-res-2x2x2.nii.gz',
+                  'label/desikan-res-2x2x2.nii.gz',
+                  'label/pp264-res-2x2x2.nii.gz',
+                  'label/CPAC200-res-2x2x2.nii.gz',
+                  'label/DS00071-res-2x2x2.nii.gz',
+                  'label/DS00096-res-2x2x2.nii.gz',
+                  'label/DS00108-res-2x2x2.nii.gz',
+                  'label/DS00140-res-2x2x2.nii.gz',
+                  'label/DS00195-res-2x2x2.nii.gz',
+                  'label/DS00278-res-2x2x2.nii.gz',
+                  'label/DS00350-res-2x2x2.nii.gz',
+                  'label/DS00446-res-2x2x2.nii.gz',
+                  'label/DS00583-res-2x2x2.nii.gz',
+                  'label/DS00833-res-2x2x2.nii.gz',
+                  'label/DS01216-res-2x2x2.nii.gz']
  
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
