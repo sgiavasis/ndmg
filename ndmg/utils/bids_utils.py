@@ -101,12 +101,15 @@ class name_resource:
         """
         return self.__outdir__
 
-    def get_template_space(self):
+    def get_template_info(self):
         """
         returns the formatted spatial information associated with a template.-
         """
-        return "space-{}_res-{}".format(self.__space__, self.__res__)
+        return "space-{}_{}".format(self.__space__, self.__res__)
 
+    def get_template_space(self):
+        return "space-{}_{}".format(self.__space__, self.__res__)
+    
     def get_label(self, label):
         """
         return the formatted label information for the parcellation.
