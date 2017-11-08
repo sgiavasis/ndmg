@@ -257,14 +257,14 @@ class qa_func(object):
         A util to return aligned func name.
         """
         return "{}_{}".format(self.namer.get_mod_source(),
-            self.namer.get_template_space())
+            self.namer.get_template_info())
 
     def aligned_anat_name(self):
         """
         A util to return aligned func name.
         """
         return "{}_{}".format(self.namer.get_anat_source(),
-            self.namer.get_template_space())
+            self.namer.get_template_info())
 
     def temp_reg_qa(self, freg):
         """
