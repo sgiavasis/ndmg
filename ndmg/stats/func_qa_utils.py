@@ -285,7 +285,7 @@ def plot_connectome(connectome, fname_corr, sub, label_name):
     axcorr.set_xlabel('ROI')
     axcorr.set_ylabel('ROI')
 
-    fcorr.set_size_inches(10, 10)
+    fcorr.set_size_inches(15, 15)
     fcorr.tight_layout()
     fcorr.savefig(fname_corr)
     plt.close(fcorr)
