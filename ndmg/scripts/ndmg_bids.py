@@ -151,7 +151,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
 
     kwargs = {'clean': (not debug)}  # our keyword arguments
     if modality == 'dwi':
-        anats, dwis, bvals, bvecs = result
+        dwis, bvals, bvecs, anats = result
         assert(len(anats) == len(dwis))
         assert(len(bvecs) == len(dwis))
         assert(len(bvals) == len(dwis))
@@ -168,7 +168,6 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
                 zip(funcs, anats)]
         f = ndmg_func_pipeline
         kwargs['stc'] = stc
-
     # optional args stored in kwargs
     # use worker wrapper to call function f with args arg
     # and keyword args kwargs
