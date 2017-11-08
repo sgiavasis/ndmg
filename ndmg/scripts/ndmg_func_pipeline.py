@@ -96,9 +96,9 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
 
     # Create derivative output file names
     reg_fname = "{}_{}".format(namer.get_mod_source(),
-        namer.get_template_space())
+        namer.get_template_info())
     reg_aname = "{}_{}".format(namer.get_anat_source(),
-        namer.get_template_space())
+        namer.get_template_info())
     
     preproc_func = namer.name_derivative(namer.dirs['output']['prep_f'],
         "{}_preproc.nii.gz".format(namer.get_mod_source()))
