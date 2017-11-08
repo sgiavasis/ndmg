@@ -87,7 +87,7 @@ def get_atlas(atlas_dir, modality='dwi'):
                               'MNI152NLin6_res-2x2x2_T1w_brain.nii.gz')
         atlas_mask = op.join(atlas_func,
                              'mask/MNI152NLin6_res-2x2x2_T1w_brainmask.nii.gz')
-        lv_mask = op.join(atlas_func, "mask/HarvardOxford" +
+        lv_mask = op.join(atlas_func, "mask/HarvardOxford_variant-" +
                           "lateral-ventricles-thr25" +
                           "_res-2x2x2_brainmask.nii.gz")
         harvlab = 'HarvardOxford'
@@ -114,6 +114,9 @@ def get_atlas(atlas_dir, modality='dwi'):
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
 
     ope = op.exists
+    for f in fils:
+        if not ope(f):
+            print(f)
     if any(not ope(f) for f in fils):
         print("Cannot find atlas information; downloading...")
         mgu.execute_cmd('mkdir -p ' + atlas_dir)
