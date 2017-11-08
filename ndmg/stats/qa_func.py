@@ -244,7 +244,7 @@ class qa_func(object):
             t1w_dat = nb.load(freg.t1w_brain).get_data()
             f_mask = plot_overlays(t1w_dat, mask_dat, minthr=0, maxthr=100)
             fname_mask = "{}/{}_{}.png".format(sreg_a_final,
-                                               self.namer.get_anat_source,
+                                               self.namer.get_anat_source(),
                                                "wmm")
             f_mask.savefig(fname_mask, format='png')
             plt.close(f_mask)
