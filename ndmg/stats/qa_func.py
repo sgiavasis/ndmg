@@ -511,7 +511,7 @@ class qa_func(object):
         # plot the timeseries for each ROI and the connectivity matrix
         fname_ts = "{}/{}_{}_timeseries.html".format(qcdir,
             self.aligned_func_name(), label_name)
-        fname_con = "{}/{}_{}_measure-correlation.png".format(qcdir,
+        fname_con = "{}/{}_{}_measure-correlation.html".format(qcdir,
             self.aligned_func_name(), label_name)
         plot_timeseries(timeseries, fname_ts, self.aligned_func_name(),
                         label_name)

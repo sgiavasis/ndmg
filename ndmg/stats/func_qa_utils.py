@@ -28,6 +28,9 @@ import matplotlib.pyplot as plt
 from ndmg.stats.qa_reg import plot_overlays
 import plotly as py
 import plotly.offline as offline
+from plotly.graph_objs import Heatmap
+import plotly_helper as pp
+
 
 def dice_coefficient(a, b):
     """
@@ -252,7 +255,7 @@ def plot_timeseries(timeseries, fname_ts, sub, label_name):
                         y=timeseries.T[:, d], mode='lines'))
     # use plotly so that users can select which rois to display
     # easily with a html
-	layout = dict(title=" ".join([sub, label_name, "ROI Timeseries"]),
+	layout = dict(title="Functional Timeseries, {} Parcellation".format(label_name),
                   xaxis=dict(title='Time Point (TRs)',
                              range=[0, timeseries.T.shape[0]]),
                   yaxis=dict(title='Intensity'),
@@ -275,18 +278,16 @@ def plot_connectome(connectome, fname_corr, sub, label_name):
     """
     # plot correlation matrix as the absolute correlation
     # of the timeseries for each roi
-    fcorr = plt.figure()
-    axcorr = fcorr.add_subplot(111)
-    cax = axcorr.imshow(connectome,
-                        interpolation='nearest',
-                        cmap=plt.cm.jet)
-    fcorr.colorbar(cax, fraction=0.046, pad=0.04)
-    axcorr.set_title(" ".join([sub, label_name, "Correlation"]))
-    axcorr.set_xlabel('ROI')
-    axcorr.set_ylabel('ROI')
-
-    fcorr.set_size_inches(15, 15)
-    fcorr.tight_layout()
-    fcorr.savefig(fname_corr)
-    plt.close(fcorr)
+    dims = connectome.shape[0]
+    fig = pp.plot_heatmap(connectome/np.max(connectome),
+        name = "Functional Connectome, {} Parcellation".format(label_name),
+        scale = True, scaletit='Normalized Rank')
+    fig.layout['xaxis']['title'] = 'ROI'
+    fig.layout['yaxis']['title'] = 'ROI'
+    fig.layout['yaxis']['autorange'] = 'reversed'
+    fig.layout['xaxis']['tickvals'] = [0, dims/2-1, dims-1]
+    fig.layout['yaxis']['tickvals'] = [0, dims/2-1, dims-1]
+    fig.layout['xaxis']['ticktext'] = [1, dims/2, dims]
+    fig.layout['yaxis']['ticktext'] = [1, dims/2, dims]
+    offline.plot(fig, filename=fname_corr, auto_open=False)
     pass

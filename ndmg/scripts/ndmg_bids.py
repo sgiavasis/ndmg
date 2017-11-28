@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#ble to work out !/usr/bin/env python
 
 # Copyright 2016 NeuroData (http://neurodata.io)
 #
@@ -91,24 +91,24 @@ def get_atlas(atlas_dir, modality='dwi'):
                           "lateral-ventricles-thr25" +
                           "_res-2x2x2_brainmask.nii.gz")
         harvlab = 'HarvardOxford'
-        labels= ['label/' + harvlab + 'cort-maxprob-thr25-res-2x2x2.nii.gz',
-                 'label/' + harvlab + 'sub-maxprob-thr25-res-2x2x2.nii.gz',
-                  'label/aal-res-2x2x2.nii.gz',
-                  'label/brodmann-res-2x2x2.nii.gz',
-                  'label/desikan-res-2x2x2.nii.gz',
-                  'label/pp264-res-2x2x2.nii.gz',
-                  'label/CPAC200-res-2x2x2.nii.gz',
-                  'label/DS00071-res-2x2x2.nii.gz',
-                  'label/DS00096-res-2x2x2.nii.gz',
-                  'label/DS00108-res-2x2x2.nii.gz',
-                  'label/DS00140-res-2x2x2.nii.gz',
-                  'label/DS00195-res-2x2x2.nii.gz',
-                  'label/DS00278-res-2x2x2.nii.gz',
-                  'label/DS00350-res-2x2x2.nii.gz',
-                  'label/DS00446-res-2x2x2.nii.gz',
-                  'label/DS00583-res-2x2x2.nii.gz',
-                  'label/DS00833-res-2x2x2.nii.gz',
-                  'label/DS01216-res-2x2x2.nii.gz']
+        labels= ['label/' + harvlab + 'cort-maxprob-thr25_res-2x2x2.nii.gz',
+                 'label/' + harvlab + 'sub-maxprob-thr25_res-2x2x2.nii.gz',
+                  'label/aal_res-2x2x2.nii.gz',
+                  'label/brodmann_res-2x2x2.nii.gz',
+                  'label/desikan_res-2x2x2.nii.gz',
+                  'label/pp264_res-2x2x2.nii.gz',
+                  'label/CPAC200_res-2x2x2.nii.gz',
+                  'label/DS00071_res-2x2x2.nii.gz',
+                  'label/DS00096_res-2x2x2.nii.gz',
+                  'label/DS00108_res-2x2x2.nii.gz',
+                  'label/DS00140_res-2x2x2.nii.gz',
+                  'label/DS00195_res-2x2x2.nii.gz',
+                  'label/DS00278_res-2x2x2.nii.gz',
+                  'label/DS00350_res-2x2x2.nii.gz',
+                  'label/DS00446_res-2x2x2.nii.gz',
+                  'label/DS00583_res-2x2x2.nii.gz',
+                  'label/DS00833_res-2x2x2.nii.gz',
+                  'label/DS01216_res-2x2x2.nii.gz']
  
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
@@ -120,8 +120,10 @@ def get_atlas(atlas_dir, modality='dwi'):
     if any(not ope(f) for f in fils):
         print("Cannot find atlas information; downloading...")
         mgu.execute_cmd('mkdir -p ' + atlas_dir)
-        cmd = 'wget -rnH --cut-dirs=3 --no-parent -P {} '.format(atlas_dir)
-        cmd += 'http://openconnecto.me/mrdata/share/atlases/'
+        cmd = 'aws s3 cp --no-sign-request s3://mrneurodata/data/'
+        cmd += 'resources/ndmg_atlases.zip /ndmg_atlases'
+        mgu.execute_cmd(cmd)
+        cmd = 'unzip /ndmg_atlases/ndmg_atlases.zip'
         mgu.execute_cmd(cmd)
 
     if modality == 'dwi':
