@@ -73,7 +73,7 @@ class name_resource:
                     olist = olist + [self.__ses__]
             self.dirs[dirt]['base'] = os.path.join(*olist)
             for kwd, path in paths.iteritems():
-                newdir = os.path.join(*[self.get_outdir(), addstr, path])
+                newdir = os.path.join(*[self.dirs[dirt]['base'], path])
                 if kwd in label_dirs:  # levels with label granularity
                     self.dirs[dirt][kwd] = {}
                     for label in labels:
