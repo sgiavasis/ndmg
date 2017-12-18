@@ -68,7 +68,7 @@ class name_resource:
             if dirt == 'tmp':
                 olist = olist +[dirt]
             elif dirt == 'qa':
-                olist = olist + [self.__sub__]
+                olist = olist + [dirt, self.__sub__]
                 if self.__ses__:
                     olist = olist + [self.__ses__]
             self.dirs[dirt]['base'] = os.path.join(*olist)
