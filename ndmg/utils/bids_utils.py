@@ -66,6 +66,8 @@ class name_resource:
             self.dirs[dirt] = {}
             if dirt == 'output':
                 addstr = ''
+            elif dirt == 'qa':
+                addstr = os.path.join(dirt, self.__sub__)
             else:
                 addstr = dirt
             self.dirs[dirt]['base'] = os.path.join(self.get_outdir(), addstr)
