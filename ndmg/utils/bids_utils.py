@@ -63,14 +63,15 @@ class name_resource:
             labels = [labels]
         dirtypes = ['output', 'tmp', 'qa']
         for dirt in dirtypes:
+            olist = [self.get_outdir()]
             self.dirs[dirt] = {}
-            if dirt == 'output':
-                addstr = ''
+            if dirt == 'tmp':
+                olist = olist +[dirt]
             elif dirt == 'qa':
-                addstr = os.path.join(dirt, self.__sub__)
-            else:
-                addstr = dirt
-            self.dirs[dirt]['base'] = os.path.join(self.get_outdir(), addstr)
+                olist = olist + [self.__sub__]
+                if self.__ses__:
+                    olist = olist + [self.__ses__]
+            self.dirs[dirt]['base'] = os.path.join(*olist)
             for kwd, path in paths.iteritems():
                 newdir = os.path.join(*[self.get_outdir(), addstr, path])
                 if kwd in label_dirs:  # levels with label granularity
