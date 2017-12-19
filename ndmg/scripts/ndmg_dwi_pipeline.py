@@ -38,6 +38,7 @@ import os
 from ndmg.graph import biggraph as ndbg
 import traceback
 from ndmg.utils.bids_utils import name_resource
+import sys
 
 
 os.environ["MPLCONFIGDIR"] = "/tmp/"
@@ -155,6 +156,8 @@ def ndmg_dwi_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
                         clean, fmt, big)
     except Exception, e:
         print(traceback.format_exc())
+    finally:
+        sys.exit()
     return
 
 
