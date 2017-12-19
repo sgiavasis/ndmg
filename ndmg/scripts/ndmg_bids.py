@@ -179,7 +179,8 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
     arg_list = [(f, arg, kwargs) for arg in args]
     p = Pool(nthreads)  # start nthreads in parallel
     p.map(worker_wrapper, arg_list)  # run them
-
+    p.close()
+    p.join()
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, modality='dwi'):
