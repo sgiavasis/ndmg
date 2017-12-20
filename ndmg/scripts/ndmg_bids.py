@@ -179,18 +179,23 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
     # use worker wrapper to call function f with args arg
     # and keyword args kwargs
     arg_list = [(f, arg, kwargs) for arg in args]
-    p = Pool(nthreads)  # start nthreads in parallel
-    p.map(worker_wrapper, arg_list)  # run them
-    p.close()
-    p.join()
+    p = Pool(processes=nthreads)  # start nthreads in parallel
+    try:
+        p.map(worker_wrapper, arg_list)  # run them
+        p.close()
+    except:
+        p.close()
+    finally:
+        p.join()
     rmflds = []
     if modality == 'func' and not debug:
        rmflds += [os.path.join(outDir, 'func', modal) for modal in ['clean', 'preproc', 'registered']]
        rmflds += [os.path.join(outDir, 'anat')]
     if not big:
         rmflds += [os.path.join(outDir, 'func', 'voxel-timeseries')]
-    cmd = "rm -rf {}".format(" ".join(rmflds))
-    mgu.execute_cmd(cmd)
+    if len(rmflds) > 0:
+        cmd = "rm -rf {}".format(" ".join(rmflds))
+        mgu.execute_cmd(cmd)
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, modality='dwi'):
@@ -302,9 +307,9 @@ def main():
     parser.add_argument('--big', action='store_true', help='Whether to produce '
                         'big graphs for DWI, or voxelwise timeseries for fMRI.',
                          default=False)
-    parser.add_argument("--nthreads", action="store", help="The number of "
-                        "threads you have available. Should be approximately "
-                        "min(ncpu*hyperthreads/cpu, maxram/10).", default=1,
+    parser.add_argument("--nproc", action="store", help="The number of "
+                        "process to launch. Should be approximately "
+                        "<min(ncpu*hyperthreads/cpu, maxram/10).", default=1,
                         type=int)
     parser.add_argument("--stc", action="store", help='A file for slice '
                         'timing correction. Options are a TR sequence file '
