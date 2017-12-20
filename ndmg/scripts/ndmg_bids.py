@@ -108,7 +108,9 @@ def get_atlas(atlas_dir, modality='dwi'):
                   'label/DS00446_res-2x2x2.nii.gz',
                   'label/DS00583_res-2x2x2.nii.gz',
                   'label/DS00833_res-2x2x2.nii.gz',
-                  'label/DS01216_res-2x2x2.nii.gz']
+                  'label/DS01216_res-2x2x2.nii.gz',
+                  'label/DK_res-2x2x2.nii.gz',
+                  'label/JHU_res-2x2x2.nii.gz']
  
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
