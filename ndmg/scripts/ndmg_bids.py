@@ -328,7 +328,7 @@ def main():
     debug = result.debug
     modality = result.modality
     nthreads = result.nthreads
-    big = (if result.big)
+    big = (True if result.big else False)
 
     minimal = result.minimal
     log = result.log
