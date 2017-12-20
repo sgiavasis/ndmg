@@ -53,14 +53,18 @@ class qa_func(object):
         f.close()
         return obj
 
-    def save(self, filename):
+    def save(self, filename, exetime):
         """
         A function for saving a qa_func object.
 
         **Positional Arguments:**
 
-            filename: the name of the file we want to save to.
+            filename:
+                - the name of the file we want to save to.
+            exetime:
+                - the runtime in seconds.
         """
+        self.runtime = exetime 
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
         f.close()

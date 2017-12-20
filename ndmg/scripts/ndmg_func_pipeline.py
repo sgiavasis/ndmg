@@ -192,22 +192,15 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         connectome.save_graph(connectomes[idx], fmt=fmt)
         qc_func.roi_ts_qa(ts, conn, aligned_func,
                           aligned_t1w, labels[idx])
-    # save our statistics so that we can do group level
-    qc_func.save(qc_stats)
-
-    print("Execution took: {}".format(datetime.now() - startTime))
-    cmd = "rm -rf {}".format(namer.dirs['tmp']['base'])
-    if clean:
-        deldirs = " ".join([namer.dirs['output'][dirn]
-                            for dirn in opt_dirs + clean_dirs])
-        cmd += " {}".format(deldirs)
-
-    if not big:
-        cmd += " {} {} {}".format(namer.dirs['output']['ts_voxel'],
-                                  namer.dirs['tmp']['ts_voxel'],
-                                  namer.dirs['qa']['ts_voxel'])
-
+    cmd = 'rm -rf {}'.format(namer.dirs['tmp']['base'])
     mgu.execute_cmd(cmd)
+
+    # save our statistics so that we can do group level
+    exe_time = datetime.now() - startTime
+    qc_func.save(qc_stats, exe_time)
+
+    print("Execution took: {}".format(exe_time))
+    cmd = "rm -rf {}".format(namer.dirs['tmp']['base'])
 
     print("Complete!")
 

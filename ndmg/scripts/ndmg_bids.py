@@ -181,6 +181,14 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
     p.map(worker_wrapper, arg_list)  # run them
     p.close()
     p.join()
+    rmflds = []
+    if modality == 'func' and not debug:
+       rmflds += [os.path.join(outDir, 'func', modal) for modal in ['clean', 'preproc', 'registered']]
+       rmflds += [os.path.join(outDir, 'anat')]
+    if not big:
+        rmflds += [os.path.join(outDir, 'func', 'voxel-timeseries')]
+    cmd = "rm -rf {}".format(" ".join(rmflds))
+    mgu.execute_cmd(cmd)
 
 def group_level(inDir, outDir, dataset=None, atlas=None, minimal=False,
                 log=False, hemispheres=False, modality='dwi'):

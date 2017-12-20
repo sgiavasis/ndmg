@@ -65,12 +65,8 @@ class name_resource:
         for dirt in dirtypes:
             olist = [self.get_outdir()]
             self.dirs[dirt] = {}
-            if dirt == 'tmp':
-                olist = olist +[dirt]
-            elif dirt == 'qa':
-                olist = olist + [dirt, self.__sub__]
-                if self.__ses__:
-                    olist = olist + [self.__ses__]
+            if dirt in ['tmp', 'qa']:
+                olist = olist +[dirt] + self.get_sub_info()
             self.dirs[dirt]['base'] = os.path.join(*olist)
             for kwd, path in paths.iteritems():
                 newdir = os.path.join(*[self.dirs[dirt]['base'], path])
@@ -146,6 +142,14 @@ class name_resource:
 
     def get_anat_source(self):
         return self.__anati__
+
+    def get_sub_info(self):
+        olist = []
+        if self.__sub__:
+            olist.append(self.__sub__)
+        if self.__ses__:
+            olist.append(self.__ses__)
+        return olist
 
 def flatten(current, result=[]):
     if isinstance(current, dict):
