@@ -143,7 +143,7 @@ def worker_wrapper((f, args, kwargs)):
 
 
 def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
-                      debug=False, modality='dwi', nthreads=1, big=False,
+                      debug=False, modality='dwi', nproc=1, big=False,
                       stc=None):
     """
     Crawls the given BIDS organized directory for data pertaining to the given
@@ -179,7 +179,7 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
     # use worker wrapper to call function f with args arg
     # and keyword args kwargs
     arg_list = [(f, arg, kwargs) for arg in args]
-    p = Pool(processes=nthreads)  # start nthreads in parallel
+    p = Pool(processes=nproc)  # start nproc in parallel
     try:
         p.map(worker_wrapper, arg_list)  # run them
         p.close()
@@ -332,7 +332,7 @@ def main():
     stc = result.stc
     debug = result.debug
     modality = result.modality
-    nthreads = result.nthreads
+    nproc = result.nproc
     big = (True if result.big else False)
 
     minimal = result.minimal
@@ -353,7 +353,7 @@ def main():
                 s3_get_data(buck, remo, inDir, public=creds)
         modif = 'ndmg_{}'.format(ndmg.version.replace('.', '-'))
         participant_level(inDir, outDir, subj, sesh, task, run, debug,
-                          modality, nthreads, big, stc)
+                          modality, nproc, big, stc)
 
     elif level == 'group':
         if buck is not None and remo is not None:

@@ -10,7 +10,7 @@ import ndmg.utils as mgu
 import os
 
 
-def run_tests(nthreads):
+def run_tests(nproc):
     print("Getting test data...")
     os.chdir("/tmp")
     mgu.execute_cmd("rm -rf /tmp/mrilab_demo*")
@@ -30,16 +30,16 @@ def run_tests(nthreads):
             in zip(dwis, bvals, bvecs, anats)]
     f = ndmg_dwi_pipeline
     arg_list = [(f, arg, {'bg': True}) for arg in args]
-    p = Pool(nthreads)
+    p = Pool(nproc)
     mgu.execute_cmd("mkdir -p " + outdir)
     p.map(worker_wrapper, arg_list)
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--nthreads", type=int, default=1,
-                        help="The number of threads to demo with.")
+    parser.add_argument("--nproc", type=int, default=1,
+                        help="The number of processes to demo with.")
     result = parser.parse_args()
-    run_tests(result.nthreads)
+    run_tests(result.nproc)
 
 if __name__ == "__main__":
     main()
