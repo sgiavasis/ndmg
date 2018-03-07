@@ -18,9 +18,7 @@
             "<SUBJ>",
             "--push_data",
             "--stc",
-            "<STC>",
-            "--bg",
-            "<BG>"
+            "<STC>"
         ],
         "environment": [
             {
