@@ -32,8 +32,8 @@ import boto3
 import json
 import ast
 
-participant_templ = 'https://raw.githubusercontent.com/neurodata/ndmg/eric-dev-fmri/templates/ndmg_cloud_participant.json'
-group_templ = 'https://raw.githubusercontent.com/neurodata/ndmg/eric-dev-fmri/templates/ndmg_cloud_group.json'
+participant_templ = 'https://raw.githubusercontent.com/neurodata/ndmg/m3r-release/templates/ndmg_cloud_participant.json'
+group_templ = 'https://raw.githubusercontent.com/neurodata/ndmg/m3r-release/templates/ndmg_cloud_group.json'
 
 
 def batch_submit(bucket, path, jobdir, credentials=None, state='participant',
@@ -101,7 +101,6 @@ def create_json(bucket, path, threads, jobdir, group=False, credentials=None,
     else:
         template = participant_templ
         seshs = threads
-
     if not os.path.isfile('{}/{}'.format(jobdir, template.split('/')[-1])):
         cmd = 'wget --quiet -P {} {}'.format(jobdir, template)
         mgu.execute_cmd(cmd)
@@ -128,7 +127,8 @@ def create_json(bucket, path, threads, jobdir, group=False, credentials=None,
     cmd[5] = re.sub('(<BUCKET>)', bucket, cmd[5])
     cmd[7] = re.sub('(<PATH>)', path, cmd[7])
     cmd[12] = re.sub('(<STC>)', stc, cmd[12])
-    cmd[14] = re.sub('(<BG>)', bg, cmd[14])
+    if bg:
+        cmd.append('--big')
     if group:
         if dataset is not None:
             cmd[10] = re.sub('(<DATASET>)', dataset, cmd[10])
@@ -297,7 +297,7 @@ def main():
                         "direction to correct. Not necessary.")
     parser.add_argument('--modality', action='store', choices=['func', 'dwi'],
                         help='Pipeline to run')
-    parser.add_argument("-b", "--bg", action="store", default='False',
+    parser.add_argument("-b", "--big", action="store", default='False',
                         help="whether or not to produce voxelwise big graph")
     result = parser.parse_args()
 
@@ -312,7 +312,7 @@ def main():
     log = result.log
     stc = result.stc
     mode = result.modality
-    bg = result.bg
+    bg = result.big
     if bg:
         bg = 'True'
     else:
