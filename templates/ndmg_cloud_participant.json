@@ -2,7 +2,7 @@
     "jobName": "<JOBNAME>", 
     "jobQueue": "ndmg-fmri-queue", 
     "dependsOn": [], 
-    "jobDefinition": "ndmg-fmri", 
+    "jobDefinition": "ndmg", 
     "parameters": {},
     "containerOverrides": {
         "command": [
