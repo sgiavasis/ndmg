@@ -157,7 +157,7 @@ def ndmg_dwi_pipeline(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     except Exception, e:
         print(traceback.format_exc())
     finally:
-        sys.exit()
+        os.exit()
     return
 
 

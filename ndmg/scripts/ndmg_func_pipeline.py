@@ -37,6 +37,7 @@ from ndmg.stats.qa_reg import *
 import traceback
 from ndmg.utils.bids_utils import name_resource
 import sys
+import os
 
 
 def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
@@ -245,7 +246,7 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         print(traceback.format_exc())
         return 
     finally:
-        sys.exit()
+        os.exit()
     return
 
 
