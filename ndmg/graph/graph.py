@@ -147,7 +147,7 @@ class graph(object):
         g = self.get_graph()
         return nx.to_numpy_matrix(g, nodelist=np.sort(g.nodes()).tolist())
 
-    def save_graph(self, graphname, fmt='gpickle'):
+    def save_graph(self, graphname, fmt='edgelist'):
         """
         Saves the graph to disk
 
@@ -162,12 +162,7 @@ class graph(object):
                     - Output graph format
         """
         self.g.graph['ecount'] = nx.number_of_edges(self.g)
-        if fmt == 'gpickle':
-            nx.write_gpickle(self.g, graphname)
-        elif fmt == 'graphml':
-            nx.write_graphml(self.g, graphname)
-        else:
-            raise ValueError('graphml is the only format currently supported')
+        nx.write_weighted_edgelist(self.g, graphname)
         pass
 
     def summary(self):
