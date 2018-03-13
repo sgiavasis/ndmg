@@ -23,6 +23,7 @@ import re
 import os.path
 import matplotlib
 import numpy as np
+np.warnings.filterwarnings('ignore')
 from ndmg.utils import utils as mgu
 from ndmg.stats.func_qa_utils import plot_timeseries, plot_signals, \
     registration_score, plot_connectome

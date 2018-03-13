@@ -77,7 +77,8 @@ def get_atlas(atlas_dir, modality='dwi'):
                   'labels/DS00583.nii.gz', 'labels/DS00833.nii.gz',
                   'labels/DS01216.nii.gz', 'labels/DS01876.nii.gz',
                   'labels/DS03231.nii.gz', 'labels/DS06481.nii.gz',
-                  'labels/DS16784.nii.gz', 'labels/DS72784.nii.gz']
+                  'labels/DS16784.nii.gz', 'labels/DS72784.nii.gz',
+                  'labels/tissue.nii.gz', 'labels/hemispheric.nii.gz']
         labels = [op.join(atlas_dir, l) for l in labels]
         fils = labels + [atlas, atlas_mask]
     if modality == 'func':
@@ -110,7 +111,9 @@ def get_atlas(atlas_dir, modality='dwi'):
                   'label/DS00833_res-2x2x2.nii.gz',
                   'label/DS01216_res-2x2x2.nii.gz',
                   'label/DK_res-2x2x2.nii.gz',
-                  'label/JHU_res-2x2x2.nii.gz']
+                  'label/JHU_res-2x2x2.nii.gz',
+                  'label/tissue_res-2x2x2.nii.gz',
+                  'label/hemispheric_res-2x2x2.nii.gz']
  
         labels = [op.join(atlas_func, l) for l in labels]
         fils = labels + [atlas, atlas_mask, atlas_brain, lv_mask]
