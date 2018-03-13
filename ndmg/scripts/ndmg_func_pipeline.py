@@ -153,11 +153,16 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
     print "Preprocessing volumes..."
     f_prep = mgfp(func, preproc_func, motion_func, namer.dirs['tmp']['prep_f'])
     f_prep.preprocess(stc=stc)
-    qc_func.func_preproc_qa(f_prep)
-
+    try:
+        qc_func.func_preproc_qa(f_prep)
+    except Exception as e:
+        print("Exception in Preprocessing QA.")
     a_prep = mgap(t1w, preproc_t1w_brain, namer.dirs['tmp']['prep_a'])
     a_prep.preprocess()
-    qc_func.anat_preproc_qa(a_prep)
+    try:
+        qc_func.anat_preproc_qa(a_prep)
+    except Exception as e:
+        print("Exception in Preprocessing QA.")
 
     # ------- Alignment Steps -------------------------------------- #
     print "Aligning volumes..."
@@ -165,23 +170,34 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
                      atlas, atlas_brain, atlas_mask, aligned_func,
                      aligned_t1w, namer.dirs['tmp'])
     func_reg.self_align()
-    qc_func.self_reg_qa(func_reg)
+    try:
+        qc_func.self_reg_qa(func_reg)
+    except Exception as e:
+        print("Exception in Self Registration QA.")
     func_reg.template_align()
-    qc_func.temp_reg_qa(func_reg)
+    try:
+        qc_func.temp_reg_qa(func_reg)
+    except Exception as e:
+        print("Exception in Template Registration QA.")
 
     # ------- Nuisance Correction Steps ---------------------------- #
     print "Correcting Nuisance Variables..."
     nuis = mgn(aligned_func, aligned_t1w, nuis_func, namer.dirs['tmp'],
                lv_mask=lv_mask, mc_params=f_prep.mc_params)
     nuis.nuis_correct()
-
-    qc_func.nuisance_qa(nuis)
+    try:
+        qc_func.nuisance_qa(nuis)
+    except Exception as e:
+        print("Exception in Nuisance Correction QA.")
 
     # ------ Voxelwise Timeseries Steps ---------------------------- #
     if big:
         print "Extracting Voxelwise Timeseries..."
         voxel = mgts().voxel_timeseries(nuis_func, atlas_mask, voxel_ts)
-        qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask)
+        try:
+            qc_func.voxel_ts_qa(voxel, nuis_func, atlas_mask)
+        except Exception as e:
+            print("Exception in Voxel Timeseries QA.")
 
     # ------ ROI Timeseries Steps ---------------------------------- #
     for idx, label in enumerate(labels):
@@ -191,8 +207,12 @@ def ndmg_func_worker(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         conn = connectome.cor_graph(ts)
         connectome.summary()
         connectome.save_graph(connectomes[idx], fmt=fmt)
-        qc_func.roi_ts_qa(ts, conn, aligned_func,
-                          aligned_t1w, labels[idx])
+        try:
+            qc_func.roi_ts_qa(ts, conn, aligned_func,
+                              aligned_t1w, labels[idx])
+        except Exception as e:
+            erm = "Exception in Connectome Extraction for {} parcellation."
+            print(erm.format(labels[idx]))
     cmd = 'rm -rf {}'.format(namer.dirs['tmp']['base'])
     mgu.execute_cmd(cmd)
 
