@@ -312,11 +312,7 @@ def main():
     log = result.log
     stc = result.stc
     mode = result.modality
-    bg = result.big
-    if bg:
-        bg = 'True'
-    else:
-        bg = 'False'
+    bg = (result.big != 'False')
 
     if jobdir is None:
         jobdir = './'
