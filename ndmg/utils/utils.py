@@ -19,7 +19,7 @@
 # Created by Will Gray Roncal on 2016-01-28.
 # Edited by Eric Bridgeford.
 # Email: wgr@jhu.edu
-# Edited by Eric Bridgeford on 2017-07-13.
+# Edited by Eric Bridgeford.
 
 from __future__ import print_function
 
@@ -31,6 +31,8 @@ import nibabel as nb
 import os.path as op
 import sys
 from networkx import to_numpy_matrix as graph2np
+from ndmg.graph.zindex import XYZMorton
+from scipy.sparse import lil_matrix
 
 
 def execute_cmd(cmd, verb=False):
@@ -212,3 +214,80 @@ def graph2mtx(self, graph):
 
 def name_tmps(basedir, basename, extension):
     return "{}/tmp/{}{}".format(basedir, basename, extension)
+
+
+def morton_region(parcellation, outpath):
+    """
+    A function to compute which region each morton index is in.
+    Col1 is the morton index. Col2 is the corresponding region
+    the particular morton index falls into. 0 means it falls into
+    a region unmapped in the parcellation.
+
+    **Positional ARguments:**
+        parcellation:
+            - the input parcellation to compute over.
+        outpath:
+            - the filepath of the matrix.
+    """
+    at_dat = nb.load(parcellation).get_data()
+    atlasn = mgu.get_filename(parcellation)
+    dims = at_dat.shape
+    region = {}
+    for x in range(0, dims[0]):
+        for y in range(0, dims[1]):
+            for z in range(0, dims[2]):
+                if at_dat[x, y, z] > 0:
+                    region[XYZMorton((int(x), int(y), int(z)))] = at_dat[x, y, z]
+    outf = op.join(outbase, atlasn + '_morton.csv')
+    with open(outf, 'w')  as f:
+        for key, val in region.iteritems():
+            f.write('{},{}\n'.format(key, val))
+        f.close()
+    return
+
+def parcel_overlap(parcellation1, parcellation2, outpath):
+    """
+    A function to compute the percent composition of each parcel in
+    parcellation 1 with the parcels in parcellation 2. Rows are indices
+    in parcellation 1; cols are parcels in parcellation 2. Values are the
+    percent of voxels in parcel (parcellation 1) that fall into parcel
+    (parcellation 2). Implied is that each row sums to 1.
+
+    **Positional Arguments:**
+        parcellation1:
+            - the path to the first parcellation.
+        parcellation2:
+            - the path to the second parcellation.
+        outpath:
+            - the path to produce the output.
+    """
+    p1_dat = nb.load(parcellation1).get_data()
+    p2_dat = nb.load(parcellation2).get_data()
+    p1regs = np.unique(p1_dat)
+    p1regs = p1regs[p1regs > 0]
+    p2regs = np.unique(p2_dat)
+
+    p1n = mgu.get_filename(parcellation1)
+    p2n = mgu.get_filename(parcellation2)
+    
+    overlapdat = lil_matrix((p1regs.shape[0], p2regs.shape[0]), dtype=np.float32)
+    for didx, p1reg in enumerate(p1regs):
+        dseq = (p1_dat == p1reg)
+        N = dseq.sum()
+        poss_regs = np.unique(p2_dat[dseq])
+        for aidx, anatreg in enumerate(p2regs):
+            if (anatreg in poss_regs):
+                # percent overlap is dseq and'd with the anatomical region voxelspace, summed and normalized
+                pover = np.logical_and(dseq, p2_dat == anatreg).sum()/float(N)
+                overlapdat[didx, aidx] = pover
+            
+    outf = op.join(outpath, "{}_{}.csv".format(p1n, p2n))
+    with open(outf, 'w')  as f:
+        p2str = ["%d" % x for x in p2regs]
+        f.write("p1reg," + ",".join(p2str) + "\n")
+        for idx, p1reg in enumerate(p1regs):
+            datstr = ["%.4f" % x for x in overlapdat[idx,].toarray()[0,]]
+            f.write(str(p1reg) + "," + ",".join(datstr) + "\n")
+        f.close()
+    return
+
