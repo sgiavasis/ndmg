@@ -65,7 +65,7 @@ class graph(object):
                           )
         print(self.g.graph)
 
-        [self.g.add_node(ids) for ids in n_ids]
+        [str(self.g.add_node(ids)) for ids in n_ids]
         pass
 
     def make_graph(self, streamlines, attr=None):
@@ -99,12 +99,12 @@ class graph(object):
                 if loc:
                     p.add(loc)
 
-            edges = combinations(p, 2)
+            edges = set(frozenset(x) for x in itertools.product(p))
             for edge in edges:
                 lst = tuple([int(node) for node in edge])
                 self.edge_dict[tuple(sorted(lst))] += 1
 
-        edge_list = [(k[0], k[1], v) for k, v in self.edge_dict.items()]
+        edge_list = [(str(k[0]), str(k[1]), v) for k, v in self.edge_dict.items()]
         self.g.add_weighted_edges_from(edge_list)
 
     def cor_graph(self, timeseries, attr=None):
@@ -126,7 +126,7 @@ class graph(object):
             for (idx_in, roi_in) in enumerate(roilist):
                 self.edge_dict[(roi_out, roi_in)] = float(cor[idx_out, idx_in])
 
-        edge_list = [(k[0], k[1], v) for k, v in self.edge_dict.items()]
+        edge_list = [(str(k[0]), str(k[1]), v) for k, v in self.edge_dict.items()]
         self.g.add_weighted_edges_from(edge_list)
         return cor
 
