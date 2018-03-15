@@ -199,7 +199,7 @@ def extract_brain(inp, out, opts="-B"):
     pass
 
 
-def graph2mtx(self, graph):
+def graph2mtx(graph):
     """
     A function to convert a networkx graph to an appropriate
     numpy matrix that is ordered properly from smallest
