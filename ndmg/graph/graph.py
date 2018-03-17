@@ -21,7 +21,7 @@
 
 from __future__ import print_function
 
-from itertools import combinations
+from itertools import product
 from collections import defaultdict
 import numpy as np
 import networkx as nx
@@ -99,7 +99,7 @@ class graph(object):
                 if loc:
                     p.add(loc)
 
-            edges = set(frozenset(x) for x in itertools.product(p))
+            edges = set(frozenset(x) for x in product(p))
             for edge in edges:
                 lst = tuple([int(node) for node in edge])
                 self.edge_dict[tuple(sorted(lst))] += 1
