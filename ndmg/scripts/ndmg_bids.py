@@ -185,7 +185,6 @@ def participant_level(inDir, outDir, subjs, sesh=None, task=None, run=None,
     p = Pool(processes=nproc)  # start nproc in parallel
     try:
         result = p.map(worker_wrapper, arg_list)  # run them
-        print("Test")
         p.close()
     except:
         p.close()
