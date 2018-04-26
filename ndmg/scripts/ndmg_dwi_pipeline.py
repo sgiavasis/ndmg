@@ -138,7 +138,7 @@ def ndmg_dwi_worker(dwi, bvals, bvecs, mprage, atlas, mask, labels, outdir,
     # Clean temp files
     if clean:
         print("Cleaning up intermediate files... ")
-        cmd = "".join(['rm -f ', tensors, ' ', outdir, '/tmp/', dwi_name, '*',
+        cmd = "".join(['rm -rf ', tensors, ' ', outdir, '/tmp/', dwi_name, '*',
                        ' ', aligned_dwi, ' ', fibers])
         mgu.execute_cmd(cmd)
 
