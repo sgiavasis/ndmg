@@ -266,7 +266,10 @@ def ndmg_func_pipeline(func, t1w, atlas, atlas_brain, atlas_mask, lv_mask,
         print(traceback.format_exc())
         return 
     finally:
-        os.exit()
+        try:
+            os.exit()
+        except Exception, e:
+            pass
     return
 
 
