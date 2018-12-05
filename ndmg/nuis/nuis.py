@@ -398,9 +398,17 @@ class nuis(object):
             # and erode by 2 voxels
             mgnu.probmap2mask(self.wm_prob, self.er_wm_mask,
                               .99, erode=2)
+
             # load whitematter mask as binary array of 0 for exclude,
             # 1 for include
             wmm = nb.load(self.er_wm_mask).get_data()
+
+            # write out white matter mask
+            wm_img = nb.Nifti1Image(wmm,
+                                    header=fmri_im.header,
+                                    affine=fmri_im.affine)
+            nb.save(wm_img, self.er_wm_mask)
+
             # wherever the whitematter mask is nonzero, extract the voxels
             # to create t x n array of n voxels in wm mask
             wm_ts = fmri_dat[wmm != 0, :].T

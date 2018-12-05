@@ -132,10 +132,25 @@ class preproc_func():
         # use slicetimer if user passes slicetiming information
         if (stc is not None):
             self.slice_time_correct(trim_func, stc_func, tr, stc)
+
+            # write out the slice-time corrected data
+            stc_dat = stc_func.get_data()
+            stc_img = nb.Nifti1Image(dataobj=stc_dat,
+                                     header=func_im.header,
+                                     affine=func_im.affine)
+            nb.save(img=stc_img, filename=stc_func)
         else:
             stc_func = self.func
         # motion correct using the mean volume (FSL default)
         self.motion_correct(stc_func, self.motion_func, None)
+
+        # write out the motion corrected data
+        motion_dat = self.motion_func.get_data()
+        motion_img = nb.Nifti1Image(dataobj=motion_dat,
+                                    header=func_im.header,
+                                    affine=func_im.affine)
+        nb.save(img=motion_img, filename=self.motion_func)
+
         self.mc_params = "{}.par".format(self.motion_func)
         cmd = "cp {} {}".format(self.motion_func, self.preproc_func)
         mgu.execute_cmd(cmd, verb=True)

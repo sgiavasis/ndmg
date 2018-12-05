@@ -43,7 +43,7 @@ from functools import partial
 import traceback
 
 
-atlas_dir = '/ndmg_atlases'  # This location bc it is convenient for containers
+atlas_dir = '/Users/steven.giavasis/run/ndmg/ndmg_atlases'  # This location bc it is convenient for containers
 
 # Data structure:
 # sub-<subject id>/
